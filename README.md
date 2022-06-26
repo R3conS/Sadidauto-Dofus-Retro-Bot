@@ -1,1 +1,1 @@
-# dofus_gobbal_bot
+# Bot for Dofus Retro.
