@@ -1,0 +1,11 @@
+# Ignored files and folders
+
+
+venv/*
+__pycache__/*
+*.pyc
+mouse_position.py
+calculateregion_w_and_h.py
+char_status.py
+testas.py
+
