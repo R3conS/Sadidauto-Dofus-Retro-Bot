@@ -2,7 +2,6 @@ import pygetwindow as gw
 import cv2 as cv
 import pyautogui
 import numpy as np
-import win32gui, win32ui, win32con
 
 
 class GameWindow:
