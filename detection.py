@@ -2,14 +2,10 @@ import cv2 as cv
 import numpy as np
 import pyautogui
 import threading
+from window_capture import WindowCapture
 
 
 class Detection:
-
-    # Threading Properties
-    stopped = True
-    lock = None
-    screenshot = None
 
     # Properties
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
@@ -24,9 +20,6 @@ class Detection:
     # Constructor
     def __init__(self, needle_img_path, method=cv.TM_CCOEFF_NORMED):
 
-        # Creating a thread lock object
-        self.lock = threading.Lock()
-
         # Only load these variables if a specific needle_img is passed in
         if needle_img_path:
             # Loading the needle_image
@@ -38,6 +31,7 @@ class Detection:
         # Loading the match method that cv_matchTemplate will be using (there are several to choose from in OpenCV docs)
         # Default method will be: cv.TM_CCOEFF_NORMED
         self.method = method
+
 
 
     def find(self, haystack_img, threshold=0.6):
@@ -63,6 +57,7 @@ class Detection:
         return rectangles
 
 
+
     def get_click_points(self, rectangles):
 
         points = []
@@ -77,12 +72,14 @@ class Detection:
         return points
 
 
+
     # These offset coordinates are used when script needs to click on found needle_imgs with pyautogui or other.
     # It converts the (x, y) coordinates found on the haystack_img to clickable coordinates on screen.
     def get_offset_click_points(self, coordinates):
         return (coordinates[0] + self.GAMEWINDOW_OFFSET_X, coordinates[1] + self.GAMEWINDOW_OFFSET_Y)
 
         
+
     def draw_rectangles(self, haystack_img, rectangles):
 
         line_color = (0, 255, 0)
@@ -98,6 +95,7 @@ class Detection:
         return haystack_img
 
 
+
     def draw_crosshairs(self, haystack_img, points):
 
         marker_color = (255, 0, 255)
@@ -109,22 +107,12 @@ class Detection:
 
         return haystack_img
 
-    
-    # Screenshoting specified region of the screen. The default is whole game window. 
-    # Converting screenshot into required format and returning it.
-    def gamewindow_capture(self, capture_region=GAMEWINDOW_DEFAULT_REGION):
-
-        screenshot = pyautogui.screenshot(region=capture_region) # Region set for (950, 765) size Dofus Window (w, h)
-        screenshot = np.array(screenshot)
-        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
-
-        return screenshot
 
 
     def detect_object(self, images_list, images_folder_path, threshold=0.6, capture_region_coordinates=GAMEWINDOW_DEFAULT_REGION):
 
         # Getting an updated screenshot (haystack) of the game
-        screenshot = self.gamewindow_capture(capture_region=capture_region_coordinates)
+        screenshot = WindowCapture().gamewindow_capture(capture_region=capture_region_coordinates)
 
         # Looping over all needle images and appending all information of found matches to an empty list
         # This generates a list of 2D numpy arrays
@@ -151,32 +139,6 @@ class Detection:
 
         return object_rectangles_converted, object_center_xy_coordinates
 
-    #--------------------
-    # Threading Methods -
-    #--------------------
-
-    def start(self):
-        self.stopped = False
-        t = threading.Thread(target=self.run)
-        t.start()
-
-
-    def stop(self):
-        self.stopped = True
-
-    
-    def run(self):
-
-        while not self.stopped:
-
-            # Get an updated image of the game
-            screenshot = self.gamewindow_capture()
-
-            # Lock the thread while updating the results
-            self.lock.acquire()
-            self.screenshot = screenshot
-            self.lock.release()
-
 
 #--------------------------------------------------------------------------------------------------------------------
 
@@ -186,50 +148,53 @@ class Object_Detection(Detection):
     # Threading properties
     stopped = True
     lock = None
-    rectangles = []
-    click_points = []
 
     # Properties
     screenshot = None
     object_images = []
     object_images_folder_path = []
     method = None
+    rectangles = []
+    click_points = []
 
     def __init__(self, needle_img_path, object_images, object_images_folder_path, method=cv.TM_CCOEFF_NORMED):
-
         # Inheriting from parent class
         super().__init__(needle_img_path, method=cv.TM_CCOEFF_NORMED)
 
         # Creating a thread lock object
         self.lock = threading.Lock()
 
+        # Loading images to look for and their paths
         self.object_images = object_images
         self.object_images_folder_path = object_images_folder_path
+
+        # Loading the OPEN CV detection method
         self.method = method
         
-    
-    def update(self, screenshot):
 
+
+    def update(self, screenshot):
         self.lock.acquire()
         self.screenshot = screenshot
         self.lock.release()
 
 
-    def start(self):
 
+    def start(self):
         self.stopped = False
         t = threading.Thread(target=self.run)
         t.start()
+
 
 
     def stop(self):
         self.stopped = True
 
 
-    def run(self):
 
+    def run(self):
         while not self.stopped:
-            if not self.screenshot is None:
+            if self.screenshot is not None:
                 # Do object detection
                 rectangles, click_points = self.detect_object(self.object_images, self.object_images_folder_path)
                 # Lock the thread while updating results
@@ -237,5 +202,10 @@ class Object_Detection(Detection):
                 self.rectangles = rectangles
                 self.click_points = click_points
                 self.lock.release()
+
+                if len(rectangles) < 1:
+                    print("No matches found... Searching...")
+                else:
+                    print(f"Found matches at: {click_points}")
 
 
