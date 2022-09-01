@@ -3,7 +3,7 @@ import numpy as np
 from time import time, sleep
 from detection import Detection, Object_Detection
 from gamewindow import GameWindow
-from char_status import CharStatus
+from window_capture import WindowCapture
 import pyautogui
 import threading
 
@@ -23,6 +23,9 @@ DEBUG = True
 # Initializing detection object
 detection = Detection(None)
 
+# Initializing window_capture object
+window_capture = WindowCapture()
+
 is_bot_in_action = False
 
 
@@ -39,7 +42,6 @@ def bot_actions(gobbal_rectangles, gobbal_center_xy_coordinates):
     is_bot_in_action = False
 
 
-
 def main():
 
     # Initializing the WindowCapture class
@@ -51,9 +53,8 @@ def main():
 
     monster_detection = Object_Detection(None, gobbal_images, gobbal_images_path)
 
-
-    # Starting the gamewindow_capture thread to get an updated screenshot of the game
-    detection.start()
+    # Starting the window_capture thread to start screenshotting the game window
+    window_capture.start()
 
     # Starting the monster detection thread
     monster_detection.start()
@@ -64,22 +65,23 @@ def main():
 
         global is_bot_in_action
 
-        if detection.screenshot is None:
+        # If no screenshot provided start the loop again
+        if window_capture.screenshot is None:
             continue
 
         # Give monster_detection object an updated screenshot image of the game to search for objects in
-        monster_detection.update(detection.screenshot)
+        monster_detection.update(window_capture.screenshot)
 
         if DEBUG:
             # Draw the rectangles around found objects (needle_imgs)
-            output_image = detection.draw_rectangles(detection.screenshot, monster_detection.rectangles)
+            output_image = detection.draw_rectangles(window_capture.screenshot, monster_detection.rectangles)
             # Displaying the processed image
             cv.imshow("Matches", output_image)
 
             if cv.waitKey(1) == ord("q"):
                 # Killing created threads after exiting program
                 monster_detection.stop()
-                detection.stop()
+                window_capture.stop()
                 cv.destroyAllWindows()
                 print("Done")
                 break
@@ -93,7 +95,7 @@ def main():
             t.start()
 
         
-        print(f"FPS {round(1 / (time() - loop_time), 2)}")
+        #print(f"FPS {round(1 / (time() - loop_time), 2)}")
         loop_time = time()
 
         
