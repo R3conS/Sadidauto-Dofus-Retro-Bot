@@ -13,12 +13,12 @@ class WindowCapture:
     
     # Properties
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
+ 
 
     def __init__(self):
-        
+
         # Creating a thread lock object
         self.lock = threading.Lock()
-
 
 
     # Screenshoting specified region of the screen. The default is whole game window. 
@@ -32,14 +32,12 @@ class WindowCapture:
         return screenshot
 
 
-
     # Threading Methods
     def start(self):
 
         self.stopped = False
-        t = threading.Thread(target=self.run)
+        t = threading.Thread(target=self.WindowCapture_Thread)
         t.start()
-
 
 
     def stop(self):
@@ -47,8 +45,7 @@ class WindowCapture:
         self.stopped = True
 
     
-
-    def run(self):
+    def WindowCapture_Thread(self):
 
         while not self.stopped:
 
