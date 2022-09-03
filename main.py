@@ -4,102 +4,84 @@ from time import time, sleep
 from detection import Detection, Object_Detection
 from gamewindow import GameWindow
 from window_capture import WindowCapture
-import pyautogui
+from bot import DofusBot, BotState
 import threading
 
 # Paths
-gobbal_images_path = "monster_images\\gobbal_images\\"
-gobbly_black_images_path = "monster_images\\gobbly_black_images\\"
-gobbly_white_images_path = "monster_images\\gobbly_white_images\\"
+gobbal_all_images_path = "monster_images\\gobbal_all_images\\"
 
 # Image Lists
-gobbal_images = ["Gobbal_BL_1.jpg", "Gobbal_BR_1.jpg", "Gobbal_TL_1.jpg", "Gobbal_TR_1.jpg"]
-gobbly_black_images = ["GobblyBlack_BL_1.jpg", "GobblyBlack_BR_1.jpg", "GobblyBlack_TL_1.jpg", "GobblyBlack_TR_1.jpg"]
-gobbly_white_images = ["GobblyWhite_BL_1.jpg", "GobblyWhite_BR_1.jpg", "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg"]
+gobbal_all_images = [
+                    "Gobbal_BL_1.jpg", "Gobbal_BR_1.jpg", "Gobbal_TL_1.jpg", "Gobbal_TR_1.jpg",
+                    "GobblyBlack_BL_1.jpg", "GobblyBlack_BR_1.jpg", "GobblyBlack_TL_1.jpg", "GobblyBlack_TR_1.jpg",
+                    "GobblyWhite_BL_1.jpg", "GobblyWhite_BR_1.jpg", "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg",
+                    ]
 
 # Global Variables
 DEBUG = True
 
-# Initializing detection object
+# OBJECTS
+# Initializing 'detection' object
 detection = Detection(None)
-
-# Initializing window_capture object
+# Initializing 'window_capture' object
 window_capture = WindowCapture()
-
-is_bot_in_action = False
-
-
-def bot_actions(gobbal_rectangles, gobbal_center_xy_coordinates):
-
-    if len(gobbal_rectangles) > 0:
-            targets = gobbal_center_xy_coordinates
-            target = detection.get_offset_click_points(targets[0])
-            pyautogui.moveTo(x=target[0], y=target[1])
-            pyautogui.click()
-            sleep(5)
-    
-    global is_bot_in_action
-    is_bot_in_action = False
-
+# Initializing 'monster_detection' object
+# monster_detection = Object_Detection(None, gobbal_all_images, gobbal_all_images_path)
+# Initializing 'bot' object
+dofus_bot = DofusBot(gobbal_all_images, gobbal_all_images_path)
 
 def main():
 
-    # Initializing the WindowCapture class
+    # Initializing the WindowCapture class.
     gamewindow = GameWindow("Novella", "v1.35.1")
 
     if gamewindow.gamewindow_checkifexists() == True:
         gamewindow.gamewindow_resize()
 
-
-    monster_detection = Object_Detection(None, gobbal_images, gobbal_images_path)
-
-    # Starting the window_capture thread to start screenshotting the game window
+    # THREADS
+    # Starting the 'window_capture' thread to start screenshotting the game window.
     window_capture.start()
-
-    # Starting the monster detection thread
-    monster_detection.start()
-
+    # Starting the 'bot' thread.
+    dofus_bot.start()
 
     loop_time = time()
     while True:
 
-        global is_bot_in_action
-
-        # If no screenshot provided start the loop again
+        # If no screenshot provided start the loop again.
         if window_capture.screenshot is None:
             continue
 
-        # Give monster_detection object an updated screenshot image of the game to search for objects in
-        monster_detection.update(window_capture.screenshot)
+        # 'BotState' manager
+        if dofus_bot.state == BotState.SEARCHING:
+            # Updating 'monster_detection' object inside 'dofus_bot' with an new screenshot image of the game to search for objects in.
+            dofus_bot.monster_detection.update(window_capture.screenshot)
+            #print("[INFO] 'DofusBot' is in 'SEARCHING' state.")
+        elif dofus_bot.state == BotState.COMBAT:
+            print("[INFO] 'DofusBot' is in 'COMBAT' state.")
+
+        # print(threading.active_count())
+        # print(threading.enumerate())
 
         if DEBUG:
-            # Draw the rectangles around found objects (needle_imgs)
-            output_image = detection.draw_rectangles(window_capture.screenshot, monster_detection.rectangles)
-            # Displaying the processed image
+
+            # Draw the rectangles around found objects (needle_imgs).
+            output_image = detection.draw_rectangles(window_capture.screenshot, dofus_bot.monster_detection.rectangles)
+            
+            # Displaying the processed image.
             cv.imshow("Matches", output_image)
 
-            if cv.waitKey(1) == ord("q"):
-                # Killing created threads after exiting program
-                monster_detection.stop()
-                window_capture.stop()
-                cv.destroyAllWindows()
-                print("Done")
-                break
+        # Press 'q' while the DEBUG window is focused to exit.
+        if cv.waitKey(1) == ord("q"):
+            # Killing created threads after exiting program
+            dofus_bot.stop()
+            window_capture.stop()
+            cv.destroyAllWindows()
+            print("Done")
+            break
 
-
-        # Take Bot actions
-        if not is_bot_in_action:
-
-            is_bot_in_action = True
-            t = threading.Thread(target=bot_actions, args=(monster_detection.rectangles, monster_detection.click_points))
-            t.start()
-
-        
         #print(f"FPS {round(1 / (time() - loop_time), 2)}")
         loop_time = time()
 
-        
-        
 if __name__ == '__main__':
     main()
 
