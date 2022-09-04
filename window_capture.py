@@ -6,14 +6,20 @@ import threading
 
 class WindowCapture:
 
+
+    # Constants
+    GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
+
+
     # Threading Properties
     stopped = True
     lock = None
+    threadas = None
+
+
+    # Properties
     screenshot = None
     
-    # Properties
-    GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
- 
 
     def __init__(self):
 
@@ -36,8 +42,8 @@ class WindowCapture:
     def start(self):
 
         self.stopped = False
-        t = threading.Thread(target=self.WindowCapture_Thread)
-        t.start()
+        self.threadas = threading.Thread(target=self.WindowCapture_Thread)
+        self.threadas.start()
 
 
     def stop(self):
