@@ -7,50 +7,55 @@ from window_capture import WindowCapture
 
 class Detection:
 
-    # Properties.
+
+    # Constants.
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
     GAMEWINDOW_OFFSET_X = GAMEWINDOW_DEFAULT_REGION[0]
     GAMEWINDOW_OFFSET_Y = GAMEWINDOW_DEFAULT_REGION[1]
 
+
+    # Properties.
+    opencv_match_method = None
     needle_img = None
     needle_w = 0
     needle_h = 0
-    method = None
+    
 
     # Constructor.
-    def __init__(self, needle_img_path, method=cv.TM_CCOEFF_NORMED):
-
-        # Only load these variables if a specific needle_img is passed in.
-        # Pass in 'needle_img_path' when initializing the object if you want to use the find() method to find a specific 'image'.
-        # In 99% of cases it's better to just initialize with 'None'.
-        if needle_img_path:
-            # Loading the needle_image.
-            self.needle_img = cv.imread(needle_img_path, cv.IMREAD_UNCHANGED)
-            # Saving dimensions of needle_image.
-            self.needle_w = self.needle_img.shape[1]
-            self.needle_h = self.needle_img.shape[0]
+    def __init__(self, opencv_match_method=cv.TM_CCOEFF_NORMED):
 
         # Loading the match method that cv_matchTemplate will be using (there are several to choose from in OpenCV docs).
         # Default method will be: cv.TM_CCOEFF_NORMED.
-        self.method = method
+        self.opencv_match_method = opencv_match_method
 
 
-    # Finds a 'needle_img', that is provided when initializing the object, on a haystack image (screenshot of the game).
-    # The haystack image must be a 'PIL Image object' or a 'numpy.ndarray'.
-    def find(self, haystack_img, threshold=0.6):
+    # Finds a 'needle' image on a 'haystack' image. Must be provided the paths to the images as strings.
+    # Will also work if the images are pre-converted to 'numpy.ndarray'.
+    def find(self, haystack_img, needle_img, threshold=0.6):
 
-        # Using matchTemplate to find needle_img in haystack_img.
-        result = cv.matchTemplate(haystack_img, self.needle_img, self.method)
+        # Converting the 'haystack_img' to a 'numpy.ndarray'.
+        if not isinstance(haystack_img, np.ndarray):
+            haystack_img = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
+
+        # Converting the 'haystack_img' to a 'numpy.ndarray'.
+        if not isinstance(needle_img, np.ndarray):
+            needle_img = cv.imread(needle_img, cv.IMREAD_UNCHANGED)
+
+        # Using matchTemplate to find 'needle_img' in 'haystack_img'.
+        result = cv.matchTemplate(haystack_img, needle_img, self.opencv_match_method)
 
         # Finding best matches (using threshold) and getting the (x, y) coordinates of those matches.
         locations = np.where(result >= threshold)
         locations = list(zip(*locations[::-1]))
 
         # Creating a list of rectangles that stores information of the found matches (x, y, w, h).
-        # The list is later used in groupRectangles() function.
+        # The list is later used in 'cv.groupRectangles()'.
         rectangles = []
         for loc in locations:
-            rect = [int(loc[0]), int(loc[1]), self.needle_w, self.needle_h]
+            rect = [int(loc[0]), int(loc[1]), needle_img.shape[1], needle_img.shape[0]]
+            # Appending to the list twice because 'cv.groupRectangles()' requires at least two overlapping rectangles for it group
+            # them together. If only appending once, 'cv.groupRectangles()' will throw out any results (even if they're correct)
+            # that do not overlap.
             rectangles.append(rect)
             rectangles.append(rect)
 
@@ -77,8 +82,8 @@ class Detection:
         return points
 
 
-    # These offset coordinates are used when script needs to click on found needle_imgs with pyautogui or other.
-    # It converts the (x, y) coordinates found on the haystack_img to clickable coordinates on screen.
+    # These offset coordinates are used when script needs to click on found 'needle' images.
+    # It converts the (x, y) coordinates found on the 'haystack' image to clickable coordinates on screen.
     def get_offset_click_points(self, coordinates):
 
         return (coordinates[0] + self.GAMEWINDOW_OFFSET_X, coordinates[1] + self.GAMEWINDOW_OFFSET_Y)
@@ -122,12 +127,12 @@ class Detection:
         # Getting an updated screenshot (haystack) of the game.
         screenshot = WindowCapture().gamewindow_capture(capture_region=capture_region_coordinates)
 
-        # Looping over all needle images and appending all information of found matches to an empty list.
+        # Looping over all needle images and trying to find them on the haystack image (screenshot).
+        # Appending all information of found matches to an empty list.
         # This generates a list of 2D numpy arrays.
         object_rectangles = []
         for image in images_list:
-            detection = Detection(images_folder_path + image)
-            rectangles = detection.find(screenshot, threshold)
+            rectangles = self.find(screenshot, images_folder_path + image, threshold)
             object_rectangles.append(rectangles)
 
         # Converting a list of 2D numpy arrays into a list of 1D numpy arrays.
@@ -143,7 +148,7 @@ class Detection:
         object_rectangles_converted, weights = cv.groupRectangles(object_rectangles_converted, 1, 0.5)
 
         # Creating a list containing center (x, y) coordinates of found matches.
-        object_center_xy_coordinates = detection.get_click_points(object_rectangles_converted)
+        object_center_xy_coordinates = self.get_click_points(object_rectangles_converted)
 
         return object_rectangles_converted, object_center_xy_coordinates
 
@@ -153,23 +158,26 @@ class Detection:
 
 class Object_Detection(Detection):
 
+
     # Threading properties.
     stopped = True
     lock = None
     threadas = None
 
+
     # Properties.
     screenshot = None
+    threshold = None
     object_images = []
     object_images_folder_path = []
-    method = None
     rectangles = []
     click_points = []
 
-    def __init__(self, needle_img_path, object_images, object_images_folder_path, method=cv.TM_CCOEFF_NORMED):
+
+    def __init__(self, object_images, object_images_folder_path, threshold=0.6, opencv_match_method=cv.TM_CCOEFF_NORMED):
 
         # Inheriting from parent class.
-        super().__init__(needle_img_path, method=cv.TM_CCOEFF_NORMED)
+        super().__init__(opencv_match_method=cv.TM_CCOEFF_NORMED)
 
         # Creating a thread lock object.
         self.lock = threading.Lock()
@@ -178,8 +186,8 @@ class Object_Detection(Detection):
         self.object_images = object_images
         self.object_images_folder_path = object_images_folder_path
 
-        # Loading the OPEN CV detection method.
-        self.method = method
+        # Loading detection threshold (0.6 by default)
+        self.threshold = threshold
         
 
     def update(self, screenshot):
@@ -206,7 +214,7 @@ class Object_Detection(Detection):
         while not self.stopped:
             if self.screenshot is not None:
                 # Do object detection.
-                rectangles, click_points = self.detect_objects(self.object_images, self.object_images_folder_path)
+                rectangles, click_points = self.detect_objects(self.object_images, self.object_images_folder_path, self.threshold)
                 # Lock the thread while updating results.
                 self.lock.acquire()
                 self.rectangles = rectangles
