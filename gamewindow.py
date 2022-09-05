@@ -35,6 +35,3 @@ class GameWindow:
         dofus_window.activate()
         dofus_window.resizeTo(950, 765) # 959, 895 perfectly split in hal for VM's res /// 950, 765 --- adjusted
         dofus_window.moveTo(-8, 0)
-
-
-
