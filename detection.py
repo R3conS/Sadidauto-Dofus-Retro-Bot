@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-import pyautogui
 import threading
-from window_capture import WindowCapture
+from window_capture import Window_Capture
+from threading_tools import Threading_Tools
 
 
 class Detection:
@@ -119,13 +119,13 @@ class Detection:
         return haystack_img
 
 
-    # Detects provided objects on a 'haystack image' (provided by WindowCapture()). Doesn't work when there's only 1 'image' in the 'images_list'.
+    # Detects provided objects on a 'haystack image' (provided by Window_Capture()). Doesn't work when there's only 1 'image' in the 'images_list'.
     # Must be at least 2. Can be the same 'image' string copied twice. Doesn't work very well though. This method is best used when trying to detect
     # multiple (>10) 'images'. Like detecting monsters for example. If accurate results for 1 'image' are needed, then it's best to use another method.
     def detect_objects(self, images_list, images_folder_path, threshold=0.6, capture_region_coordinates=GAMEWINDOW_DEFAULT_REGION):
 
         # Getting an updated screenshot (haystack) of the game.
-        screenshot = WindowCapture().gamewindow_capture(capture_region=capture_region_coordinates)
+        screenshot = Window_Capture().gamewindow_capture(capture_region=capture_region_coordinates)
 
         # Looping over all needle images and trying to find them on the haystack image (screenshot).
         # Appending all information of found matches to an empty list.
@@ -160,9 +160,9 @@ class Object_Detection(Detection):
 
 
     # Threading properties.
-    stopped = True
-    lock = None
-    threadas = None
+    Object_Detection_Thread_stopped = True
+    Object_Detection_Thread_lock = None
+    Object_Detection_Thread_thread = None
 
 
     # Properties.
@@ -179,44 +179,49 @@ class Object_Detection(Detection):
         # Inheriting from parent class.
         super().__init__(opencv_match_method=cv.TM_CCOEFF_NORMED)
 
-        # Creating a thread lock object.
-        self.lock = threading.Lock()
-
         # Loading images to look for and their paths.
         self.object_images = object_images
         self.object_images_folder_path = object_images_folder_path
 
         # Loading detection threshold (0.6 by default)
         self.threshold = threshold
-        
+
+        # Initializing a 'threading.Lock()' object.
+        self.Object_Detection_Thread_lock = threading.Lock()
+
+        # Initializing a 'Threading_Tools()' object.
+        self.threading_tools = Threading_Tools()
+
 
     def update(self, screenshot):
 
-        self.lock.acquire()
+        self.Object_Detection_Thread_lock.acquire()
         self.screenshot = screenshot
-        self.lock.release()
+        self.Object_Detection_Thread_lock.release()
 
 
-    def start(self):
+    def Object_Detection_Thread_start(self):
 
-        self.stopped = False
-        self.threadas = threading.Thread(target=self.ObjectDetection_Thread)
-        self.threadas.start()
+        self.Object_Detection_Thread_stopped = False
+        self.Object_Detection_Thread_thread = threading.Thread(target=self.Object_Detection_Thread_run)
+        self.Object_Detection_Thread_thread.start()
+        self.threading_tools.wait_for_thread_to_start(self.Object_Detection_Thread_thread)
+        
+
+    def Object_Detection_Thread_stop(self):
+
+        self.Object_Detection_Thread_stopped = True
+        self.threading_tools.wait_for_thread_to_stop(self.Object_Detection_Thread_thread)
 
 
-    def stop(self):
+    def Object_Detection_Thread_run(self):
 
-        self.stopped = True
-
-
-    def ObjectDetection_Thread(self):
-
-        while not self.stopped:
+        while not self.Object_Detection_Thread_stopped:
             if self.screenshot is not None:
                 # Do object detection.
                 rectangles, click_points = self.detect_objects(self.object_images, self.object_images_folder_path, self.threshold)
                 # Lock the thread while updating results.
-                self.lock.acquire()
+                self.Object_Detection_Thread_lock.acquire()
                 self.rectangles = rectangles
                 self.click_points = click_points
-                self.lock.release()
+                self.Object_Detection_Thread_lock.release()
