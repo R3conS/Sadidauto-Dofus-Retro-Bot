@@ -1,9 +1,12 @@
 import threading
 import pyautogui
-from detection import Detection, Object_Detection
-from window_capture import WindowCapture
 import time
 import os
+import cv2 as cv
+from detection import Detection, Object_Detection
+from window_capture import Window_Capture
+from threading_tools import Threading_Tools
+
 
 
 class ImageData:
@@ -37,37 +40,51 @@ class DofusBot:
     # Constants.
     # Time to wait before changing to 'SEARCHING' state during 'INITIALIZING' state.
     WAIT_TIME_INITIALIZING = 3
-    # Time to wait inbetween various script actions/steps.
-    WAIT_TIME_SCRIPT_ACTIONS = 0.25
-    # Time to wait before searching for new objects in 'SEARCHING' state. 
-    WAIT_TIME_BOTSTATE_SEARCHING = 1
+    # Time to wait inbetween various script actions/steps. 
+    WAIT_TIME_SCRIPT_ACTIONS = 0.1
+    # Time to wait before starting a new detection cycle in 'SEARCHING' state.
+    # The lower the number, the more chance the detection wont work properly on a slower machine (like a VM).
+    # Detection seems to work properly on 2GB Ram + 2 core CPU.
+    WAIT_TIME_BOTSTATE_SEARCHING = 3
+    # Time to wait after a 'thread.stop()' call. Gives time for a thread to properly stop before continuing.
+    WAIT_TIME_THREAD_STOP = 2
     
 
-    # Threading Properties.
-    stopped = True
-    lock = None
+    # 'DofusBot_Thread' threading properties.
+    DofusBot_Thread_stopped = True
+    DofusBot_Thread_thread = None
+
+
+    # 'Window_VisualDebugOutput_Thread' threading properties.
+    Window_VisualDebugOutput_Thread_stopped = True
+    Window_VisualDebugOutput_Thread_thread = None
 
 
     # Properties.
     monster_images_to_detect = None
     monster_images_to_detect_path = None
+    debug_window = None
 
     
-    def __init__(self, monster_images_to_detect, monster_images_to_detect_path):
+    def __init__(self, monster_images_to_detect, monster_images_to_detect_path, debug_window=False):
 
+        # Loading monster/object images.
         self.monster_images_to_detect = monster_images_to_detect
         self.monster_images_to_detect_path = monster_images_to_detect_path
 
-        # Default state of the bot at the start
+        # If 'True', will allow bot to run 'Window_VisualDebugOutput_Thread_start' which opens an 'OpenCV' debug window.
+        self.debug_window = debug_window
+
+        # Default state of the bot at the start.
         self.state = BotState.INITIALIZING
 
-        # Initializing thread lock object
-        self.lock = threading.Lock()
+        # Initializing 'Threading_Tools()' object. Holds various custom threading methods.
+        self.threading_tools = Threading_Tools()
 
-        # Initializing 'window_capture' object. Handles screenshotting the game window.
-        self.window_capture = WindowCapture()
+        # Initializing 'Window_Capture()' object. Handles screenshotting the game window.
+        self.window_capture = Window_Capture()
 
-        # Initializing 'monster_detection' object. Handles detecting monsters on the screen.
+        # Initializing 'Object_Detection()' object. Handles detecting monsters on the screen.
         self.monster_detection = Object_Detection(self.monster_images_to_detect, self.monster_images_to_detect_path)
 
  
@@ -86,35 +103,14 @@ class DofusBot:
             os._exit(1)
 
 
-    def check_thread_alive_OR_dead(self, thread_name):
-
-        if thread_name.is_alive():
-            print(f"[INFO] {thread_name} is 'ALIVE'!")
-            return "ALIVE"
-        elif not thread_name.is_alive():
-            print(f"[INFO] {thread_name} is 'DEAD'!")
-            return "DEAD"
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------MAIN THREAD OF CONTROL---------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
-    def start(self):
+    def DofusBot_Thread_run(self):
 
-        self.stopped = False
-        t = threading.Thread(target=self.DofusBot_Thread)
-        t.start()
-
-
-    def stop(self):
-
-        self.stopped = True
-        self.monster_detection.stop()
-        self.window_capture.stop()
-
-    
-    def DofusBot_Thread(self):
-
-        print("[INFO] 'Bot' thread started!")
-    
-        while not self.stopped:
+        while not self.DofusBot_Thread_stopped:
 
             # The bot always starts up in this (INITIALIZING) state. 
             # Starts the 'monster_detection' thread, starts the 'window_capture' thread and changes it's state to 'SEARCHING'.
@@ -134,26 +130,19 @@ class DofusBot:
                         self.check_BotState_change_success_OR_fail("SEARCHING")
                         time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
-                        # Starting the 'WindowCapture_Thread' thread to start screenshotting the game window.
-                        print(f"[INFO] Starting 'WindowCapture_Thread' in 'WindowCapture' object ...")
-                        self.window_capture.start()
-
-                        # Checking if the thread started successfully. Stop the program if it didn't.
-                        if self.check_thread_alive_OR_dead(self.window_capture.threadas) == "Dead":
-                            os._exit(1)
-
-                        # Starting the 'ObjectDetection_Thread' to start detecting monsters.
-                        print(f"[INFO] Starting 'ObjectDetection_Thread' in 'monster_detection' object ...")                        
-                        self.monster_detection.start()
-
-                        # Checking if the thread started successfully. Stop the program if it didn't.
-                        if self.check_thread_alive_OR_dead(self.monster_detection.threadas) == "Dead":
-                            os._exit(1)
-
-                        # Script will briefly lag at this point and might give a false result until it reaches the "SEARCHING" logic where it gets
-                        # an updated screenshot of the game. Works better if instantly given a screenshot to work on.
-                        self.monster_detection.update(self.window_capture.screenshot)
+                        # Starting the 'Window_Capture_Thread' thread to start screenshotting the game window.
+                        self.window_capture.Window_Capture_Thread_start()
                         time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
+
+                        # Starting the 'Object_Detection_Thread' to start detecting monsters.                   
+                        self.monster_detection.Object_Detection_Thread_start()
+                        time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
+
+                        # Launches an 'OpenCV' window for debug purposes.
+                        if self.debug_window:
+                            # Starting the DEBUG output window thread
+                            self.Window_VisualDebugOutput_Thread_start()
+                            time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
                     else:
 
@@ -161,14 +150,15 @@ class DofusBot:
                         time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
 
-            # This state handles the monster detection. If monsters are detected, the 'BotState' changes to 'ATTACKING' and
-            # 'monster_detection' thread is stopped. If nothing is detected, switches to 'CHANGING_MAP' state.
+            # This state handles the monster detection. 
+            # If monsters are detected, the 'BotState' changes to 'ATTACKING' and 'monster_detection' thread is stopped.
+            # If nothing is detected, the 'BotState' changes to 'CHANGING_MAP' and 'monster_detection' thread is stopped.
             elif self.state == BotState.SEARCHING:
 
                 # Constantly updating 'monster_detection' with a new screenshot of the game
                 self.monster_detection.update(self.window_capture.screenshot)
                 
-                # Giving time for 'monster_detection' thread to initialize properly. Best to keep at >= 1 seconds.
+                # Giving time for 'monster_detection' thread to search for monsters thoroughly.
                 print("[INFO] Searching ... ")
                 time.sleep(self.WAIT_TIME_BOTSTATE_SEARCHING)
 
@@ -186,16 +176,11 @@ class DofusBot:
                     self.check_BotState_change_success_OR_fail("ATTACKING")
                     time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
-                    print(f"[INFO] Stopping 'ObjectDetection_Thread' in 'monster_detection' object (FOUND MONSTERS) ...")
-                    self.monster_detection.stop()
-
-                    # Giving time for the thread to stop. Make sure it's >= 1 second.
-                    time.sleep(1)
-
-                    # Checking if 'ObjectDetection_Thread' in 'monster_detection' object was stopped successfully.
-                    if self.check_thread_alive_OR_dead(self.monster_detection.threadas) == "Alive":
-                        os._exit(1)
+                    # Stopping 'Object_Detection_Thread'.
+                    self.monster_detection.Object_Detection_Thread_stop()
+                    time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
                         
+                # EXECUTE THIS BLOCK IF MONSTERS WERE **NOT** DETECTED
                 elif len(self.monster_detection.click_points) <= 0:
 
                     print("[INFO] Couldn't find any monsters ...")
@@ -208,25 +193,82 @@ class DofusBot:
                     self.check_BotState_change_success_OR_fail("CHANGING_MAP")
                     time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
-                    print(f"[INFO] Stopping 'ObjectDetection_Thread' in 'monster_detection' object ... ")
-                    self.monster_detection.stop()
+                    # Stopping 'Object_Detection_Thread'.
+                    self.monster_detection.Object_Detection_Thread_stop()
+                    time.sleep(self.WAIT_TIME_SCRIPT_ACTIONS)
 
-                    # Giving time for the thread to stop. Make sure it's >= 1 second.
-                    time.sleep(1)
-
-                    # Checking if 'ObjectDetection_Thread' in 'monster_detection' object was stopped successfully.
-                    if self.check_thread_alive_OR_dead(self.monster_detection.threadas) == "Alive":
-                        os._exit(1)
 
             # Handles attacking found monsters by 'SEARCHING' state
             elif self.state == BotState.ATTACKING:
                 print("[INFO] Attacking")
-                time.sleep(1)
-
+                time.sleep(2.5)
 
             # Handles map changing when bot doesn't detect any monsterss
             elif self.state == BotState.CHANGING_MAP:
                 print("[INFO] Changing map")
-                time.sleep(1)
+                time.sleep(2.5)
 
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------THREADING METHODS----------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+
+    def DofusBot_Thread_start(self):
+
+        self.DofusBot_Thread_stopped = False
+        self.DofusBot_Thread_thread = threading.Thread(target=self.DofusBot_Thread_run)
+        self.DofusBot_Thread_thread.start()
+        self.threading_tools.wait_for_thread_to_start(self.DofusBot_Thread_thread)
+
+
+    def DofusBot_Thread_stop(self):
+
+        self.stopped = True
+        self.monster_detection.stop()
+        self.window_capture.stop()
+        self.threading_tools.wait_for_thread_to_stop(self.DofusBot_Thread_thread)
+
+
+    def Window_VisualDebugOutput_Thread_start(self):
+
+        self.Window_VisualDebugOutput_stopped = False
+        self.Window_VisualDebugOutput_Thread_thread = threading.Thread(target=self.Window_VisualDebugOutput_Thread_run)
+        self.Window_VisualDebugOutput_Thread_thread.start()
+        self.threading_tools.wait_for_thread_to_start(self.Window_VisualDebugOutput_Thread_thread)
+
+
+    def Window_VisualDebugOutput_Thread_stop(self):
+
+        self.Window_VisualDebugOutput_stopped = True
+        self.threading_tools.wait_for_thread_to_stop(self.Window_VisualDebugOutput_Thread_thread)
+        
+
+    def Window_VisualDebugOutput_Thread_run(self):
+
+        loop_time = time.time()
+        while not self.Window_VisualDebugOutput_stopped:
+
+            # If no screenshot provided yet, start the loop again.
+            if self.window_capture.screenshot is None:
+                continue
+        
+            # Draw boxes (rectangles) around detected monsters.
+            output_image = self.monster_detection.draw_rectangles(self.window_capture.screenshot, self.monster_detection.rectangles)
+            
+            # Displaying the processed image.
+            cv.imshow("Matches", output_image)
+
+            # Press 'q' while the DEBUG window is focused to exit.
+            if cv.waitKey(1) == ord("q"):
+                # Hard exiting and force killing all threads (not clean)
+                cv.destroyAllWindows()
+                print("Done")
+                os._exit(1)
+
+            # Uncomment to display FPS in terminal (spams terminal).
+            #print(f"FPS {round(1 / (time.time() - loop_time), 2)}")
+            loop_time = time.time()
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------
