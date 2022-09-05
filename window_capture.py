@@ -2,9 +2,10 @@ import cv2 as cv
 import numpy as np
 import pyautogui
 import threading
+from threading_tools import Threading_Tools
 
 
-class WindowCapture:
+class Window_Capture:
 
 
     # Constants
@@ -12,9 +13,9 @@ class WindowCapture:
 
 
     # Threading Properties
-    stopped = True
-    lock = None
-    threadas = None
+    Window_Capture_Thread_stopped = True
+    Window_Capture_Thread_lock = None
+    Window_Capture_Thread_thread = None
 
 
     # Properties
@@ -23,43 +24,48 @@ class WindowCapture:
 
     def __init__(self):
 
-        # Creating a thread lock object
-        self.lock = threading.Lock()
+        # Initializing a 'threading.Lock()' object.
+        self.Window_Capture_Thread_lock = threading.Lock()
+
+        # Initializing a 'Threading_Tools()' object.
+        self.threading_tools = Threading_Tools()
 
 
     # Screenshoting specified region of the screen. The default is whole game window. 
     # Converting screenshot into required format and returning it.
     def gamewindow_capture(self, capture_region=GAMEWINDOW_DEFAULT_REGION):
 
-        screenshot = pyautogui.screenshot(region=capture_region) # Region set for (950, 765) size Dofus Window (w, h)
+        # Region set for (950, 765) size Dofus Window (w, h). The CONSTANT is adjusted with an offset.
+        screenshot = pyautogui.screenshot(region=capture_region)
         screenshot = np.array(screenshot)
         screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
 
         return screenshot
 
 
-    # Threading Methods
-    def start(self):
+    # Threading Methods.
+    def Window_Capture_Thread_start(self):
 
-        self.stopped = False
-        self.threadas = threading.Thread(target=self.WindowCapture_Thread)
-        self.threadas.start()
+        self.Window_Capture_Thread_stopped = False
+        self.Window_Capture_Thread_thread = threading.Thread(target=self.Window_Capture_Thread_run)
+        self.Window_Capture_Thread_thread.start()
+        self.threading_tools.wait_for_thread_to_start(self.Window_Capture_Thread_thread)
 
 
-    def stop(self):
+    def Window_Capture_Thread_stop(self):
 
-        self.stopped = True
+        self.Window_Capture_Thread_stopped = True
+        self.threading_tools.wait_for_thread_to_stop(self.Window_Capture_Thread_thread)
 
     
-    def WindowCapture_Thread(self):
+    def Window_Capture_Thread_run(self):
 
-        while not self.stopped:
+        while not self.Window_Capture_Thread_stopped:
 
-            # Get an updated image of the game
+            # Getting an updated image (screenshot) of the game.
             screenshot = self.gamewindow_capture()
 
-            # Lock the thread while updating the results
-            self.lock.acquire()
+            # Locking the thread while updating the results.
+            self.Window_Capture_Thread_lock.acquire()
             self.screenshot = screenshot
-            self.lock.release()
-
+            self.Window_Capture_Thread_lock.release()
