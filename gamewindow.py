@@ -1,7 +1,4 @@
 import pygetwindow as gw
-import cv2 as cv
-import pyautogui
-import numpy as np
 
 
 class GameWindow:
@@ -33,5 +30,6 @@ class GameWindow:
         dofus_window = gw.getWindowsWithTitle("Dofus Retro")[0]
         dofus_window.restore()
         dofus_window.activate()
-        dofus_window.resizeTo(950, 765) # 959, 895 perfectly split in hal for VM's res /// 950, 765 --- adjusted
+        # Resizing to (w950, h765). These values should never be changed.
+        dofus_window.resizeTo(950, 765)
         dofus_window.moveTo(-8, 0)
