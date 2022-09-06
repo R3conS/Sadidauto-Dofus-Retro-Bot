@@ -8,8 +8,11 @@ from threading_tools import Threading_Tools
 class Window_Capture:
 
 
-    # Constants
-    GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
+    # Constants.
+    # The region of the screen where screenshots for 'haystack' images are made. This value should NEVER be touched.
+    # The width and height values aren't the same as the 'Dofus.exe' window itself, because 'pyautogui.screenshot()' captures a little more than needed.
+    # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
+    GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
 
 
     # Threading Properties
@@ -19,7 +22,8 @@ class Window_Capture:
 
 
     # Properties
-    screenshot = None
+    screenshot_for_object_detection = None
+    screenshot_for_VisualDebugOutput_Thread = None
     
 
     def __init__(self):
@@ -36,11 +40,15 @@ class Window_Capture:
     def gamewindow_capture(self, capture_region=GAMEWINDOW_DEFAULT_REGION):
 
         # Region set for (950, 765) size Dofus Window (w, h). The CONSTANT is adjusted with an offset.
-        screenshot = pyautogui.screenshot(region=capture_region)
-        screenshot = np.array(screenshot)
-        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
+        screenshot_for_object_detection = pyautogui.screenshot(region=capture_region)
+        screenshot_for_object_detection = np.array(screenshot_for_object_detection)
+        screenshot_for_object_detection = cv.cvtColor(screenshot_for_object_detection, cv.COLOR_RGB2BGR)
 
-        return screenshot
+        screenshot_for_VisualDebugOutput_Thread = pyautogui.screenshot(region=capture_region)
+        screenshot_for_VisualDebugOutput_Thread = np.array(screenshot_for_VisualDebugOutput_Thread)
+        screenshot_for_VisualDebugOutput_Thread = cv.cvtColor(screenshot_for_VisualDebugOutput_Thread, cv.COLOR_RGB2BGR)
+
+        return screenshot_for_object_detection, screenshot_for_VisualDebugOutput_Thread
 
 
     # Threading Methods.
@@ -63,9 +71,10 @@ class Window_Capture:
         while not self.Window_Capture_Thread_stopped:
 
             # Getting an updated image (screenshot) of the game.
-            screenshot = self.gamewindow_capture()
+            screenshot_for_object_detection, screenshot_for_VisualDebugOutput_Thread = self.gamewindow_capture()
 
             # Locking the thread while updating the results.
             self.Window_Capture_Thread_lock.acquire()
-            self.screenshot = screenshot
+            self.screenshot_for_object_detection = screenshot_for_object_detection
+            self.screenshot_for_VisualDebugOutput_Thread = screenshot_for_VisualDebugOutput_Thread
             self.Window_Capture_Thread_lock.release()
