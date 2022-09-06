@@ -9,7 +9,10 @@ class Detection:
 
 
     # Constants.
-    GAMEWINDOW_DEFAULT_REGION = (0, 30, 935, 725)
+    # The region of the screen where screenshots for 'haystack' images are made. This value should NEVER be touched.
+    # The width and height values aren't the same as the 'Dofus.exe' window itself, because 'pyautogui.screenshot()' captures a little more than needed.
+    # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
+    GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
     GAMEWINDOW_OFFSET_X = GAMEWINDOW_DEFAULT_REGION[0]
     GAMEWINDOW_OFFSET_Y = GAMEWINDOW_DEFAULT_REGION[1]
 
@@ -77,16 +80,9 @@ class Detection:
             center_x = x + int(w/2)
             center_y = y + int(h/2)
             # Saving the center positions.
-            points.append((center_x, center_y))
+            points.append((center_x + self.GAMEWINDOW_OFFSET_X, center_y + self.GAMEWINDOW_OFFSET_Y))
 
         return points
-
-
-    # These offset coordinates are used when script needs to click on found 'needle' images.
-    # It converts the (x, y) coordinates found on the 'haystack' image to clickable coordinates on screen.
-    def get_offset_click_points(self, coordinates):
-
-        return (coordinates[0] + self.GAMEWINDOW_OFFSET_X, coordinates[1] + self.GAMEWINDOW_OFFSET_Y)
 
 
     # Draws a box around found objects using (x, y, w, h) coordinates provided by 'find()' method.
@@ -122,17 +118,14 @@ class Detection:
     # Detects provided objects on a 'haystack image' (provided by Window_Capture()). Doesn't work when there's only 1 'image' in the 'images_list'.
     # Must be at least 2. Can be the same 'image' string copied twice. Doesn't work very well though. This method is best used when trying to detect
     # multiple (>10) 'images'. Like detecting monsters for example. If accurate results for 1 'image' are needed, then it's best to use another method.
-    def detect_objects(self, images_list, images_folder_path, threshold=0.6, capture_region_coordinates=GAMEWINDOW_DEFAULT_REGION):
-
-        # Getting an updated screenshot (haystack) of the game.
-        screenshot = Window_Capture().gamewindow_capture(capture_region=capture_region_coordinates)
+    def detect_objects(self, objects_to_detect_list, objects_to_detect_path, haystack_image, threshold=0.6):
 
         # Looping over all needle images and trying to find them on the haystack image (screenshot).
         # Appending all information of found matches to an empty list.
         # This generates a list of 2D numpy arrays.
         object_rectangles = []
-        for image in images_list:
-            rectangles = self.find(screenshot, images_folder_path + image, threshold)
+        for image in objects_to_detect_list:
+            rectangles = self.find(haystack_image, objects_to_detect_path + image, threshold)
             object_rectangles.append(rectangles)
 
         # Converting a list of 2D numpy arrays into a list of 1D numpy arrays.
@@ -154,74 +147,3 @@ class Detection:
 
 
 #--------------------------------------------------------------------------------------------------------------------
-
-
-class Object_Detection(Detection):
-
-
-    # Threading properties.
-    Object_Detection_Thread_stopped = True
-    Object_Detection_Thread_lock = None
-    Object_Detection_Thread_thread = None
-
-
-    # Properties.
-    screenshot = None
-    threshold = None
-    object_images = []
-    object_images_folder_path = []
-    rectangles = []
-    click_points = []
-
-
-    def __init__(self, object_images, object_images_folder_path, threshold=0.6, opencv_match_method=cv.TM_CCOEFF_NORMED):
-
-        # Inheriting from parent class.
-        super().__init__(opencv_match_method=cv.TM_CCOEFF_NORMED)
-
-        # Loading images to look for and their paths.
-        self.object_images = object_images
-        self.object_images_folder_path = object_images_folder_path
-
-        # Loading detection threshold (0.6 by default)
-        self.threshold = threshold
-
-        # Initializing a 'threading.Lock()' object.
-        self.Object_Detection_Thread_lock = threading.Lock()
-
-        # Initializing a 'Threading_Tools()' object.
-        self.threading_tools = Threading_Tools()
-
-
-    def update(self, screenshot):
-
-        self.Object_Detection_Thread_lock.acquire()
-        self.screenshot = screenshot
-        self.Object_Detection_Thread_lock.release()
-
-
-    def Object_Detection_Thread_start(self):
-
-        self.Object_Detection_Thread_stopped = False
-        self.Object_Detection_Thread_thread = threading.Thread(target=self.Object_Detection_Thread_run)
-        self.Object_Detection_Thread_thread.start()
-        self.threading_tools.wait_for_thread_to_start(self.Object_Detection_Thread_thread)
-        
-
-    def Object_Detection_Thread_stop(self):
-
-        self.Object_Detection_Thread_stopped = True
-        self.threading_tools.wait_for_thread_to_stop(self.Object_Detection_Thread_thread)
-
-
-    def Object_Detection_Thread_run(self):
-
-        while not self.Object_Detection_Thread_stopped:
-            if self.screenshot is not None:
-                # Do object detection.
-                rectangles, click_points = self.detect_objects(self.object_images, self.object_images_folder_path, self.threshold)
-                # Lock the thread while updating results.
-                self.Object_Detection_Thread_lock.acquire()
-                self.rectangles = rectangles
-                self.click_points = click_points
-                self.Object_Detection_Thread_lock.release()
