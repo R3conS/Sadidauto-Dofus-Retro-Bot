@@ -9,4 +9,7 @@ calculateregion_w_and_h.py
 char_status.py
 testas.py
 test.py
-
+test_needle.jpg
+test_haystack.jpg
+*test_monster_images
+*test_images
