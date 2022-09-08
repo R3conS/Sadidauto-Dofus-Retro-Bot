@@ -1,8 +1,5 @@
 import cv2 as cv
 import numpy as np
-import threading
-from window_capture import Window_Capture
-from threading_tools import Threading_Tools
 
 
 class Detection:
@@ -34,7 +31,7 @@ class Detection:
 
     # Finds a 'needle' image on a 'haystack' image. Must be provided the paths to the images as strings.
     # Will also work if the images are pre-converted to 'numpy.ndarray'.
-    def find(self, haystack_img, needle_img, threshold=0.6):
+    def find(self, haystack_img, needle_img, threshold=0.9):
 
         # Converting the 'haystack_img' to a 'numpy.ndarray'.
         if not isinstance(haystack_img, np.ndarray):
@@ -115,9 +112,9 @@ class Detection:
         return haystack_img
 
 
-    # Detects provided objects on a 'haystack image' (provided by Window_Capture()). Doesn't work when there's only 1 'image' in the 'images_list'.
-    # Must be at least 2. Can be the same 'image' string copied twice. Doesn't work very well though. This method is best used when trying to detect
-    # multiple (>10) 'images'. Like detecting monsters for example. If accurate results for 1 'image' are needed, then it's best to use another method.
+    # Detects provided 'objects_to_detect_list' (string names of images) on a 'haystack_image'. Doesn't work when there's only 1 'image' in the 'objects_to_detect_list'.
+    # Must be at least 2. Can be the same image string copied twice. Doesn't work very well though. This method is best used when trying to detect
+    # multiple (>10) objects. Like detecting monsters for example. If an accurate results for 1 object is needed, then it's best to use 'find()'.
     def detect_objects(self, objects_to_detect_list, objects_to_detect_path, haystack_image, threshold=0.6):
 
         # Looping over all needle images and trying to find them on the haystack image (screenshot).

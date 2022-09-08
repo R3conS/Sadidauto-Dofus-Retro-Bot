@@ -27,7 +27,7 @@ class GameWindow:
     # Resizes Dofus Retro window
     def gamewindow_resize(self):
 
-        dofus_window = gw.getWindowsWithTitle("Dofus Retro")[0]
+        dofus_window = gw.getWindowsWithTitle(self.character_name + " - Dofus Retro " + self.game_version)[0]
         dofus_window.restore()
         dofus_window.activate()
         # Resizing to (w950, h765). These values should never be changed.
