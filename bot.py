@@ -14,12 +14,27 @@ class ImageData:
     test_monster_images_path = "test_monster_images\\"
     test_monster_images_list = ["test_1.jpg", "test_2.jpg", "test_3.jpg", "test_4.jpg"]
 
-    gobbal_images_path = "monster_images\\gobbal_all_images\\"
-    gobbal_images_list = [
-                         "Gobbal_BL_1.jpg", "Gobbal_BR_1.jpg", "Gobbal_TL_1.jpg", "Gobbal_TR_1.jpg",
+    gobball_images_path = "monster_images\\gobball_all_images\\"
+    gobball_images_list = [
+                         "Gobball_BL_1.jpg", "Gobball_BR_1.jpg", "Gobball_TL_1.jpg", "Gobball_TR_1.jpg",
                          "GobblyBlack_BL_1.jpg", "GobblyBlack_BR_1.jpg", "GobblyBlack_TL_1.jpg", "GobblyBlack_TR_1.jpg",
                          "GobblyWhite_BL_1.jpg", "GobblyWhite_BR_1.jpg", "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg",
                          ]
+
+
+class MapData:
+
+
+    amakna_castle_gobballs = [
+
+        {"3,-9": {"top": (  None  ), "bottom": (500, 580), "left": (  None  ), "right": (900, 310)} },
+        {"4,-9": {"top": (  None  ), "bottom": (500, 580), "left": (30 , 310), "right": (900, 275)} },
+        {"5,-9": {"top": (  None  ), "bottom": (435, 580), "left": (30 , 270), "right": (  None  )} },
+        {"3,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (  None  ), "right": (900, 310)} },
+        {"4,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (30 , 275), "right": (900, 310)} },
+        {"5,-8": {"top": (430 , 70), "bottom": (  None  ), "left": (30 , 310), "right": (  None  )} },
+
+    ]
 
 
 class BotState:
@@ -43,6 +58,7 @@ class DofusBot:
     WAIT_TIME_COMBAT_START = 10
     # Time to wait before checking again if the 'Fight Results' window was properly closed in 'BotState.IN_COMBAT'.
     WAIT_TIME_FIGHT_RESULT_WINDOW_CLOSED = 3
+
 
     # 'DofusBot_Thread' threading properties.
     DofusBot_Thread_stopped = True
@@ -249,9 +265,9 @@ class DofusBot:
                     # Checking if combat started after 'READY' button was clicked.
                     if preparation_state_ready_button_click_action:
 
-                        preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg")
-                        preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg")
-                        preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg")
+                        preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg", threshold=0.8)
+                        preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg", threshold=0.8)
+                        preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg", threshold=0.8)
                         
                         if time.time() - click_ready_action_start_time > self.WAIT_TIME_COMBAT_START:
                             print("[INFO] Failed to start combat, retrying ... ")
@@ -262,6 +278,7 @@ class DofusBot:
                             print(f"[INFO] Changing 'BotState' to: '{BotState.IN_COMBAT}' ... ")
                             self.state = BotState.IN_COMBAT
                             break
+
 
             # Handles the combat actions.
             elif self.state == BotState.IN_COMBAT:
@@ -279,6 +296,7 @@ class DofusBot:
                     in_combat_state_close_button_icon = self.detection.get_click_points(self.detection.find(
                                                                                                     self.window_capture.screenshot_for_object_detection,
                                                                                                     "status_images\\END_OF_COMBAT_verifier_1.jpg",
+                                                                                                    threshold=0.8
                                                                                                     ))
 
                                                                                                     

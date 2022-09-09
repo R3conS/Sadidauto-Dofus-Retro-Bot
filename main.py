@@ -4,10 +4,10 @@ from bot import DofusBot, ImageData
 
 
 # Initializing the 'GameWindow()' object.
-gamewindow = GameWindow("Novella", "v1.35.1")
+gamewindow = GameWindow("Novella")
 
 # Initializing 'bot' object
-dofusbot = DofusBot(ImageData.gobbal_images_list, ImageData.gobbal_images_path, debug_window=True)
+dofusbot = DofusBot(ImageData.gobball_images_list, ImageData.gobball_images_path, debug_window=True)
 #dofus_bot = DofusBot(ImageData.test_monster_images_list, ImageData.test_monster_images_path)
 
 
