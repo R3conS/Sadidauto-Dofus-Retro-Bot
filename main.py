@@ -7,8 +7,8 @@ from bot import DofusBot, ImageData
 gamewindow = GameWindow("Novella")
 
 # Initializing 'bot' object
-dofusbot = DofusBot(ImageData.gobball_images_list, ImageData.gobball_images_path, debug_window=True)
-#dofus_bot = DofusBot(ImageData.test_monster_images_list, ImageData.test_monster_images_path)
+dofusbot = DofusBot(ImageData.amakna_castle_gobballs_images_list, ImageData.amakna_castle_gobballs_images_path, debug_window=True)
+#dofusbot = DofusBot(ImageData.test_monster_images_list, ImageData.test_monster_images_path, debug_window=True)
 
 
 def main():
