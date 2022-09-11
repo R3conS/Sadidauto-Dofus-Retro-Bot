@@ -68,6 +68,33 @@ class Window_Capture:
         return screenshot_for_map_detection
 
 
+    # Takes a screenshot around mouse. 
+    # 'rect_size' - controls how big the screenshot (rectangle around mouse) will be.
+    def area_around_mouse_capture(self, rect_size):
+
+        mouse_pos = pyautogui.position()
+
+        center_x = mouse_pos[0]
+        center_y = mouse_pos[1]
+
+        topleft_x = center_x - rect_size
+        topleft_y = center_y - rect_size
+
+        bottomright_x = center_x + rect_size
+        bottomright_y = center_y + rect_size
+
+        width = bottomright_x - topleft_x
+        height = bottomright_y - topleft_y
+
+        capture_region = (topleft_x, topleft_y, width, height)
+
+        screenshot = pyautogui.screenshot(region=capture_region)
+        screenshot = np.array(screenshot)
+        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
+
+        return screenshot
+
+
     # Threading Methods.
     def Window_Capture_Thread_start(self):
 

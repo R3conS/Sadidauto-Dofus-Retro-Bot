@@ -31,12 +31,12 @@ class MapData:
 
     amakna_castle_gobballs = [
 
-        {"3,-9": {"top": (  None  ), "bottom": (500, 580), "left": (  None  ), "right": (900, 310), "cell": (  None  )} },
-        {"4,-9": {"top": (  None  ), "bottom": (500, 580), "left": (30 , 310), "right": (900, 275), "cell": (  None  )} },
-        {"5,-9": {"top": (  None  ), "bottom": (435, 580), "left": (30 , 270), "right": (  None  ), "cell": (  None  )} },
-        {"3,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (  None  ), "right": (900, 310), "cell": (  None  )} },
-        {"4,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (30 , 275), "right": (900, 310), "cell": (  None  )} },
-        {"5,-8": {"top": (430 , 70), "bottom": (  None  ), "left": (30 , 310), "right": (  None  ), "cell": (  None  )} },
+        {"3,-9": {"top": (  None  ), "bottom": (500, 580), "left": (  None  ), "right": (900, 310), "cell": (395, 290)} },
+        {"4,-9": {"top": (  None  ), "bottom": (500, 580), "left": (30 , 310), "right": (900, 275), "cell": (230, 310)} },
+        {"5,-9": {"top": (  None  ), "bottom": (435, 580), "left": (30 , 270), "right": (  None  ), "cell": (395, 395)} },
+        {"3,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (  None  ), "right": (900, 310), "cell": (330, 290)} },
+        {"4,-8": {"top": (500 , 70), "bottom": (  None  ), "left": (30 , 275), "right": (900, 310), "cell": (265, 290)} },
+        {"5,-8": {"top": (430 , 70), "bottom": (  None  ), "left": (30 , 310), "right": (  None  ), "cell": (330, 325)} },
 
     ]
 
@@ -90,8 +90,24 @@ class DofusBot:
     detected_object_click_points = []
     # Pyautogui mouse movement duration. Default is '0.1' as per docs. Basically instant.
     move_duration = 0.15
-    # Keeps count of how many times script tried to change maps in 'BotState.CHANGING_MAP'.
-    changing_map_state_change_map_attempts = 0
+
+
+    # 'BotState.PREPARATION' properties.
+    preparation_state_cell_x_coordinate = None
+    preparation_state_cell_y_coordinate = None
+    preparation_state_current_map_detected_successfully = False
+    preparation_state_cell_selected_successfully = False
+    # Keeps count of how many times script tried to move character to the starting cell.
+    preparation_state_cell_click_attempts_total = 0
+    # How many attemps at clicking on the starting cell are allowed before exiting.
+    preparation_state_cell_click_attempts_allowed = 3
+
+
+    # 'BotState.CHANGING_MAP' properties.
+    # Keeps count of how many times script tried to change maps.
+    changing_map_state_change_map_attempts_total = 0
+    # How many attemps to change maps are allowed before exiting.
+    changing_map_state_change_map_attempts_allowed = 3
 
     
     def __init__(self, objects_to_detect_list, objects_to_detect_path, debug_window=False, detection_threshold=0.6):
@@ -118,6 +134,30 @@ class DofusBot:
 
         # Initializing 'Detection()' object & it's 'threading.Lock()' object.
         self.detection = Detection()
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------METHODS---------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+
+    # Checks if provided maps data is in database.
+    # Map - must be a string
+    # Database - list of dictionaries.
+    def check_if_map_present_in_database(self, map, database):
+
+        listas = []
+
+        for _, value in enumerate(database):
+
+            for key in value.keys():
+
+                listas.append(key)
+
+        if map not in listas:
+            return False
+
+        return True
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -169,7 +209,7 @@ class DofusBot:
                     # EXECUTE THIS BLOCK IF MONSTERS WERE DETECTED.
                     if len(self.detected_object_click_points) > 0:
 
-                        print(f"[INFO] Monsters found at: '{self.detected_object_click_points}'!")
+                        print(f"[INFO] Monsters found at: {self.detected_object_click_points}!")
                         print(f"[INFO] Changing 'BotState' to: '{BotState.ATTACKING}' ... ")
                         self.state = BotState.ATTACKING
                             
@@ -196,7 +236,7 @@ class DofusBot:
 
                         # Separating moving mouse and clicking into two actions instead of one, because otherwise it sometimes right clicks too early,
                         # causing the character to fail an attack.
-                        print(f"[INFO] Attacking monster at: '{click_points}' ... ")
+                        print(f"[INFO] Attacking monster at: {click_points} ... ")
                         pyautogui.moveTo(x=attacking_state_x_coordinate, y=attacking_state_y_coordinate, duration=self.move_duration)
                         pyautogui.click(button="right")
                         attacking_state_attack_attempts += 1
@@ -213,7 +253,7 @@ class DofusBot:
                             ready_button_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_2.jpg")
                             
                             if time.time() - attack_action_start_time > self.WAIT_TIME_AFTER_ATTACKING_MONSTER:
-                                print(f"[INFO] Failed to attack monster at: '{click_points}'!")
+                                print(f"[INFO] Failed to attack monster at: {click_points}!")
                                 print(f"[INFO] Trying the next coordinates ... ")
                                 break
 
@@ -245,47 +285,123 @@ class DofusBot:
                 self.detected_object_rectangles = []
                 self.detected_object_click_points = []
 
-                print("[INFO] Clicking on best starting position ... ")
+                # Execute this block if current map wasn't detected.
+                if not self.preparation_state_current_map_detected_successfully:
 
-                #------------------------------------------------------
-                # TO BE CREATED: Finding out best cell to start on.
-                #------------------------------------------------------
+                    # Gets a screenshot of minimap.
+                    preparation_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
-                # Checking if combat has ended.
-                preparation_state_ready_button_click_action = False
-                while True:
+                    # Control variables
+                    preparation_state_current_map = None
+                    
+                    # Detects current map.
+                    for preparation_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
 
-                    preparation_state_ready_button_icon = self.detection.get_click_points(self.detection.find(self.window_capture.screenshot_for_object_detection, 
-                                                                                      "status_images\\PREPARATION_state_verifier_2.jpg"))
+                        preparation_state_rectangles = self.detection.find(preparation_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + preparation_state_map_image, threshold=0.95)
 
-                    # If 'READY' button was found.
-                    if len(preparation_state_ready_button_icon) > 0 and not preparation_state_ready_button_click_action:
-
-                        print("[INFO] Clicking 'READY' ... ")
-                        pyautogui.moveTo(x=preparation_state_ready_button_icon[0][0], y=preparation_state_ready_button_icon[0][1], duration=self.move_duration)
-                        pyautogui.click()
-                        # Moving the mouse off the 'READY' button incase script needs to detect it again.
-                        pyautogui.move(0, 80)
-                        click_ready_action_start_time = time.time()
-                        preparation_state_ready_button_click_action = True 
-
-                    # Checking if combat started after 'READY' button was clicked.
-                    if preparation_state_ready_button_click_action:
-
-                        preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg", threshold=0.8)
-                        preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg", threshold=0.8)
-                        preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg", threshold=0.8)
-                        
-                        if time.time() - click_ready_action_start_time > self.WAIT_TIME_COMBAT_START:
-                            print("[INFO] Failed to start combat!")
-                            print("[INFO] Retrying ... ")
-                            preparation_state_ready_button_click_action = False
-
-                        elif len(preparation_state_cc_icon) > 0 and len(preparation_state_ap_icon) > 0 and len(preparation_state_mp_icon) > 0:
-                            print("[INFO] Successfully started combat!")
-                            print(f"[INFO] Changing 'BotState' to: '{BotState.IN_COMBAT}' ... ")
-                            self.state = BotState.IN_COMBAT
+                        if len(preparation_state_rectangles) > 0:
+                            print(f"[INFO] Preparing to fight at: ({preparation_state_map_image.rstrip('.jpg')}) ... ")
+                            preparation_state_current_map = preparation_state_map_image.rstrip('.jpg')
+                            self.preparation_state_current_map_detected_successfully = True
                             break
+
+                # If map was detected successfully, get the map's starting cell coordinates and move character there.
+                if self.preparation_state_current_map_detected_successfully:
+
+                    # Gets current map's best starting cell coordinates.
+                    while True:
+
+                        if not self.check_if_map_present_in_database(preparation_state_current_map, MapData.amakna_castle_gobballs):
+                            print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
+                            print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
+                            print("[ERROR] Exiting ... ")
+                            os._exit(1)
+
+                        for list_index, value in enumerate(MapData.amakna_castle_gobballs):
+
+                            for i_key, j_value in value.items():
+
+                                if preparation_state_current_map == i_key:
+
+                                    self.preparation_state_cell_x_coordinate = j_value["cell"][0]
+                                    self.preparation_state_cell_y_coordinate = j_value["cell"][1]
+
+                        # Moves the cursor to starting cell coordinates.
+                        pyautogui.moveTo(self.preparation_state_cell_x_coordinate, self.preparation_state_cell_y_coordinate, duration=self.move_duration)
+
+                        # Taking a screenshot before clicking on the starting cell.
+                        preparation_state_screenshot_before_clicking_on_cell = self.window_capture.area_around_mouse_capture(15)
+
+                        # Clicking on the cell.
+                        print(f"[INFO] Clicking on the starting cell: {self.preparation_state_cell_x_coordinate, self.preparation_state_cell_y_coordinate} ... ")
+                        pyautogui.click()
+                        self.preparation_state_cell_click_attempts_total += 1
+
+                        # Taking a screenshot after clicking on the starting cell.
+                        preparation_state_screenshot_after_clicking_on_cell = self.window_capture.area_around_mouse_capture(15)
+
+                        # Comparing the two screenshots
+                        preparation_state_compare_before_and_after_screenshot = self.detection.find(preparation_state_screenshot_before_clicking_on_cell,
+                                                                                                     preparation_state_screenshot_after_clicking_on_cell,
+                                                                                                     threshold=0.96)
+
+                        # Controls how many times to try and click on starting cell before exiting.
+                        if self.preparation_state_cell_click_attempts_total >= self.preparation_state_cell_click_attempts_allowed:
+                            print("[ERROR] Failed to select starting cell in 'BotState.PREPARATION'!")
+                            print("[ERROR] Exiting ... ")
+                            os._exit(1)
+
+                        # If there is NO difference between two screenshots, it means character is not standing on the correct cell.
+                        elif len(preparation_state_compare_before_and_after_screenshot) > 0:
+                            print("[INFO] Failed to move character to starting cell!")
+
+                        # If there IS a difference between two screenshots, it means character is standing on the correct cell.
+                        elif len(preparation_state_compare_before_and_after_screenshot) <= 0:
+                            print("[INFO] Character is standing on the correct cell!")
+                            self.preparation_state_cell_selected_successfully = True
+                            self.preparation_state_current_map_detected_successfully = False
+                            self.preparation_state_cell_click_attempts_total = 0
+                            break
+                            
+                # If character was moved to the starting cell successfully, script will try to start combat by clicking 'Ready'.
+                if self.preparation_state_cell_selected_successfully:
+                
+                    preparation_state_ready_button_click_action = False
+                    while True:
+
+                        preparation_state_ready_button_icon = self.detection.get_click_points(self.detection.find(self.window_capture.screenshot_for_object_detection, 
+                                                                                                                 "status_images\\PREPARATION_state_verifier_2.jpg",
+                                                                                                                 threshold=0.8))
+
+                        # If 'READY' button was found.
+                        if len(preparation_state_ready_button_icon) > 0 and not preparation_state_ready_button_click_action:
+
+                            print("[INFO] Clicking 'READY' ... ")
+                            pyautogui.moveTo(x=preparation_state_ready_button_icon[0][0], y=preparation_state_ready_button_icon[0][1], duration=self.move_duration)
+                            pyautogui.click()
+                            # Moving the mouse off the 'READY' button incase script needs to detect it again.
+                            pyautogui.move(0, 80)
+                            click_ready_action_start_time = time.time()
+                            preparation_state_ready_button_click_action = True 
+
+                        # Checking if combat started after 'READY' button was clicked.
+                        if preparation_state_ready_button_click_action:
+
+                            preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg", threshold=0.8)
+                            preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg", threshold=0.8)
+                            preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg", threshold=0.8)
+                            
+                            if time.time() - click_ready_action_start_time > self.WAIT_TIME_COMBAT_START:
+                                print("[INFO] Failed to start combat!")
+                                print("[INFO] Retrying ... ")
+                                preparation_state_ready_button_click_action = False
+
+                            elif len(preparation_state_cc_icon) > 0 and len(preparation_state_ap_icon) > 0 and len(preparation_state_mp_icon) > 0:
+                                print("[INFO] Successfully started combat!")
+                                print(f"[INFO] Changing 'BotState' to: '{BotState.IN_COMBAT}' ... ")
+                                self.state = BotState.IN_COMBAT
+                                self.preparation_state_cell_selected_successfully = False
+                                break
 
 
             # Handles the combat actions.
@@ -346,7 +462,7 @@ class DofusBot:
             elif self.state == BotState.CHANGING_MAP:
 
                 # Gets a screenshot of minimap.
-                screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
+                changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
                 # List of valid directions for moving.
                 changing_map_state_valid_directions_list = ["top", "bottom", "left", "right"]
@@ -355,40 +471,49 @@ class DofusBot:
                 changing_map_state_current_map = None
                 changing_map_state_current_map_detected_successfully = False
 
-                if self.changing_map_state_change_map_attempts >= 3:
+                if self.changing_map_state_change_map_attempts_total >= self.changing_map_state_change_map_attempts_allowed:
                         print("[ERROR] Too many failed attemps to change map!")
                         print("[ERROR] Exiting ... ")
                         os._exit(1)
 
-                # Loops through all images in the map list and tries to find them in 'screenshot_for_current_map_detection'.
-                for map_image in ImageData.amakna_castle_gobballs_map_images_list:
+                # Loops through all images in the map list and tries to find them in 'changing_map_state_screenshot_for_current_map_detection'.
+                for changing_map_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
 
-                    rectangles = self.detection.find(screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + map_image, threshold=0.95)
+                    changing_map_state_rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + changing_map_state_map_image, threshold=0.95)
 
-                    if len(rectangles) > 0:
-                        print(f"[INFO] Character is currently on map: '({map_image.rstrip('.jpg')})' ... ")
-                        changing_map_state_current_map = map_image.rstrip('.jpg')
+                    if len(changing_map_state_rectangles) > 0:
+                        print(f"[INFO] Character is currently on map: ({changing_map_state_map_image.rstrip('.jpg')}) ... ")
+                        changing_map_state_current_map = changing_map_state_map_image.rstrip('.jpg')
                         changing_map_state_current_map_detected_successfully = True
                         break
 
+                # Uses 'changing_map_state_current_map' to unlock the map data and finds possible directions for the character to move to.
                 if changing_map_state_current_map_detected_successfully:
 
-                    # Uses 'changing_map_state_current_map' to unlock the map data and finds possible directions for the character to move to.
                     changing_map_state_move_directions_list = []  
-                    changing_map_state_current_map_data_list_position = None
+                    changing_map_state_current_map_data_list_position = None       
+
+                    # Checking if detected map's data is in 'MapData.amakna_castle_gobballs'.
+                    if not self.check_if_map_present_in_database(changing_map_state_current_map, MapData.amakna_castle_gobballs):
+                        print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
+                        print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
+                        print("[ERROR] Exiting ... ")
+                        os._exit(1)
+
+                    # Getting a list of possible directions to move.
                     for list_index, value in enumerate(MapData.amakna_castle_gobballs):
 
                         for i_key, i_value in value.items():
 
                             if changing_map_state_current_map == i_key:
 
-                                for j_key, j_value in i_value.items():
+                                for k_key, k_value in i_value.items():
 
-                                    if j_value is not None and j_key in changing_map_state_valid_directions_list:
+                                    if k_value is not None and k_key in changing_map_state_valid_directions_list:
 
-                                        changing_map_state_move_directions_list.append(j_key)
+                                        changing_map_state_move_directions_list.append(k_key)
                                         changing_map_state_current_map_data_list_position = list_index
-                    
+
                     # Generating a random choice from possible choices in 'changing_map_state_move_directions_list'.
                     changing_map_state_move_directions_choice = random.choice(changing_map_state_move_directions_list)
 
@@ -398,7 +523,7 @@ class DofusBot:
 
                     # Clicking on the coordinates to change maps.
                     print(f"[INFO] Changing map ... ")
-                    print(f"[INFO] Clicking on: '{MapData.amakna_castle_gobballs[changing_map_state_current_map_data_list_position][changing_map_state_current_map][changing_map_state_move_directions_choice]}' to move '{changing_map_state_move_directions_choice}' ... ")
+                    print(f"[INFO] Clicking on: {(changing_map_state_move_directions_x_coordinate, changing_map_state_move_directions_y_coordinate)} to move '{changing_map_state_move_directions_choice}' ... ")
                     pyautogui.keyDown('e')
                     pyautogui.moveTo(changing_map_state_move_directions_x_coordinate, changing_map_state_move_directions_y_coordinate)
                     # Must wait because 'Dofus' GUI blocks a click when trying to move in 'bottom' direction.
@@ -410,19 +535,20 @@ class DofusBot:
                     changing_map_state_click_action_timestamp = time.time()
                     while True:
 
-                        screenshot_for_map_change_confirmation = self.window_capture.map_detection_capture()
-                        rectangles = self.detection.find(screenshot_for_current_map_detection, screenshot_for_map_change_confirmation)
+                        changing_map_state_screenshot_for_map_change_confirmation = self.window_capture.map_detection_capture()
+                        rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, changing_map_state_screenshot_for_map_change_confirmation)
 
                         if len(rectangles) <= 0:
-                                print("[INFO] Map changed successfully!")
-                                print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
-                                self.state = BotState.SEARCHING
-                                break
+                            print("[INFO] Map changed successfully!")
+                            print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
+                            self.state = BotState.SEARCHING
+                            self.changing_map_state_change_map_attempts_total = 0
+                            break
 
                         elif time.time() - changing_map_state_click_action_timestamp > self.WAIT_TIME_BEFORE_TRY_CHANGE_MAP_AGAIN:
                             print("[INFO] Couldn't change map!")
                             print("[INFO] Retrying ... ")
-                            self.changing_map_state_change_map_attempts += 1
+                            self.changing_map_state_change_map_attempts_total += 1
                             break
 
                 elif not changing_map_state_current_map_detected_successfully:
