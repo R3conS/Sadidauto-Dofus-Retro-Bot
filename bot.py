@@ -66,6 +66,10 @@ class DofusBot:
     WAIT_TIME_CHANGING_MAP_CLICK = 0.5
     # Time to wait AFTER clicking on yellow 'sun' to change maps. Determines how long script will wait for character to change maps.
     WAIT_TIME_BEFORE_TRY_CHANGE_MAP_AGAIN = 10
+    # Time to wait for map to load after a successful map change. Determines how long script will wait after character moves to a new map.
+    # The lower the number, the higher the chance that on a slower machine 'SEARCHING' state will act too fast & try to search for monsters
+    # on a black "LOADING MAP" screen. This waiting time allows the black loading screen to disappear.
+    WAIT_TIME_MAP_LOADING = 1
 
 
     # 'DofusBot_Thread' threading properties.
@@ -108,6 +112,8 @@ class DofusBot:
     changing_map_state_change_map_attempts_total = 0
     # How many attemps to change maps are allowed before exiting.
     changing_map_state_change_map_attempts_allowed = 3
+    # Controls flow.
+    changing_map_state_current_map_detected_successfully = False
 
     
     def __init__(self, objects_to_detect_list, objects_to_detect_path, debug_window=False, detection_threshold=0.6):
@@ -147,7 +153,7 @@ class DofusBot:
     def check_if_map_present_in_database(self, map, database):
 
         listas = []
-
+        
         for _, value in enumerate(database):
 
             for key in value.keys():
@@ -461,44 +467,47 @@ class DofusBot:
             # Handles map changing when bot doesn't detect any monsters.
             elif self.state == BotState.CHANGING_MAP:
 
-                # Gets a screenshot of minimap.
-                changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
+                if not self.changing_map_state_current_map_detected_successfully:
 
-                # List of valid directions for moving.
-                changing_map_state_valid_directions_list = ["top", "bottom", "left", "right"]
+                    # Gets a screenshot of minimap.
+                    changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
-                # Control variables
-                changing_map_state_current_map = None
-                changing_map_state_current_map_detected_successfully = False
+                    # List of valid directions for moving.
+                    changing_map_state_valid_directions_list = ["top", "bottom", "left", "right"]
 
-                if self.changing_map_state_change_map_attempts_total >= self.changing_map_state_change_map_attempts_allowed:
-                        print("[ERROR] Too many failed attemps to change map!")
-                        print("[ERROR] Exiting ... ")
-                        os._exit(1)
+                    # For storage of current map's key as a string.
+                    changing_map_state_current_map = None
 
-                # Loops through all images in the map list and tries to find them in 'changing_map_state_screenshot_for_current_map_detection'.
-                for changing_map_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
+                    # Loops through all images in the map list and tries to find them in 'changing_map_state_screenshot_for_current_map_detection'.
+                    for changing_map_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
 
-                    changing_map_state_rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + changing_map_state_map_image, threshold=0.95)
+                        changing_map_state_rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + changing_map_state_map_image, threshold=0.95)
 
-                    if len(changing_map_state_rectangles) > 0:
-                        print(f"[INFO] Character is currently on map: ({changing_map_state_map_image.rstrip('.jpg')}) ... ")
-                        changing_map_state_current_map = changing_map_state_map_image.rstrip('.jpg')
-                        changing_map_state_current_map_detected_successfully = True
-                        break
+                        if len(changing_map_state_rectangles) > 0:
+                            changing_map_state_current_map = changing_map_state_map_image.rstrip('.jpg')
+                            print(f"[INFO] Character is currently on map: ({changing_map_state_current_map}) ... ")
+
+                            # Checking if detected map's data is in database.
+                            if not self.check_if_map_present_in_database(changing_map_state_current_map, MapData.amakna_castle_gobballs):
+                                print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
+                                print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
+                                print("[ERROR] Exiting ... ")
+                                os._exit(1)
+
+                            self.changing_map_state_current_map_detected_successfully = True
+                            break
 
                 # Uses 'changing_map_state_current_map' to unlock the map data and finds possible directions for the character to move to.
-                if changing_map_state_current_map_detected_successfully:
+                if self.changing_map_state_current_map_detected_successfully:
 
                     changing_map_state_move_directions_list = []  
-                    changing_map_state_current_map_data_list_position = None       
+                    changing_map_state_current_map_data_list_position = None    
 
-                    # Checking if detected map's data is in 'MapData.amakna_castle_gobballs'.
-                    if not self.check_if_map_present_in_database(changing_map_state_current_map, MapData.amakna_castle_gobballs):
-                        print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
-                        print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
+                    # Will exit out of program if script fails to change maps too many times.
+                    if self.changing_map_state_change_map_attempts_total >= self.changing_map_state_change_map_attempts_allowed:
+                        print("[ERROR] Too many failed attemps to change map!")
                         print("[ERROR] Exiting ... ")
-                        os._exit(1)
+                        os._exit(1)   
 
                     # Getting a list of possible directions to move.
                     for list_index, value in enumerate(MapData.amakna_castle_gobballs):
@@ -522,7 +531,6 @@ class DofusBot:
                     changing_map_state_move_directions_y_coordinate = MapData.amakna_castle_gobballs[changing_map_state_current_map_data_list_position][changing_map_state_current_map][changing_map_state_move_directions_choice][1]
 
                     # Clicking on the coordinates to change maps.
-                    print(f"[INFO] Changing map ... ")
                     print(f"[INFO] Clicking on: {(changing_map_state_move_directions_x_coordinate, changing_map_state_move_directions_y_coordinate)} to move '{changing_map_state_move_directions_choice}' ... ")
                     pyautogui.keyDown('e')
                     pyautogui.moveTo(changing_map_state_move_directions_x_coordinate, changing_map_state_move_directions_y_coordinate)
@@ -531,7 +539,7 @@ class DofusBot:
                     pyautogui.click()
                     pyautogui.keyUp('e')
 
-                    # Wait for character to run and change maps
+                    # Detects if characte changed maps successfully.
                     changing_map_state_click_action_timestamp = time.time()
                     while True:
 
@@ -539,10 +547,13 @@ class DofusBot:
                         rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, changing_map_state_screenshot_for_map_change_confirmation)
 
                         if len(rectangles) <= 0:
+                            print(f"[INFO] Waiting {self.WAIT_TIME_MAP_LOADING} second(s) for map to load ... ")
+                            time.sleep(self.WAIT_TIME_MAP_LOADING)
                             print("[INFO] Map changed successfully!")
                             print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
                             self.state = BotState.SEARCHING
                             self.changing_map_state_change_map_attempts_total = 0
+                            self.changing_map_state_current_map_detected_successfully = False
                             break
 
                         elif time.time() - changing_map_state_click_action_timestamp > self.WAIT_TIME_BEFORE_TRY_CHANGE_MAP_AGAIN:
@@ -550,12 +561,6 @@ class DofusBot:
                             print("[INFO] Retrying ... ")
                             self.changing_map_state_change_map_attempts_total += 1
                             break
-
-                elif not changing_map_state_current_map_detected_successfully:
-                    print("[ERROR] Couldn't detect current map in 'BotState.CHANGING_MAP' ... ")
-                    print("[ERROR] Adjust detection threshold? Bad image paths?")
-                    print("[ERROR] Exiting ... ")
-                    os._exit(1)
 
             
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
