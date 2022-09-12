@@ -34,11 +34,11 @@ class Detection:
     def find(self, haystack_img, needle_img, threshold=0.9):
 
         # Converting the 'haystack_img' to a 'numpy.ndarray'.
-        if not isinstance(haystack_img, np.ndarray):
+        if isinstance(haystack_img, str):
             haystack_img = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
 
         # Converting the 'haystack_img' to a 'numpy.ndarray'.
-        if not isinstance(needle_img, np.ndarray):
+        if isinstance(needle_img, str):
             needle_img = cv.imread(needle_img, cv.IMREAD_UNCHANGED)
 
         # Using matchTemplate to find 'needle_img' in 'haystack_img'.
