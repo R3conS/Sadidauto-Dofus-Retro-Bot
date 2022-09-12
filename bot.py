@@ -96,6 +96,11 @@ class DofusBot:
     move_duration = 0.15
 
 
+    # 'BotState.ATTACKING' properties.
+    # How many attemps to fail an attack are allowed before searching for monsters again.
+    attacking_state_attack_attempts_allowed = 3
+
+
     # 'BotState.PREPARATION' properties.
     preparation_state_cell_x_coordinate = None
     preparation_state_cell_y_coordinate = None
@@ -231,56 +236,59 @@ class DofusBot:
             elif self.state == BotState.ATTACKING:
 
                 attacking_state_attack_successful = False
-                attacking_state_attack_attempts = 0
+                attacking_state_attack_attempts_allowed = 0
+                attacking_state_attack_attempts_total = 0
 
-                # Keep trying all coordinates in 'detected_object_click_points' list until combat starts.
-                if attacking_state_attack_attempts <= len(self.detected_object_click_points):
+                # Allowing script to fail an attack no more than 'self.attacking_state_attack_attempts_allowed' times.
+                if len(self.detected_object_click_points) > self.attacking_state_attack_attempts_allowed:
+                    attacking_state_attack_attempts_allowed = self.attacking_state_attack_attempts_allowed
+                else:
+                    attacking_state_attack_attempts_allowed = len(self.detected_object_click_points)
 
-                    for click_points in self.detected_object_click_points:
+                # Looping through detected monster coordinates.
+                for attacking_state_click_points in self.detected_object_click_points:
 
-                        attacking_state_x_coordinate, attacking_state_y_coordinate = click_points
+                    attacking_state_x_coordinate, attacking_state_y_coordinate = attacking_state_click_points
 
-                        # Separating moving mouse and clicking into two actions instead of one, because otherwise it sometimes right clicks too early,
-                        # causing the character to fail an attack.
-                        print(f"[INFO] Attacking monster at: {click_points} ... ")
-                        pyautogui.moveTo(x=attacking_state_x_coordinate, y=attacking_state_y_coordinate, duration=self.move_duration)
-                        pyautogui.click(button="right")
-                        attacking_state_attack_attempts += 1
+                    # Separating moving mouse and clicking into two actions instead of one, because otherwise it sometimes right clicks too early,
+                    # causing the character to fail an attack.
+                    print(f"[INFO] Attacking monster at: {attacking_state_click_points} ... ")
+                    pyautogui.moveTo(x=attacking_state_x_coordinate, y=attacking_state_y_coordinate, duration=self.move_duration)
+                    pyautogui.click(button="right")
 
-                        # This loop will keep trying to find 'status_images' that confirm if the monster was attacked succesfully.
-                        # The wait time is controlled by 'WAIT_TIME_AFTER_ATTACKING_MONSTER'.
-                        # If images were detected, then combat was started successfully and the bot will change state to 'PREPARATION'.
-                        # If images are not detected within the time specified, the 'while' loop will break to start the next 'for' loop iteration
-                        # and try the next coordinates.
-                        attack_action_start_time = time.time()
-                        while True:
+                    # This loop will keep trying to find 'status_images' that confirm if the monster was attacked succesfully.
+                    # The wait time is controlled by 'WAIT_TIME_AFTER_ATTACKING_MONSTER'.
+                    # If images were detected, then combat was started successfully and the bot will change state to 'PREPARATION'.
+                    # If images are not detected within the time specified, the 'while' loop will break to start the next 'for' loop iteration
+                    # and try the next coordinates.
+                    # If character fails to attack 'self.attacking_state_attack_attempts_allowed' times, 'BotState' will be changed to 'SEARCHING'.
+                    attack_action_start_time = time.time()
+                    while True:
 
-                            cc_icon_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_1.jpg")
-                            ready_button_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_2.jpg")
-                            
-                            if time.time() - attack_action_start_time > self.WAIT_TIME_AFTER_ATTACKING_MONSTER:
-                                print(f"[INFO] Failed to attack monster at: {click_points}!")
-                                print(f"[INFO] Trying the next coordinates ... ")
-                                break
-
-                            elif len(cc_icon_attacking_state) > 0 and len(ready_button_attacking_state) > 0:
-                                print(f"[INFO] Successfully attacked monster at: {click_points}!")
-                                print(f"[INFO] Changing 'BotState' to: '{BotState.PREPARATION}' ... ")
-                                self.state = BotState.PREPARATION
-                                attacking_state_attack_successful = True
-                                break
-
-                        if attacking_state_attack_successful:
+                        cc_icon_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_1.jpg")
+                        ready_button_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_2.jpg")
+                        
+                        if time.time() - attack_action_start_time > self.WAIT_TIME_AFTER_ATTACKING_MONSTER:
+                            print(f"[INFO] Failed to attack monster at: {attacking_state_click_points}!")
+                            print(f"[INFO] Trying the next coordinates ... ")
+                            attacking_state_attack_attempts_total += 1
                             break
 
-                # If all coordinates in 'detected_object_click_points' have been tried and combat hasn't started, change state to 'SEARCHING'
-                # to get a new coordinate list.
-                if attacking_state_attack_attempts == len(self.detected_object_click_points) and not attacking_state_attack_successful:
+                        elif len(cc_icon_attacking_state) > 0 and len(ready_button_attacking_state) > 0:
+                            print(f"[INFO] Successfully attacked monster at: {attacking_state_click_points}!")
+                            print(f"[INFO] Changing 'BotState' to: '{BotState.PREPARATION}' ... ")
+                            self.state = BotState.PREPARATION
+                            attacking_state_attack_successful = True
+                            break
 
-                    print("[INFO] Tried all coordinates within found monsters list!")
-                    print("[INFO] Failed to start combat!")
-                    print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
-                    self.state = BotState.SEARCHING
+                    if attacking_state_attack_successful:
+                        break
+
+                    elif not attacking_state_attack_successful and attacking_state_attack_attempts_allowed == attacking_state_attack_attempts_total:
+                        print(f"[INFO] Failed to start combat '{attacking_state_attack_attempts_total}' time(s)!")
+                        print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
+                        self.state = BotState.SEARCHING
+                        break
 
 
             # Handles selecting best starting position and starting combat.
