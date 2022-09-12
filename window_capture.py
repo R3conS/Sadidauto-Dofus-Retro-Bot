@@ -14,6 +14,9 @@ class Window_Capture:
     # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
 
+    # Small detection area where 'map_images' will be looked for.
+    MAP_DETECTION_CAPTURE_REGION = (445, 630, 145, 100)
+
 
     # Threading Properties
     Window_Capture_Thread_stopped = True
@@ -49,6 +52,20 @@ class Window_Capture:
         screenshot_for_VisualDebugOutput_Thread = cv.cvtColor(screenshot_for_VisualDebugOutput_Thread, cv.COLOR_RGB2BGR)
 
         return screenshot_for_object_detection, screenshot_for_VisualDebugOutput_Thread
+
+    
+    # Screenshoots the minimap area.
+    def map_detection_capture(self, capture_region=MAP_DETECTION_CAPTURE_REGION):
+
+        # Moves mouse over the red area on the minimap, so that black map tooltip appears.
+        pyautogui.moveTo(520, 680)
+        screenshot_for_map_detection = pyautogui.screenshot(region=capture_region)
+        screenshot_for_map_detection = np.array(screenshot_for_map_detection)
+        screenshot_for_map_detection = cv.cvtColor(screenshot_for_map_detection, cv.COLOR_RGB2BGR)
+        # Moves mouse off the red area on the minimap incase a new screenshot is required for another detection.
+        pyautogui.move(20, 0)
+
+        return screenshot_for_map_detection
 
 
     # Threading Methods.
