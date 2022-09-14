@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+from paddleocr import PaddleOCR
 
 
 class Detection:
@@ -84,17 +85,17 @@ class Detection:
 
     # Draws a box around found objects using (x, y, w, h) coordinates provided by 'find()' method.
     # 'rectangles' must be a list of lists, or list of tuples.
-    def draw_rectangles(self, haystack_img, rectangles):
+    def draw_rectangles(self, haystack_img, rectangles, line_color=(0, 255, 0), line_thickness=1):
 
-        line_color = (0, 255, 0)
-        line_type = cv.LINE_4
+        line_color = line_color
+        line_thickness = line_thickness
 
         for (x, y, w, h) in rectangles:
             # Determining the box positions.
             top_left = (x, y)
             bottom_right = (x + w, y + h)
             # Draw the box/rectangle.
-            cv.rectangle(haystack_img, top_left, bottom_right, line_color, line_type)
+            cv.rectangle(haystack_img, top_left, bottom_right, line_color, line_thickness)
 
         return haystack_img
 
@@ -141,6 +142,35 @@ class Detection:
         object_center_xy_coordinates = self.get_click_points(object_rectangles_converted)
 
         return object_rectangles_converted, object_center_xy_coordinates
+
+
+    # Detects text on a provided image. The 'image_path' must be a string or 'np.ndarray'.
+    def ocr_detect_text_from_image(self, image_path, lang="en", use_angle_cls=True, gpu=False, show_log=False):
+
+        if isinstance(image_path, str):
+            image_path = cv.imread(image_path, cv.IMREAD_UNCHANGED)
+
+        ocr = PaddleOCR(lang=lang, use_angle_cls=use_angle_cls, gpu=gpu, show_log=show_log)
+        results = ocr.ocr(image_path)
+    
+        # results[0][0][0] are [x, y] coordinates of the TOP LEFT corner of the bounding box.
+        # results[0][0][2] are [x, y] coordinates of the BOTOOM RIGHT corner of the bounding box.
+        # results[0][1][0] is the text found within the bounding box.
+        # results[0][1][1] is the confidence parameter.
+
+        # Getting bounding box information of detected results.
+        boxes = [result[0] for result in results]
+        # Getting (x, y, w, h) of the bounding boxes. This format is needed for 'draw_rectangles()' method.
+        rectangles = [(int(box[0][0]), int(box[0][1]), int(box[2][0]) - int(box[0][0]), int(box[2][1]) - int(box[0][1])) for box in boxes]
+        # Getting all detected text.
+        text = [result[1][0] for result in results]
+
+        # Creating a list which stores (x, y, w, h) of the bounding box & text found within that bounding box.
+        rectangles_and_text = []
+        for i in range(len(rectangles)):
+            rectangles_and_text.append([[rectangles[i]], text[i]])
+
+        return rectangles_and_text, rectangles, text
 
 
 #--------------------------------------------------------------------------------------------------------------------

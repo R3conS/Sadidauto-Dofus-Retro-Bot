@@ -13,7 +13,6 @@ class Window_Capture:
     # The width and height values aren't the same as the 'Dofus.exe' window itself, because 'pyautogui.screenshot()' captures a little more than needed.
     # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
-
     # Small detection area where 'map_images' will be looked for.
     MAP_DETECTION_CAPTURE_REGION = (445, 630, 145, 100)
 
