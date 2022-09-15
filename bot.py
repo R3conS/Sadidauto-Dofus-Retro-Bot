@@ -480,36 +480,34 @@ class DofusBot:
                     # Gets a screenshot of minimap.
                     changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
-                    # List of valid directions for moving.
-                    changing_map_state_valid_directions_list = ["top", "bottom", "left", "right"]
+                    # Detecting current map's coordinates in "changing_map_state_screenshot_for_current_map_detection".
+                    changing_map_state_current_map_rectangles_and_text, _, _ = self.detection.ocr_detect_text_from_image(changing_map_state_screenshot_for_current_map_detection)
 
-                    # For storage of current map's key as a string.
-                    changing_map_state_current_map = None
+                    # Storing current map's coordinates.
+                    changing_map_state_current_map = changing_map_state_current_map_rectangles_and_text[0][1]
 
-                    # Loops through all images in the map list and tries to find them in 'changing_map_state_screenshot_for_current_map_detection'.
-                    for changing_map_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
+                    # Replacing dots with commas in case a dot is detected instead of a comma.
+                    changing_map_state_current_map = changing_map_state_current_map.replace(".", ",")
 
-                        changing_map_state_rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + changing_map_state_map_image, threshold=0.95)
+                    print(f"[INFO] Character is currently on map: ({changing_map_state_current_map}) ... ")
 
-                        if len(changing_map_state_rectangles) > 0:
-                            changing_map_state_current_map = changing_map_state_map_image.rstrip('.jpg')
-                            print(f"[INFO] Character is currently on map: ({changing_map_state_current_map}) ... ")
+                    # Checking if detected map's data is in database.
+                    if not self.check_if_map_present_in_database(changing_map_state_current_map, MapData.amakna_castle_gobballs):
+                        print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
+                        print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
+                        print("[ERROR] Exiting ... ")
+                        os._exit(1)
 
-                            # Checking if detected map's data is in database.
-                            if not self.check_if_map_present_in_database(changing_map_state_current_map, MapData.amakna_castle_gobballs):
-                                print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
-                                print(f"[ERROR] Couldn't detect map ({changing_map_state_current_map}) in database!")
-                                print("[ERROR] Exiting ... ")
-                                os._exit(1)
-
-                            self.changing_map_state_current_map_detected_successfully = True
-                            break
+                    self.changing_map_state_current_map_detected_successfully = True
 
                 # Uses 'changing_map_state_current_map' to unlock the map data and finds possible directions for the character to move to.
                 if self.changing_map_state_current_map_detected_successfully:
 
+                    # List of valid directions for moving.
+                    changing_map_state_valid_directions_list = ["top", "bottom", "left", "right"]
+                    # Stores possible moving directions from MapData (depends on map).
                     changing_map_state_move_directions_list = []  
-                    changing_map_state_current_map_data_list_position = None    
+                    changing_map_state_current_map_data_list_position = None
 
                     # Will exit out of program if script fails to change maps too many times.
                     if self.changing_map_state_change_map_attempts_total >= self.changing_map_state_change_map_attempts_allowed:
@@ -524,11 +522,11 @@ class DofusBot:
 
                             if changing_map_state_current_map == i_key:
 
-                                for k_key, k_value in i_value.items():
+                                for j_key, j_value in i_value.items():
 
-                                    if k_value is not None and k_key in changing_map_state_valid_directions_list:
+                                    if j_value is not None and j_key in changing_map_state_valid_directions_list:
 
-                                        changing_map_state_move_directions_list.append(k_key)
+                                        changing_map_state_move_directions_list.append(j_key)
                                         changing_map_state_current_map_data_list_position = list_index
 
                     # Generating a random choice from possible choices in 'changing_map_state_move_directions_list'.
@@ -552,10 +550,18 @@ class DofusBot:
                     while True:
 
                         changing_map_state_screenshot_for_map_change_confirmation = self.window_capture.map_detection_capture()
-                        rectangles = self.detection.find(changing_map_state_screenshot_for_current_map_detection, changing_map_state_screenshot_for_map_change_confirmation)
+                        changing_map_state_future_map_rectangles_and_text, _, _ = self.detection.ocr_detect_text_from_image(changing_map_state_screenshot_for_map_change_confirmation)
 
-                        if len(rectangles) <= 0:
-                            print(f"[INFO] Waiting {self.WAIT_TIME_MAP_LOADING} second(s) for map to load ... ")
+                        # If 'changing_map_state_future_map_rectangles_and_text' is not empty, assign coordinates.
+                        if changing_map_state_future_map_rectangles_and_text:
+                            changing_map_state_future_map = changing_map_state_future_map_rectangles_and_text[0][1]
+                            # Replacing dots with commas in case a dot is detected instead of a comma.
+                            changing_map_state_future_map = changing_map_state_future_map.replace(".", ",")
+                        else:
+                            changing_map_state_future_map = None
+                        
+                        if changing_map_state_current_map != changing_map_state_future_map and changing_map_state_future_map is not None:
+                            #print(f"[INFO] Waiting {self.WAIT_TIME_MAP_LOADING} second(s) for map to load ... ")
                             time.sleep(self.WAIT_TIME_MAP_LOADING)
                             print("[INFO] Map changed successfully!")
                             print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
