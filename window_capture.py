@@ -13,8 +13,9 @@ class Window_Capture:
     # The width and height values aren't the same as the 'Dofus.exe' window itself, because 'pyautogui.screenshot()' captures a little more than needed.
     # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
-    # Small detection area where 'map_images' will be looked for.
-    MAP_DETECTION_CAPTURE_REGION = (445, 630, 145, 100)
+    # Region to screenshot for map detection.
+    MAP_DETECTION_CAPTURE_REGION = (522, 650, 48, 30)
+    #MAP_DETECTION_CAPTURE_REGION = (515, 645, 70, 45)
 
 
     # Threading Properties
@@ -56,12 +57,23 @@ class Window_Capture:
     # Screenshoots the minimap area.
     def map_detection_capture(self, capture_region=MAP_DETECTION_CAPTURE_REGION):
 
-        # Moves mouse over the red area on the minimap, so that black map tooltip appears.
-        pyautogui.moveTo(520, 680)
+        # Moving mouse over the red area on the minimap for the black map tooltip to appear.
+        pyautogui.moveTo(517, 680)
+
+        # Getting a screenshot.
         screenshot_for_map_detection = pyautogui.screenshot(region=capture_region)
         screenshot_for_map_detection = np.array(screenshot_for_map_detection)
-        screenshot_for_map_detection = cv.cvtColor(screenshot_for_map_detection, cv.COLOR_RGB2BGR)
-        # Moves mouse off the red area on the minimap incase a new screenshot is required for another detection.
+        screenshot_for_map_detection = cv.cvtColor(screenshot_for_map_detection, cv.COLOR_RGB2GRAY)
+
+        # Upscaling the screenshot.
+        PERCENTAGE_WIDTH = 215
+        PERCENTAGE_HEIGHT = 200
+        width = int(screenshot_for_map_detection.shape[1] * PERCENTAGE_WIDTH / 100)
+        height = int(screenshot_for_map_detection.shape[0] * PERCENTAGE_HEIGHT / 100)
+        dimensions = (width, height)
+        screenshot_for_map_detection = cv.resize(screenshot_for_map_detection, dimensions, interpolation=cv.INTER_AREA)
+
+        # Moving mouse off the red area on the minimap in case a new screenshot is required for another detection.
         pyautogui.move(20, 0)
 
         return screenshot_for_map_detection
