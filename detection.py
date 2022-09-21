@@ -30,22 +30,49 @@ class Detection:
         self.opencv_match_method = opencv_match_method
 
 
-    # Finds a 'needle' image on a 'haystack' image. Must be provided the paths to the images as strings.
-    # Will also work if the images are pre-converted to 'numpy.ndarray'.
-    def find(self, haystack_img, needle_img, threshold=0.9):
+    # Finds a 'needle' image on a 'haystack' image.
+    def find(self, haystack_img: str|np.ndarray, needle_img: str|np.ndarray, threshold: float|None=0.9) -> tuple | list[list[int]]:
+        """Find 'needle' image on 'haystack' image.
 
+        Parameters
+        ----------
+        haystack_img : str | np.ndarray
+            Image to search on. Can be `str` path to the image or `np.ndarray`.
+        needle_img : str | np.ndarray
+            Image to search for. Can be `str` path to the image or `np.ndarray`.
+        threshold : float, optional
+            Accuracy with which `needle_img` will be searched for (0.0 to 1.0).
+            Defaults to 0.9. Gives optimal results in most cases with the default.
+
+        Returns
+        ----------
+        rectangles : tuple
+            Empty `tuple` if no matches found.
+        rectangles : list[list[int]]
+            2D `list` containing bounding box information of found matches. Example: [[topLeft_x, topLeft_y, width, height]].
+
+        Raises
+        ---------
+        Overload resolution failed
+            If `haystack_img` or `needle_img` are not `str` or `np.ndarray`.
+        (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) in function 'cv::matchTemplate'
+            If `haystack_img` or `needle_img` do not exist in the specified path.
+        (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) in function 'cv::matchTemplate'
+            If `haystack_img` and `needle_img` are read into memory as different types/formats. 
+            Example: `haystack_img` is 'BGR' and `needle_img` is 'GRAY'.
+        """
         # Converting the 'haystack_img' to a 'numpy.ndarray'.
         if isinstance(haystack_img, str):
             haystack_img = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
 
-        # Converting the 'haystack_img' to a 'numpy.ndarray'.
+        # Converting the 'needle_img' to a 'numpy.ndarray'.
         if isinstance(needle_img, str):
             needle_img = cv.imread(needle_img, cv.IMREAD_UNCHANGED)
 
         # Using matchTemplate to find 'needle_img' in 'haystack_img'.
         result = cv.matchTemplate(haystack_img, needle_img, self.opencv_match_method)
 
-        # Finding best matches (using threshold) and getting the (x, y) coordinates of those matches.
+        # Finding best matches (using threshold) and getting the (x, y) coordinates of top left corners of those matches.
         locations = np.where(result >= threshold)
         locations = list(zip(*locations[::-1]))
 
@@ -62,7 +89,7 @@ class Detection:
 
         # Grouping all rectangles that are close by.
         rectangles, weights = cv.groupRectangles(rectangles, 1, 0.5)
-
+        
         return rectangles
 
 
