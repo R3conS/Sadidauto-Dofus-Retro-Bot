@@ -171,6 +171,3 @@ class Detection:
             rectangles_and_text.append([[rectangles[i]], text[i]])
 
         return rectangles_and_text, rectangles, text
-
-
-#--------------------------------------------------------------------------------------------------------------------

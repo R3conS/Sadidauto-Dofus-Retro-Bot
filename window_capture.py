@@ -15,7 +15,9 @@ class Window_Capture:
     GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
     # Region to screenshot for map detection.
     MAP_DETECTION_CAPTURE_REGION = (522, 650, 48, 30)
-    #MAP_DETECTION_CAPTURE_REGION = (515, 645, 70, 45)
+    # Region to screenshot for AP/MP detection.
+    AP_DETECTION_CAPTURE_REGION = (465, 610, 20, 25)
+    MP_DETECTION_CAPTURE_REGION = (570, 615, 15, 25)
 
 
     # Threading Properties
@@ -61,22 +63,22 @@ class Window_Capture:
         pyautogui.moveTo(517, 680)
 
         # Getting a screenshot.
-        screenshot_for_map_detection = pyautogui.screenshot(region=capture_region)
-        screenshot_for_map_detection = np.array(screenshot_for_map_detection)
-        screenshot_for_map_detection = cv.cvtColor(screenshot_for_map_detection, cv.COLOR_RGB2GRAY)
+        screenshot = pyautogui.screenshot(region=capture_region)
+        screenshot = np.array(screenshot)
+        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2GRAY)
 
         # Upscaling the screenshot.
         PERCENTAGE_WIDTH = 215
         PERCENTAGE_HEIGHT = 200
-        width = int(screenshot_for_map_detection.shape[1] * PERCENTAGE_WIDTH / 100)
-        height = int(screenshot_for_map_detection.shape[0] * PERCENTAGE_HEIGHT / 100)
+        width = int(screenshot.shape[1] * PERCENTAGE_WIDTH / 100)
+        height = int(screenshot.shape[0] * PERCENTAGE_HEIGHT / 100)
         dimensions = (width, height)
-        screenshot_for_map_detection = cv.resize(screenshot_for_map_detection, dimensions, interpolation=cv.INTER_AREA)
+        screenshot = cv.resize(screenshot, dimensions, interpolation=cv.INTER_AREA)
 
         # Moving mouse off the red area on the minimap in case a new screenshot is required for another detection.
         pyautogui.move(20, 0)
 
-        return screenshot_for_map_detection
+        return screenshot
 
 
     # Takes a screenshot around mouse. 
@@ -105,8 +107,50 @@ class Window_Capture:
 
         return screenshot
 
+    
+    # Takes a screenshot of 'AP' area and upscales it.
+    def ap_area_capture(self, capture_region=AP_DETECTION_CAPTURE_REGION):
 
-    # Threading Methods.
+        # Getting a screenshot.
+        screenshot = pyautogui.screenshot(region=capture_region)
+        screenshot = np.array(screenshot)
+        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2GRAY)
+
+        # Upscaling the screenshot.
+        PERCENTAGE_WIDTH = 215
+        PERCENTAGE_HEIGHT = 200
+        width = int(screenshot.shape[1] * PERCENTAGE_WIDTH / 100)
+        height = int(screenshot.shape[0] * PERCENTAGE_HEIGHT / 100)
+        dimensions = (width, height)
+        screenshot = cv.resize(screenshot, dimensions, interpolation=cv.INTER_AREA)
+
+        return screenshot
+
+
+    # Takes a screenshot of MP area and upscales it.
+    def mp_area_capture(self, capture_region=MP_DETECTION_CAPTURE_REGION):
+
+        # Getting a screenshot.
+        screenshot = pyautogui.screenshot(region=capture_region)
+        screenshot = np.array(screenshot)
+        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2GRAY)
+
+        # Upscaling the screenshot.
+        PERCENTAGE_WIDTH = 215
+        PERCENTAGE_HEIGHT = 200
+        width = int(screenshot.shape[1] * PERCENTAGE_WIDTH / 100)
+        height = int(screenshot.shape[0] * PERCENTAGE_HEIGHT / 100)
+        dimensions = (width, height)
+        screenshot = cv.resize(screenshot, dimensions, interpolation=cv.INTER_AREA)
+
+        return screenshot
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------THREADING METHODS----------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+
     def Window_Capture_Thread_start(self):
 
         self.Window_Capture_Thread_stopped = False
@@ -133,3 +177,6 @@ class Window_Capture:
             self.screenshot_for_object_detection = screenshot_for_object_detection
             self.screenshot_for_VisualDebugOutput_Thread = screenshot_for_VisualDebugOutput_Thread
             self.Window_Capture_Thread_lock.release()
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
