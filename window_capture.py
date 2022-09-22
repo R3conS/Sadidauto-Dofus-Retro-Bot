@@ -12,7 +12,7 @@ class Window_Capture:
     # The region of the screen where screenshots for 'haystack' images are made. This value should NEVER be touched.
     # The width and height values aren't the same as the 'Dofus.exe' window itself, because 'pyautogui.screenshot()' captures a little more than needed.
     # The (x, y, w, h) values are adjusted to have no black bars & no Windows top bar.
-    GAMEWINDOW_DEFAULT_REGION = (0, 30, 933, 725)
+    GAMEWINDOW_DEFAULT_REGION = (0, 0, 933, 755)
     # Region to screenshot for map detection.
     MAP_DETECTION_CAPTURE_REGION = (522, 650, 48, 30)
     # Region to screenshot for AP/MP detection.

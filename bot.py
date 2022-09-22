@@ -305,19 +305,21 @@ class DofusBot:
                     # Gets a screenshot of minimap.
                     preparation_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
+                    # Gets current map coordinates as a string
+                    preparation_state_current_map_coordinates, _, _ = self.detection.ocr_detect_text_from_image(preparation_state_screenshot_for_current_map_detection)
+
                     # Control variables
                     preparation_state_current_map = None
                     
-                    # Detects current map.
-                    for preparation_state_map_image in ImageData.amakna_castle_gobballs_map_images_list:
+                    for preparation_state_i in MapData.amakna_castle_gobballs:
 
-                        preparation_state_rectangles = self.detection.find(preparation_state_screenshot_for_current_map_detection, ImageData.amakna_castle_gobballs_map_images_path + preparation_state_map_image, threshold=0.95)
+                        for preparation_state_j_keys, preparation_state_j_values in preparation_state_i.items():
 
-                        if len(preparation_state_rectangles) > 0:
-                            print(f"[INFO] Preparing to fight at: ({preparation_state_map_image.rstrip('.jpg')}) ... ")
-                            preparation_state_current_map = preparation_state_map_image.rstrip('.jpg')
-                            self.preparation_state_current_map_detected_successfully = True
-                            break
+                            if preparation_state_j_keys == preparation_state_current_map_coordinates[0][1]:
+                                preparation_state_current_map = preparation_state_current_map_coordinates[0][1]
+                                print(f"[INFO] Preparing to fight at: ({preparation_state_current_map}) ... ")
+                                self.preparation_state_current_map_detected_successfully = True
+                                break
 
                 # If map was detected successfully, get the map's starting cell coordinates and move character there.
                 if self.preparation_state_current_map_detected_successfully:
@@ -383,7 +385,7 @@ class DofusBot:
                     preparation_state_ready_button_click_action = False
                     while True:
 
-                        preparation_state_ready_button_icon = self.detection.get_click_points(self.detection.find(self.window_capture.screenshot_for_object_detection, 
+                        preparation_state_ready_button_icon = self.detection.get_click_coords(self.detection.find(self.window_capture.screenshot_for_object_detection, 
                                                                                                                  "status_images\\PREPARATION_state_verifier_2.jpg",
                                                                                                                  threshold=0.8))
 
@@ -431,14 +433,14 @@ class DofusBot:
                 in_combat_state_close_button_click_action = False
                 while True:
 
-                    in_combat_state_close_button_icon = self.detection.get_click_points(self.detection.find(
+                    in_combat_state_close_button_icon = self.detection.get_click_coords(self.detection.find(
                                                                                                     self.window_capture.screenshot_for_object_detection,
                                                                                                     "status_images\\END_OF_COMBAT_verifier_1.jpg",
                                                                                                     threshold=0.8
                                                                                                     ))
 
                                                                                                     
-                    in_combat_state_cc_icon = self.detection.get_click_points(self.detection.find(
+                    in_combat_state_cc_icon = self.detection.get_click_coords(self.detection.find(
                                                                                         self.window_capture.screenshot_for_object_detection, 
                                                                                         "status_images\\END_OF_COMBAT_verifier_2.jpg"
                                                                                         ))
@@ -631,7 +633,7 @@ class DofusBot:
             output_image = self.detection.draw_rectangles(self.window_capture.screenshot_for_VisualDebugOutput_Thread, self.detected_object_rectangles)
 
             # Displaying the processed image.
-            cv.imshow("Matches", output_image)
+            cv.imshow("Visual Debug Window", output_image)
 
             # Press 'q' while the DEBUG window is focused to exit.
             if cv.waitKey(1) == ord("q"):
