@@ -17,7 +17,7 @@ class Combat:
     def get_ap(self):
         
         ap_screenshot = self.window_capture.ap_area_capture()
-        rectangles_and_text, _, _  = self.detection.ocr_detect_text_from_image(ap_screenshot)
+        rectangles_and_text, _, _  = self.detection.detect_text_from_image(ap_screenshot)
 
         # If the count is not detected, most likely:
         # 1) mouse cursor or something else is blocking the area where 'ap_area_capture()' takes a screenshot.
@@ -32,7 +32,7 @@ class Combat:
     def get_mp(self):
 
         mp_screenshot = self.window_capture.mp_area_capture()
-        rectangles_and_text, _, _  = self.detection.ocr_detect_text_from_image(mp_screenshot)
+        rectangles_and_text, _, _  = self.detection.detect_text_from_image(mp_screenshot)
 
         # If the count is not detected, most likely:
         # 1) mouse cursor or something else is blocking the area where 'mp_area_capture()' takes a screenshot.

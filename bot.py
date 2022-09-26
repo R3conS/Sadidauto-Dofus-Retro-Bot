@@ -306,7 +306,7 @@ class DofusBot:
                     preparation_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
                     # Gets current map coordinates as a string
-                    preparation_state_current_map_coordinates, _, _ = self.detection.ocr_detect_text_from_image(preparation_state_screenshot_for_current_map_detection)
+                    preparation_state_current_map_coordinates, _, _ = self.detection.detect_text_from_image(preparation_state_screenshot_for_current_map_detection)
 
                     # Control variables
                     preparation_state_current_map = None
@@ -483,7 +483,7 @@ class DofusBot:
                     changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
 
                     # Detecting current map's coordinates in "changing_map_state_screenshot_for_current_map_detection".
-                    changing_map_state_current_map_rectangles_and_text, _, _ = self.detection.ocr_detect_text_from_image(changing_map_state_screenshot_for_current_map_detection)
+                    changing_map_state_current_map_rectangles_and_text, _, _ = self.detection.detect_text_from_image(changing_map_state_screenshot_for_current_map_detection)
 
                     # Storing current map's coordinates.
                     changing_map_state_current_map = changing_map_state_current_map_rectangles_and_text[0][1]
@@ -552,7 +552,7 @@ class DofusBot:
                     while True:
 
                         changing_map_state_screenshot_for_map_change_confirmation = self.window_capture.map_detection_capture()
-                        changing_map_state_future_map_rectangles_and_text, _, _ = self.detection.ocr_detect_text_from_image(changing_map_state_screenshot_for_map_change_confirmation)
+                        changing_map_state_future_map_rectangles_and_text, _, _ = self.detection.detect_text_from_image(changing_map_state_screenshot_for_map_change_confirmation)
 
                         # If 'changing_map_state_future_map_rectangles_and_text' is not empty, assign coordinates.
                         if changing_map_state_future_map_rectangles_and_text:
