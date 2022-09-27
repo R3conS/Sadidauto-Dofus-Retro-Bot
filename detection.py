@@ -11,7 +11,7 @@ class Detection:
     """
     Holds methods related to detecting and working with images.
          
-    Methods:
+    Methods
     ----------
     find()
         Find 'needle' image on a 'haystack' image.
@@ -138,13 +138,10 @@ class Detection:
 
         """
         coords = []
-
         for [x, y, w, h] in rectangles:
-            
             # Determining the center positions of found matches.
             center_x = x + int(w/2)
             center_y = y + int(h/2)
-
             # Saving the center positions.
             coords.append((center_x, center_y))
 
@@ -193,11 +190,9 @@ class Detection:
         line_thickness = line_thickness
 
         for [x, y, w, h] in rectangles:
-
             # Determine the box positions.
             top_left = (x, y)
             bottom_right = (x + w, y + h)
-
             # Draw the box/rectangle.
             cv.rectangle(haystack_img, 
                          top_left, 
@@ -248,7 +243,6 @@ class Detection:
         marker_type = marker_type
 
         for (center_x, center_y) in coords:
-
             # Drawing markers on the center positions of found matches.
             cv.drawMarker(haystack_img, 
                          (center_x, center_y), 
@@ -315,7 +309,6 @@ class Detection:
         # numpy arrays.
         object_rectangles = []
         for image in objects_to_detect_list:
-
             rectangles = self.find(haystack_image, 
                                    objects_to_detect_path + image, 
                                    threshold=threshold,
@@ -426,6 +419,5 @@ class Detection:
         r_and_t = []
         for i in range(len(rectangles)):
             r_and_t.append((rectangles[i], text[i]))
-            #r_and_t.append(text[i])
 
         return r_and_t, rectangles, text

@@ -191,7 +191,7 @@ class DofusBot:
                 # If this is omitted, script will reach 'self.detection.detect_objects()' method in 'SEARCHING' state faster than the
                 # 'Window_Capture_Thread' can make the first screenshot for detection. Will throw out an error like this:
                 # (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) && type == _templ.type() && _img.dims() <= 2 in function 'cv::matchTemplate'
-                while self.window_capture.screenshot_for_object_detection is None:
+                while self.window_capture.screenshot_for_obj_detection is None:
                     continue
 
                 # Launches an 'OpenCV' window for debug purposes.
@@ -213,7 +213,7 @@ class DofusBot:
                     self.detected_object_rectangles, self.detected_object_click_points = self.detection.detect_objects(
                                                                                                                       self.objects_to_detect_list, 
                                                                                                                       self.objects_to_detect_path, 
-                                                                                                                      self.window_capture.screenshot_for_object_detection,
+                                                                                                                      self.window_capture.screenshot_for_obj_detection,
                                                                                                                       threshold=self.detection_threshold,
                                                                                                                       )
 
@@ -265,8 +265,8 @@ class DofusBot:
                     attack_action_start_time = time.time()
                     while True:
 
-                        cc_icon_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_1.jpg")
-                        ready_button_attacking_state = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\PREPARATION_state_verifier_2.jpg")
+                        cc_icon_attacking_state = self.detection.find(self.window_capture.screenshot_for_obj_detection, "status_images\\PREPARATION_state_verifier_1.jpg")
+                        ready_button_attacking_state = self.detection.find(self.window_capture.screenshot_for_obj_detection, "status_images\\PREPARATION_state_verifier_2.jpg")
                         
                         if time.time() - attack_action_start_time > self.WAIT_TIME_AFTER_ATTACKING_MONSTER:
                             print(f"[INFO] Failed to attack monster at: {attacking_state_click_points}!")
@@ -303,7 +303,15 @@ class DofusBot:
                 if not self.preparation_state_current_map_detected_successfully:
 
                     # Gets a screenshot of minimap.
-                    preparation_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
+                    # Moving mouse over the red area on the minimap for the black map tooltip to appear.
+                    pyautogui.moveTo(517, 680)
+                    preparation_state_screenshot_for_current_map_detection = self.window_capture.custom_area_capture(self.window_capture.MAP_DETECTION_REGION,
+                                                                                                                     cv.COLOR_RGB2GRAY,
+                                                                                                                     cv.INTER_AREA,
+                                                                                                                     scale_width=215,
+                                                                                                                     scale_height=200)
+                    # Moving mouse off the red area on the minimap in case a new screenshot is required for another detection.
+                    pyautogui.move(20, 0)
 
                     # Gets current map coordinates as a string
                     preparation_state_current_map_coordinates, _, _ = self.detection.detect_text_from_image(preparation_state_screenshot_for_current_map_detection)
@@ -385,7 +393,7 @@ class DofusBot:
                     preparation_state_ready_button_click_action = False
                     while True:
 
-                        preparation_state_ready_button_icon = self.detection.get_click_coords(self.detection.find(self.window_capture.screenshot_for_object_detection, 
+                        preparation_state_ready_button_icon = self.detection.get_click_coords(self.detection.find(self.window_capture.screenshot_for_obj_detection, 
                                                                                                                  "status_images\\PREPARATION_state_verifier_2.jpg",
                                                                                                                  threshold=0.8))
 
@@ -403,9 +411,9 @@ class DofusBot:
                         # Checking if combat started after 'READY' button was clicked.
                         if preparation_state_ready_button_click_action:
 
-                            preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg", threshold=0.8)
-                            preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg", threshold=0.8)
-                            preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_object_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg", threshold=0.8)
+                            preparation_state_cc_icon = self.detection.find(self.window_capture.screenshot_for_obj_detection, "status_images\\IN_COMBAT_state_verifier_1.jpg", threshold=0.8)
+                            preparation_state_ap_icon = self.detection.find(self.window_capture.screenshot_for_obj_detection, "status_images\\IN_COMBAT_state_verifier_2.jpg", threshold=0.8)
+                            preparation_state_mp_icon = self.detection.find(self.window_capture.screenshot_for_obj_detection, "status_images\\IN_COMBAT_state_verifier_3.jpg", threshold=0.8)
                             
                             if time.time() - click_ready_action_start_time > self.WAIT_TIME_COMBAT_START:
                                 print("[INFO] Failed to start combat!")
@@ -434,14 +442,14 @@ class DofusBot:
                 while True:
 
                     in_combat_state_close_button_icon = self.detection.get_click_coords(self.detection.find(
-                                                                                                    self.window_capture.screenshot_for_object_detection,
+                                                                                                    self.window_capture.screenshot_for_obj_detection,
                                                                                                     "status_images\\END_OF_COMBAT_verifier_1.jpg",
                                                                                                     threshold=0.8
                                                                                                     ))
 
                                                                                                     
                     in_combat_state_cc_icon = self.detection.get_click_coords(self.detection.find(
-                                                                                        self.window_capture.screenshot_for_object_detection, 
+                                                                                        self.window_capture.screenshot_for_obj_detection, 
                                                                                         "status_images\\END_OF_COMBAT_verifier_2.jpg"
                                                                                         ))
                     
@@ -480,7 +488,13 @@ class DofusBot:
                 if not self.changing_map_state_current_map_detected_successfully:
 
                     # Gets a screenshot of minimap.
-                    changing_map_state_screenshot_for_current_map_detection = self.window_capture.map_detection_capture()
+                    pyautogui.moveTo(517, 680)
+                    changing_map_state_screenshot_for_current_map_detection = self.window_capture.custom_area_capture(self.window_capture.MAP_DETECTION_REGION,
+                                                                                                                      cv.COLOR_RGB2GRAY,
+                                                                                                                      cv.INTER_AREA,
+                                                                                                                      scale_width=215,
+                                                                                                                      scale_height=200)
+                    pyautogui.move(20, 0)
 
                     # Detecting current map's coordinates in "changing_map_state_screenshot_for_current_map_detection".
                     changing_map_state_current_map_rectangles_and_text, _, _ = self.detection.detect_text_from_image(changing_map_state_screenshot_for_current_map_detection)
@@ -551,9 +565,15 @@ class DofusBot:
                     changing_map_state_click_action_timestamp = time.time()
                     while True:
 
-                        changing_map_state_screenshot_for_map_change_confirmation = self.window_capture.map_detection_capture()
+                        pyautogui.moveTo(517, 680)
+                        changing_map_state_screenshot_for_map_change_confirmation = self.window_capture.custom_area_capture(self.window_capture.MAP_DETECTION_REGION,
+                                                                                                                            cv.COLOR_RGB2GRAY,
+                                                                                                                            cv.INTER_AREA,
+                                                                                                                            scale_width=215,
+                                                                                                                            scale_height=200)
+                        pyautogui.move(20, 0)
                         changing_map_state_future_map_rectangles_and_text, _, _ = self.detection.detect_text_from_image(changing_map_state_screenshot_for_map_change_confirmation)
-
+                        
                         # If 'changing_map_state_future_map_rectangles_and_text' is not empty, assign coordinates.
                         if changing_map_state_future_map_rectangles_and_text:
                             changing_map_state_future_map = changing_map_state_future_map_rectangles_and_text[0][1]
@@ -624,13 +644,13 @@ class DofusBot:
 
             loop_time = time.time()
 
-            # Making sure 'window_capture.screenshot_for_VisualDebugOutput_Thread' is not 'None'. Will throw an exception if 'None' & no checking condition.
+            # Making sure 'window_capture.screenshot_for_VDO_Thread' is not 'None'. Will throw an exception if 'None' & no checking condition.
             # (-215:Assertion failed) size.width>0 && size.height>0 in function 'cv::imshow'.
-            if self.window_capture.screenshot_for_VisualDebugOutput_Thread is None:
+            if self.window_capture.screenshot_for_VDO_Thread is None:
                 continue
 
             # Draw boxes (rectangles) around detected monsters.
-            output_image = self.detection.draw_rectangles(self.window_capture.screenshot_for_VisualDebugOutput_Thread, self.detected_object_rectangles)
+            output_image = self.detection.draw_rectangles(self.window_capture.screenshot_for_VDO_Thread, self.detected_object_rectangles)
 
             # Displaying the processed image.
             cv.imshow("Visual Debug Window", output_image)
