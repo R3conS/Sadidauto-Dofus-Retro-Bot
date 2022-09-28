@@ -1,5 +1,5 @@
 import os
-from gamewindow import GameWindow
+from game_window import GameWindow
 from bot import DofusBot, ImageData
 
 
@@ -7,17 +7,17 @@ from bot import DofusBot, ImageData
 character_name = "Novella"
 
 # Initializing the 'GameWindow()' object.
-gamewindow = GameWindow(character_name, official_version=False)
+gamewindow = GameWindow(character_name, False)
 
 # Initializing 'bot' object
-dofusbot = DofusBot(ImageData.amakna_castle_gobballs_images_list, ImageData.amakna_castle_gobballs_images_path, debug_window=True)
-#dofusbot = DofusBot(ImageData.test_monster_images_list, ImageData.test_monster_images_path, debug_window=True)
+# dofusbot = DofusBot(ImageData.amakna_castle_gobballs_images_list, ImageData.amakna_castle_gobballs_images_path, debug_window=True)
+dofusbot = DofusBot(ImageData.test_monster_images_list, ImageData.test_monster_images_path, debug_window=True)
 
 
 def main():
 
-    if gamewindow.gamewindow_checkifexists() == True:
-        gamewindow.gamewindow_resize()
+    if gamewindow.check_if_exists() == True:
+        gamewindow.resize_and_move()
         # Starting the 'bot' thread.
         dofusbot.DofusBot_Thread_start()
     else:
