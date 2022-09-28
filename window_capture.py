@@ -7,10 +7,10 @@ import cv2 as cv
 import numpy as np
 import pyautogui
 
-from threading_tools import Threading_Tools
+from threading_tools import ThreadingTools
 
 
-class Window_Capture:
+class WindowCapture:
     """
     Holds various screenshotting methods.
     
@@ -20,9 +20,9 @@ class Window_Capture:
         Screenshot area around mouse cursor.
     custom_area_capture()
         Screenshot specified area.
-    Window_Capture_Thread_start()
+    WindowCapture_Thread_start()
         Start window capturing thread.
-    Window_Capture_Thread_stop()
+    WindowCapture_Thread_stop()
         Stop window capturing thread.
 
     """
@@ -37,15 +37,15 @@ class Window_Capture:
     MP_DETECTION_REGION = (570, 615, 15, 25)
 
     # Threading attributes.
-    __Window_Capture_Thread_stopped = True
-    __Window_Capture_Thread_lock = threading.Lock()
-    __Window_Capture_Thread_thread = None
+    __WindowCapture_Thread_stopped = True
+    __WindowCapture_Thread_lock = threading.Lock()
+    __WindowCapture_Thread_thread = None
+    __threading_tools = ThreadingTools()
 
     # Class attributes.
     screenshot_for_obj_detection = None
     screenshot_for_VDO_Thread = None
-    __threading_tools = Threading_Tools()
-    
+
     def __gamewindow_capture(
             self,
             capture_region: Tuple[int, int, int, int] = __GAMEWINDOW_REGION,
@@ -189,30 +189,30 @@ class Window_Capture:
 #--------------------------THREADING METHODS---------------------------#
 #----------------------------------------------------------------------#
 
-    def Window_Capture_Thread_start(self):
+    def WindowCapture_Thread_start(self):
         """Start window capturing thread."""
-        self.__Window_Capture_Thread_stopped = False
-        self.__Window_Capture_Thread_thread = threading.Thread(
-            target=self.__Window_Capture_Thread_run)
-        self.__Window_Capture_Thread_thread.start()
-        self.__threading_tools.wait_for_thread_to_start(
-            self.__Window_Capture_Thread_thread)
+        self.__WindowCapture_Thread_stopped = False
+        self.__WindowCapture_Thread_thread = threading.Thread(
+            target=self.__WindowCapture_Thread_run)
+        self.__WindowCapture_Thread_thread.start()
+        self.__threading_tools.wait_thread_start(
+            self.__WindowCapture_Thread_thread)
 
-    def Window_Capture_Thread_stop(self):
+    def WindowCapture_Thread_stop(self):
         """Stop window capturing thread."""
-        self.__Window_Capture_Thread_stopped = True
-        self.__threading_tools.wait_for_thread_to_stop(
-            self.__Window_Capture_Thread_thread)
+        self.__WindowCapture_Thread_stopped = True
+        self.__threading_tools.wait_thread_stop(
+            self.__WindowCapture_Thread_thread)
 
-    def __Window_Capture_Thread_run(self):
+    def __WindowCapture_Thread_run(self):
         """Execute this code while thread is alive."""
-        while not self.__Window_Capture_Thread_stopped:
+        while not self.__WindowCapture_Thread_stopped:
             # Getting an updated image (screenshot) of the game.
             sc_obj_detection, sc_VDO_Thread = self.__gamewindow_capture()
             # Locking the thread while updating the results.
-            self.__Window_Capture_Thread_lock.acquire()
+            self.__WindowCapture_Thread_lock.acquire()
             self.screenshot_for_obj_detection = sc_obj_detection
             self.screenshot_for_VDO_Thread = sc_VDO_Thread
-            self.__Window_Capture_Thread_lock.release()
+            self.__WindowCapture_Thread_lock.release()
 
 #----------------------------------------------------------------------#

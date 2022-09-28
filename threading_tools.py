@@ -1,56 +1,97 @@
-class Threading_Tools:
+"""Provides additional threading functionality."""
+
+import threading
 
 
-    def __init__(self):
-        pass
+class ThreadingTools:
+    """
+    Holds custom threading methods.
 
+    Methods
+    ----------
+    check_thread_status()
+        Check if thread alive, dead or doesn't exist.
+    wait_thread_start()
+        Wait until thread starts.
+    wait_thread_stop()
+        Wait until thread stops.
 
-    # Checks status of a specified thread.
-    def check_thread_status_alive_OR_dead(self, thread_name):
+    """
 
-        if thread_name is None:
-            return None
-        elif thread_name.is_alive():
+    def check_thread_status(self, 
+                            thread_instance: type[threading.Thread]) \
+                            -> str | None:
+        """
+        Check if thread alive, dead or doesn't exist.
+
+        Parameters
+        ----------
+        thread_instance : type[threading.Thread]
+            Instance of `threading.Thread` class.
+
+        Returns
+        ----------
+        None : NoneType
+            If `thread_instance` is `None`.
+        "ALIVE" : str
+            If `thread_instance.is_alive()` is `True`.
+        "DEAD" : str
+            If `thread_instance.is_alive()` is `False`.
+
+        """
+        if thread_instance.is_alive():
             return "ALIVE"
-        elif not thread_name.is_alive():
+        elif not thread_instance.is_alive():
             return "DEAD"
+        else:
+            return None
 
+    def wait_thread_start(self, 
+                          thread_instance: type[threading.Thread]) \
+                          -> None:
+        """
+        Wait until thread starts.
 
-    # Forces program to wait until the thread is started.
-    def wait_for_thread_to_start(self, thread_name):
+        Parameters
+        ----------
+        thread_instance : type[threading.Thread]
+            Instance of `threading.Thread` class.
 
+        """
         success = False
-
-        print(f"[INFO] Starting '{thread_name}'!")
-
+        print(f"[INFO] Starting '{thread_instance}'!")
         while True:
-
             if success:
-                print(f"[INFO] Started '{thread_name}'!")
+                print(f"[INFO] Started '{thread_instance}'!")
                 break
-            elif self.check_thread_status_alive_OR_dead(thread_name) == "ALIVE":
+            elif self.check_thread_status(thread_instance) == "ALIVE":
                 success = True
-            elif self.check_thread_status_alive_OR_dead(thread_name) == "DEAD":
+            elif self.check_thread_status(thread_instance) == "DEAD":
                 continue
-            elif self.check_thread_status_alive_OR_dead(thread_name) is None:
+            elif self.check_thread_status(thread_instance) is None:
                 continue
 
+    def wait_thread_stop(self, 
+                         thread_instance: type[threading.Thread]) \
+                         -> None:
+        """
+        Wait until thread stops.
 
-    # Forces program to wait until the thread is stopped.
-    def wait_for_thread_to_stop(self, thread_name):
+        Parameters
+        ----------
+        thread_instance : type[threading.Thread]
+            Instance of `threading.Thread` class.
 
+        """
         success = False
-
-        print(f"[INFO] Stopping '{thread_name}'!")
-
+        print(f"[INFO] Stopping '{thread_instance}'!")
         while True:
-
             if success:
-                print(f"[INFO] Stopped '{thread_name}'!")
+                print(f"[INFO] Stopped '{thread_instance}'!")
                 break
-            elif self.check_thread_status_alive_OR_dead(thread_name) == "ALIVE":
+            elif self.check_thread_status(thread_instance) == "ALIVE":
                 continue
-            elif self.check_thread_status_alive_OR_dead(thread_name) == "DEAD":
+            elif self.check_thread_status(thread_instance) == "DEAD":
                 success = True
-            elif self.check_thread_status_alive_OR_dead(thread_name) is None:
+            elif self.check_thread_status(thread_instance) is None:
                 success = True

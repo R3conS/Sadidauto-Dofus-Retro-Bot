@@ -1,54 +1,99 @@
+"""Provides combat functionality."""
+
 import cv2 as cv
 
 from detection import Detection
-from window_capture import Window_Capture
+from window_capture import WindowCapture
 
 
 class Combat:
+    """
+    Holds methods related to combat.
 
+    Methods
+    ----------
+    get_ap()
+        Get current 'AP' of character.
+    get_mp()
+        Get current 'MP' of character.
+
+    """
 
     def __init__(self):
-        
-        # Initializing 'window_capture' object.
-        self.window_capture = Window_Capture()
+        """
+        Constructor.
 
-        # Initializing 'detection' object.
-        self.detection = Detection()
+        Attributes
+        ----------
+        __window_capture : type[WindowCapture]
+            Instance of 'WindowCapture' class.
+        __detection : type[Detection]
+            Instance of 'Detection' class.
 
+        """
+        self.__window_capture = WindowCapture()
+        self.__detection = Detection()
 
     def get_ap(self):
-        
-        ap_screenshot = self.window_capture.custom_area_capture(self.window_capture.AP_DETECTION_REGION,
-                                                                cv.COLOR_RGB2GRAY,
-                                                                cv.INTER_AREA,
-                                                                scale_width=215,
-                                                                scale_height=200)
-        rectangles_and_text, _, _  = self.detection.detect_text_from_image(ap_screenshot)
+        """
+        Get current 'AP' of character.
+
+        Returns
+        ----------
+        r_and_t[0][1] : int
+            Current number of 'AP' as `int`.
+        None : NoneType
+            If 'AP' count couldn't be detected.
+
+        """
+        ap_screenshot = self.__window_capture.custom_area_capture(
+            self.__window_capture.AP_DETECTION_REGION,
+            cv.COLOR_RGB2GRAY,
+            cv.INTER_AREA,
+            scale_width=215,
+            scale_height=200)
+
+        r_and_t, _, _ = self.__detection.detect_text_from_image(ap_screenshot)
 
         # If the count is not detected, most likely:
-        # 1) mouse cursor or something else is blocking the area where 'custom_area_capture()' takes a screenshot.
-        # 2) the 'capture_region' argument in 'custom_area_capture()' is wrong.
-        if len(rectangles_and_text) <= 0:
+        # 1) mouse cursor or something else is blocking the area where 
+        # 'custom_area_capture()' takes a screenshot.
+        # 2) the 'capture_region' argument in 'custom_area_capture()' 
+        # is wrong.
+        if len(r_and_t) <= 0:
             print("[INFO] Couldn't detect current 'AP' count!")
             return None
 
-        return rectangles_and_text[0][1]
-
+        return r_and_t[0][1]
 
     def get_mp(self):
+        """
+        Get current 'MP' of character.
 
-        mp_screenshot = self.window_capture.custom_area_capture(self.window_capture.MP_DETECTION_REGION,
-                                                                cv.COLOR_RGB2GRAY,
-                                                                cv.INTER_AREA,
-                                                                scale_width=215,
-                                                                scale_height=200)
-        rectangles_and_text, _, _  = self.detection.detect_text_from_image(mp_screenshot)
+        Returns
+        ----------
+        r_and_t[0][1] : int
+            Current number of 'MP' as `int`.
+        None : NoneType
+            If 'MP' count couldn't be detected.
+
+        """
+        mp_screenshot = self.__window_capture.custom_area_capture(
+            self.__window_capture.MP_DETECTION_REGION,
+            cv.COLOR_RGB2GRAY,
+            cv.INTER_AREA,
+            scale_width=215,
+            scale_height=200)
+
+        r_and_t, _, _ = self.__detection.detect_text_from_image(mp_screenshot)
 
         # If the count is not detected, most likely:
-        # 1) mouse cursor or something else is blocking the area where 'custom_area_capture()' takes a screenshot.
-        # 2) the 'capture_region' argument in 'custom_area_capture()' is wrong.
-        if len(rectangles_and_text) <= 0:
+        # 1) mouse cursor or something else is blocking the area where 
+        # 'custom_area_capture()' takes a screenshot.
+        # 2) the 'capture_region' argument in 'custom_area_capture()' 
+        # is wrong.
+        if len(r_and_t) <= 0:
             print("[INFO] Couldn't detect current 'MP' count!")
             return None
 
-        return rectangles_and_text[0][1]
+        return r_and_t[0][1]

@@ -5,8 +5,8 @@ import os
 import cv2 as cv
 import random
 from detection import Detection
-from window_capture import Window_Capture
-from threading_tools import Threading_Tools
+from window_capture import WindowCapture
+from threading_tools import ThreadingTools
 
 
 class ImageData:
@@ -137,11 +137,11 @@ class DofusBot:
         # Default state of the bot at the start.
         self.state = BotState.INITIALIZING
 
-        # Initializing 'Threading_Tools()' object. Holds various custom threading methods.
-        self.threading_tools = Threading_Tools()
+        # Initializing 'ThreadingTools()' object. Holds various custom threading methods.
+        self.threading_tools = ThreadingTools()
 
-        # Initializing 'Window_Capture()' object. Handles screenshotting the game window.
-        self.window_capture = Window_Capture()
+        # Initializing 'WindowCapture()' object. Handles screenshotting the game window.
+        self.window_capture = WindowCapture()
 
         # Initializing 'Detection()' object & it's 'threading.Lock()' object.
         self.detection = Detection()
@@ -181,15 +181,15 @@ class DofusBot:
         while not self.DofusBot_Thread_stopped:
 
             # The bot always starts up in this (INITIALIZING) state. 
-            # Starts 'Window_Capture_Thread', if needed starts the 'Window_VisualDebugOutput_Thread' and changes it's state to 'SEARCHING'.
+            # Starts 'WindowCapture_Thread', if needed starts the 'Window_VisualDebugOutput_Thread' and changes it's state to 'SEARCHING'.
             if self.state == BotState.INITIALIZING:
 
-                # Starting the 'Window_Capture_Thread' thread to start screenshotting the game window. 
-                self.window_capture.Window_Capture_Thread_start()
+                # Starting the 'WindowCapture_Thread' thread to start screenshotting the game window. 
+                self.window_capture.WindowCapture_Thread_start()
 
-                # Waiting for 'Window_Capture_Thread' to complete at least one cycle before continuing script execution.
+                # Waiting for 'WindowCapture_Thread' to complete at least one cycle before continuing script execution.
                 # If this is omitted, script will reach 'self.detection.detect_objects()' method in 'SEARCHING' state faster than the
-                # 'Window_Capture_Thread' can make the first screenshot for detection. Will throw out an error like this:
+                # 'WindowCapture_Thread' can make the first screenshot for detection. Will throw out an error like this:
                 # (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) && type == _templ.type() && _img.dims() <= 2 in function 'cv::matchTemplate'
                 while self.window_capture.screenshot_for_obj_detection is None:
                     continue
@@ -609,15 +609,15 @@ class DofusBot:
         self.DofusBot_Thread_stopped = False
         self.DofusBot_Thread_thread = threading.Thread(target=self.DofusBot_Thread_run)
         self.DofusBot_Thread_thread.start()
-        self.threading_tools.wait_for_thread_to_start(self.DofusBot_Thread_thread)
+        self.threading_tools.wait_thread_start(self.DofusBot_Thread_thread)
 
 
     def DofusBot_Thread_stop(self):
 
         self.stopped = True
-        self.window_capture.Window_Capture_Thread_stop()
+        self.window_capture.WindowCapture_Thread_stop()
         self.Window_VisualDebugOutput_Thread_stop()
-        self.threading_tools.wait_for_thread_to_stop(self.DofusBot_Thread_thread)
+        self.threading_tools.wait_thread_stop(self.DofusBot_Thread_thread)
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -628,13 +628,13 @@ class DofusBot:
         self.Window_VisualDebugOutput_stopped = False
         self.Window_VisualDebugOutput_Thread_thread = threading.Thread(target=self.Window_VisualDebugOutput_Thread_run)
         self.Window_VisualDebugOutput_Thread_thread.start()
-        self.threading_tools.wait_for_thread_to_start(self.Window_VisualDebugOutput_Thread_thread)
+        self.threading_tools.wait_thread_start(self.Window_VisualDebugOutput_Thread_thread)
 
 
     def Window_VisualDebugOutput_Thread_stop(self):
 
         self.Window_VisualDebugOutput_stopped = True
-        self.threading_tools.wait_for_thread_to_stop(self.Window_VisualDebugOutput_Thread_thread)
+        self.threading_tools.wait_thread_stop(self.Window_VisualDebugOutput_Thread_thread)
         
 
     def Window_VisualDebugOutput_Thread_run(self):
