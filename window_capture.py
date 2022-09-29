@@ -36,15 +36,17 @@ class WindowCapture:
     AP_DETECTION_REGION = (465, 610, 20, 25)
     MP_DETECTION_REGION = (570, 615, 15, 25)
 
+    # Class attributes.
+    screenshot_for_obj_detection = None
+    screenshot_for_VDO_Thread = None
+
     # Threading attributes.
     __WindowCapture_Thread_stopped = True
     __WindowCapture_Thread_lock = threading.Lock()
     __WindowCapture_Thread_thread = None
-    __threading_tools = ThreadingTools()
 
-    # Class attributes.
-    screenshot_for_obj_detection = None
-    screenshot_for_VDO_Thread = None
+    # Objects.
+    __threading_tools = ThreadingTools()
 
     def __gamewindow_capture(
             self,
@@ -193,16 +195,19 @@ class WindowCapture:
         """Start window capturing thread."""
         self.__WindowCapture_Thread_stopped = False
         self.__WindowCapture_Thread_thread = threading.Thread(
-            target=self.__WindowCapture_Thread_run)
+                target=self.__WindowCapture_Thread_run
+            )
         self.__WindowCapture_Thread_thread.start()
         self.__threading_tools.wait_thread_start(
-            self.__WindowCapture_Thread_thread)
+                self.__WindowCapture_Thread_thread
+            )
 
     def WindowCapture_Thread_stop(self):
         """Stop window capturing thread."""
         self.__WindowCapture_Thread_stopped = True
         self.__threading_tools.wait_thread_stop(
-            self.__WindowCapture_Thread_thread)
+                self.__WindowCapture_Thread_thread
+            )
 
     def __WindowCapture_Thread_run(self):
         """Execute this code while thread is alive."""
