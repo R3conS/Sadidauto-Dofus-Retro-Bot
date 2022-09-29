@@ -32,7 +32,7 @@ class GameWindow:
         self.character_name = character_name
         self.official_version = official_version
 
-    def check_if_exists(self):
+    def check_if_exists(self) -> bool:
         """
         Detect 'Dofus.exe' window.
         
@@ -53,7 +53,7 @@ class GameWindow:
                   + "character name and make sure you are logged in.")
             return False
 
-    def resize_and_move(self):
+    def resize_and_move(self) -> None:
         """Resize and move 'Dofus.exe' window."""
         dfw = gw.getWindowsWithTitle(self.character_name + " - Dofus Retro")[0]
         dfw.restore()

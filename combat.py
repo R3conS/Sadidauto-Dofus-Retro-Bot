@@ -1,5 +1,7 @@
 """Provides combat functionality."""
 
+from typing import Tuple
+
 import cv2 as cv
 
 from detection import Detection
@@ -34,7 +36,7 @@ class Combat:
         self.__window_capture = WindowCapture()
         self.__detection = Detection()
 
-    def get_ap(self):
+    def get_ap(self) -> list[Tuple[list[int], str]] | None:
         """
         Get current 'AP' of character.
 
@@ -66,7 +68,7 @@ class Combat:
 
         return r_and_t[0][1]
 
-    def get_mp(self):
+    def get_mp(self) -> list[Tuple[list[int], str]] | None:
         """
         Get current 'MP' of character.
 
