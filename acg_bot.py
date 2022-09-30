@@ -4,6 +4,7 @@ import threading
 import time
 import os
 import random
+from typing import NoReturn, Tuple
 
 import cv2 as cv
 import pyautogui
@@ -91,9 +92,12 @@ class Bot:
     # was properly closed in 'BotState.IN_COMBAT'.
     __WAIT_WINDOW_CLOSED = 3
     # Time to wait before clicking on yellow 'sun' to change maps.
+    # Must wait when moving in 'bottom' direction, because 'Dofus' GUI 
+    # blocks the sun otherwise.
     __WAIT_SUN_CLICK = 0.5
     # Time to wait AFTER clicking on yellow 'sun' to change maps. 
-    # Determines how long script will wait for character to change maps.
+    # Determines how long to wait for character to change maps after 
+    # clicking on yellow 'sun'.
     __WAIT_CHANGE_MAP = 10
     # Time to wait for map to load after a successful map change. 
     # Determines how long script will wait after character moves to a 
@@ -126,8 +130,6 @@ class Bot:
     __botstate_preparation_current_map = None
     # 'BotState.CHANGING_MAP' attributes.
     __botstate_changing_map_current_map = None
-    # Keeps count of how many times script tried to change maps.
-    __change_attempts_total = 0
 
     # Objects.
     __threading_tools = ThreadingTools()
@@ -138,7 +140,7 @@ class Bot:
                  objects_list: list[str] = ImageData.acg_images_list,
                  objects_path: str = ImageData.acg_images_path,
                  debug_window: bool = False,
-                 detection_threshold: bool = 0.6,
+                 detection_threshold: float = 0.6,
                  bot_state: str = BotState.INITIALIZING):
         """
         Constructor
@@ -201,6 +203,43 @@ class Bot:
             return False
 
         return True
+
+    def __get_current_map_coordinates(self) -> bool | str:
+        """
+        Get current map's coordinates.
+        
+        Returns
+        ----------
+        map_coords : str
+            Map coordinates as a `str`.
+        False : bool
+            If map wasn't detected.
+
+        """
+        # Get a screenshot of coordinates on minimap. Moving mouse
+        # over the red area on the minimap for the black map tooltip
+        # to appear.
+        pyautogui.moveTo(517, 680)
+        screenshot = self.__window_capture.custom_area_capture(
+                capture_region=self.__window_capture.MAP_DETECTION_REGION,
+                conversion_code=cv.COLOR_RGB2GRAY,
+                interpolation_flag=cv.INTER_LINEAR,
+                scale_width=215,
+                scale_height=200
+            )
+        # Moving mouse off the red area on the minimap in case a new 
+        # screenshot is required for another detection.
+        pyautogui.move(20, 0)
+
+        # Get map coordinates as a string.
+        r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+        try:
+            map_coords = r_and_t[0][1]
+            map_coords = map_coords.replace(".", ",")
+        except IndexError:
+            return False
+
+        return map_coords
 
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
@@ -306,7 +345,6 @@ class Bot:
                     print("[INFO] Trying the next coordinates ... ")
                     attack_attempts_total += 1
                     break
-
                 elif len(cc_icon) > 0 and len(ready_button) > 0:
                     print("[INFO] Successfully attacked monster at: "
                           f"{coords}!")
@@ -318,7 +356,6 @@ class Bot:
 
             if attack_successful:
                 break
-
             elif (not attack_successful and
                   attack_attempts_allowed == attack_attempts_total):
                 print("[INFO] Failed to start combat "
@@ -343,38 +380,43 @@ class Bot:
                 if self.__botstate_preparation_start_combat():
                     self.__state = BotState.IN_COMBAT
 
-    def __botstate_preparation_detect_map(self):
-        """Detect current map."""
-        # Get screenshot of current map coordinates. Moving mouse 
-        # over the red area on the minimap for the black map tooltip
-        # to appear.
-        pyautogui.moveTo(517, 680)
-        sc_current_map = self.__window_capture.custom_area_capture(
-                self.__window_capture.MAP_DETECTION_REGION,
-                cv.COLOR_RGB2GRAY,
-                cv.INTER_LINEAR,
-                scale_width=215,
-                scale_height=200
-            )
-        # Moving mouse off the red area on the minimap in case a new 
-        # screenshot is required for another detection.
-        pyautogui.move(20, 0)
+    def __botstate_preparation_detect_map(self) -> bool | NoReturn:
+        """
+        Detect current map.
+        
+        Returns
+        ----------
+        True : bool
+            If map was detected successfully.
+        NoReturn
+            Exit program if map wasn't detected within
+            `wait_time_before_exit` seconds.
+        
+        """
+        start_time = time.time()
+        wait_time_before_exit = 10
 
-        # Get map coordinates as a string.
-        r_and_t, _, _ = self.__detection.detect_text_from_image(sc_current_map)
-        map_coords = r_and_t[0][1]
-        map_coords = map_coords.replace(".", ",")
-
-        # Checking if detected map is present in database.
-        if not self.__check_if_map_in_database(map_coords, 
-                                               MapData.acg):
-            print("[ERROR] Fatal error in 'BotState.PREPARATION'!")
-            print(f"[ERROR] Couldn't detect map ({map_coords}) in database!")
+        while time.time() - start_time < wait_time_before_exit:
+            map_coords = self.__get_current_map_coordinates()
+            if map_coords:
+                if not self.__check_if_map_in_database(map_coords, 
+                                                       MapData.acg):
+                    print("[ERROR] Fatal error in "
+                        "'__botstate_preparation_detect_map()'!")
+                    print(f"[ERROR] Map ({map_coords}) doesn't exist "
+                        "in database!")
+                    print("[ERROR] Exiting ... ")
+                    os._exit(1)
+                else:
+                    self.__botstate_preparation_current_map = map_coords
+                    return True
+        else:
+            print("[ERROR] Fatal error in "
+                  "'__botstate_preparation_detect_map()'!")
+            print("[ERROR] Exceeded detection time limit of "
+                  f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
-        else:
-            self.__botstate_preparation_current_map = map_coords
-            return True
 
     def __botstate_preparation_move_char_on_cell(self):
         """Move character to a correct cell before starting combat."""
@@ -550,66 +592,60 @@ class Bot:
 
     def __botstate_changing_map(self):
         """Changing map state logic."""
-
-        change_attempts_allowed = 3
-
-        # Exit if script fails to change maps too many times.
-        if self.__change_attempts_total == change_attempts_allowed:
-            print("[ERROR] Too many failed attemps to change map!")
-            print("[ERROR] Exiting ... ")
-            os._exit(1)
-
         if self.__botstate_changing_map_detect_map():
-            self.__botstate_changing_map_change_map()
-            if self.__botstate_changing_map_check_success():
-                self.__change_attempts_total = 0
+            if self.__botstate_changing_map_change_map():
                 self.__state = BotState.SEARCHING
-            else:
-                self.__change_attempts_total += 1
 
-    def __botstate_changing_map_detect_map(self):
+    def __botstate_changing_map_detect_map(self) -> bool | NoReturn:
         """
         Detect current map.
         
-        Gets current map coordinates as a `str` and makes sure they're
-        in `MapData` before returning them.
+        Returns
+        ----------
+        True : bool
+            If map was detected successfully.
+        NoReturn
+            Exit program if map wasn't detected within
+            `wait_time_before_exit` seconds.
 
         """
-        # Gets a screenshot of minimap.
-        pyautogui.moveTo(517, 680)
-        sc_current_map = self.__window_capture.custom_area_capture(
-                self.__window_capture.MAP_DETECTION_REGION,
-                cv.COLOR_RGB2GRAY,
-                cv.INTER_LINEAR,
-                scale_width=215,
-                scale_height=200
-            )
-        pyautogui.move(20, 0)
+        start_time = time.time()
+        wait_time_before_exit = 10
 
-        # Get map coordinates as a string.
-        r_and_t, _, _ = self.__detection.detect_text_from_image(sc_current_map)
-        map_coords = r_and_t[0][1]
-        map_coords = map_coords.replace(".", ",")
-
-        print(f"[INFO] Character is currently on map: ({map_coords}) ... ")
-
-        # Checking if detected map is present in database.
-        if not self.__check_if_map_in_database(map_coords,
-                                               MapData.acg):
-            print("[ERROR] Fatal error in 'BotState.CHANGING_MAP'!")
-            print(f"[ERROR] Couldn't detect map ({map_coords}) in database!")
+        while time.time() - start_time < wait_time_before_exit:
+            map_coords = self.__get_current_map_coordinates()
+            if map_coords:
+                print(f"[INFO] Character is on map: ({map_coords}) ... ")
+                if not self.__check_if_map_in_database(map_coords,
+                                                       MapData.acg):
+                    print("[ERROR] Fatal error in "
+                          "'__botstate_changing_map_detect_map()'!")
+                    print(f"[ERROR] Map ({map_coords}) doesn't exist "
+                          "in database!")
+                    print("[ERROR] Exiting ... ")
+                    os._exit(1)
+                else:
+                    self.__botstate_changing_map_current_map = map_coords
+                    return True
+        else:
+            print("[ERROR] Fatal error in "
+                  "'__botstate_changing_map_detect_map()'!")
+            print("[ERROR] Exceeded detection time limit of "
+                  f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
-        else:
-            self.__botstate_changing_map_current_map = map_coords
-            return True
 
-    def __botstate_changing_map_change_map(self):
+    def __botstate_changing_map_get_move_coords(self) \
+                                                -> Tuple[Tuple[int, int], str]:
         """
-        Change maps.
-        
-        Gets all possible moving directions from `MapData`, randomly 
-        chooses one and moves.
+        Get move (x, y) coordinates and move choice.
+
+        Returns
+        ----------
+        move_coords: tuple[int, int]
+            (x, y) coordinates to click on for map change.
+        move_choice: str
+            Move direction.
 
         """
         # List of valid directions for moving to change maps.
@@ -631,71 +667,69 @@ class Bot:
         move_choice = random.choice(possible_directions)
 
         # Getting (x, y) coordinates.
-        move_x, move_y = MapData.acg[map_index]\
-                                    [self.__botstate_changing_map_current_map]\
-                                    [move_choice]
+        move_coords = MapData.acg[map_index]\
+                                 [self.__botstate_changing_map_current_map]\
+                                 [move_choice]
 
-        # Clicking on the coordinates to change maps.
-        print(f"[INFO] Clicking on: {(move_x, move_y)} to move "
-              f"'{move_choice}' ... ")
-        pyautogui.keyDown('e')
-        pyautogui.moveTo(move_x, move_y)
-        # Must wait because 'Dofus' GUI blocks a click when trying to 
-        # move in 'bottom' direction.
-        time.sleep(self.__WAIT_SUN_CLICK)
-        pyautogui.click()
-        pyautogui.keyUp('e')
+        return move_coords, move_choice
 
-    def __botstate_changing_map_check_success(self):
+    def __botstate_changing_map_change_map(self) -> bool | NoReturn:
         """
-        Check if map was changed successfully
-        
-        Keeps taking screenshots of current map and comparing extracted
-        coordinates to global map coordinates generated by
-        `__botstate_changing_map_detect_map()`.
+        Change maps.
+
+        - Gets coordinates to click on for map change. 
+        - Clicks.
+        - Starts comparing current map's coordinates to global
+        coordinates generated by `__botstate_changing_map_detect_map()`,
+        has `__WAIT_CHANGE_MAP` seconds for comparison.
+        - If coordinates are the same after `__WAIT_CHANGE_MAP` seconds
+        of comparing, increments `change_attempts_total`, gets new click
+        coordinates and tries to change maps again.
+        - If coordinates are different, means map change was successful.
+
+        Returns
+        ----------
+        True : bool
+            If map change was a successful.
+        NoReturn
+            Exit program if map change wasn't successful after 
+            `change_attempts_allowed` tries.
 
         """
-        click_time = time.time()
+        change_attempts_allowed = 3
+        change_attempts_total = 0
 
-        while True:
+        while change_attempts_total < change_attempts_allowed:
+            # Changing maps.
+            coords, choice = self.__botstate_changing_map_get_move_coords()
+            print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
+                  f"'{choice}' ... ")
+            pyautogui.keyDown('e')
+            pyautogui.moveTo(coords[0], coords[1])
+            if choice == "bottom":
+                time.sleep(self.__WAIT_SUN_CLICK)
+            pyautogui.click()
+            pyautogui.keyUp('e')
+            change_attempts_total += 1
+            start_time = time.time()
 
-            # Get screenshot of current map coordinates. Moving mouse 
-            # over the red area on the minimap for the black map tooltip
-            # to appear.
-            pyautogui.moveTo(517, 680)
-            screenshot = self.__window_capture.custom_area_capture(
-                                self.__window_capture.MAP_DETECTION_REGION,
-                                cv.COLOR_RGB2GRAY,
-                                cv.INTER_AREA,
-                                scale_width=215,
-                                scale_height=200
-                            )
-            # Moving mouse off the red area on the minimap in case a new 
-            # screenshot is required for another detection.
-            pyautogui.move(20, 0)
-            r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
-            
-            # If 'r_and_t' is not empty, assign coordinates. Preventing
-            # "IndexError". Happens when program tries to screenshot
-            # exactly when map is loading.
-            if r_and_t:
-                map_coords = r_and_t[0][1]
-                map_coords = map_coords.replace(".", ",")
-            else:
-                map_coords = None
-            
-            if (self.__botstate_changing_map_current_map != map_coords 
-                and map_coords is not None):
-                time.sleep(self.__WAIT_MAP_LOADING)
-                print("[INFO] Map changed successfully!")
-                print("[INFO] Changing 'BotState' to: "
-                      f"'{BotState.SEARCHING}' ... ")
-                return True
-
-            elif time.time() - click_time > self.__WAIT_CHANGE_MAP:
-                print("[INFO] Couldn't change map!")
-                print("[INFO] Retrying ... ")
-                return False
+            while time.time() - start_time < self.__WAIT_CHANGE_MAP:
+                map_coords = self.__get_current_map_coordinates()
+                if (self.__botstate_changing_map_current_map != map_coords 
+                    and map_coords):
+                    print(f"[INFO] Waiting '{self.__WAIT_MAP_LOADING}' "
+                          "second(s) for map to load!")
+                    time.sleep(self.__WAIT_MAP_LOADING)
+                    print("[INFO] Map changed successfully!")
+                    print("[INFO] Changing 'BotState' to: "
+                        f"'{BotState.SEARCHING}' ... ")
+                    return True
+        else:
+            print("[ERROR] Fatal error in "
+                  "'__botstate_changing_map_change_map()'!")
+            print("[ERROR] Too many failed attemps to change map!")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
