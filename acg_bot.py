@@ -40,7 +40,7 @@ class MapData:
                  "cell": (395, 290)}},
         {"4,-9": {"top": (  None  ), "bottom": (500, 580),
                  "left": (30 , 310), "right" : (900, 275),
-                 "cell": (230, 310)}},
+                 "cell": (  None  )}},
         {"5,-9": {"top": (  None  ), "bottom": (435, 580),
                  "left": (30 , 270), "right" : (  None  ),
                  "cell": (395, 395)}},
@@ -49,7 +49,7 @@ class MapData:
                  "cell": (330, 290)}},
         {"4,-8": {"top": (500 , 70), "bottom": (  None  ),
                  "left": (30 , 275), "right" : (900, 310),
-                 "cell": (265, 290)}},
+                 "cell": (  None  )}},
         {"5,-8": {"top": (430 , 70), "bottom": (  None  ),
                  "left": (30 , 310), "right" : (  None  ),
                  "cell": (330, 325)}},
@@ -385,8 +385,12 @@ class Bot:
         for _, value in enumerate(MapData.acg):
             for i_key, i_value in value.items():
                 if self.__botstate_preparation_current_map == i_key:
-                    cell_x = i_value["cell"][0]
-                    cell_y = i_value["cell"][1]
+                    if i_value["cell"] is not None:
+                        cell_x = i_value["cell"][0]
+                        cell_y = i_value["cell"][1]
+                    else:
+                        print("[INFO] Character is standing on correct cell!")
+                        return True
 
         while True:
 
@@ -424,7 +428,7 @@ class Bot:
             # If there IS a difference between two screenshots, 
             # it means character is standing on the correct cell.
             elif len(sc_compared) <= 0:
-                print("[INFO] Character is standing on the correct cell!")
+                print("[INFO] Character is standing on correct cell!")
                 return True
 
     def __botstate_preparation_start_combat(self):
