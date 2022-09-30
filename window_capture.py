@@ -156,7 +156,7 @@ class WindowCapture:
             `cv.INTER_AREA` interpolation, whereas to enlarge an image, 
             it will generally look best with `cv.INTER_CUBIC` (slow) 
             or `cv.INTER_LINEAR` (faster but still looks OK). Defaults 
-            to: `cv.INTER_LINEAR`.
+            to `cv.INTER_LINEAR`.
         scale_width : int, optional
             Controls screenshot's width upscale/downscale percentage.
             100 is untouched. Defaults to: 100.

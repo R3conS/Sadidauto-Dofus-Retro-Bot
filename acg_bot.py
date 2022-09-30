@@ -156,7 +156,7 @@ class Bot:
         detection_threshold : bool, optional
             Controls threshold value for `detect_objects()` in
             `BotState.SEARCHING`. Defaults to 0.6.
-        bot_state : str
+        bot_state : str, optional
             Current state of bot. Defaults to: `BotState.INITIALIZING`.
 
         """
@@ -352,7 +352,7 @@ class Bot:
         sc_current_map = self.__window_capture.custom_area_capture(
                 self.__window_capture.MAP_DETECTION_REGION,
                 cv.COLOR_RGB2GRAY,
-                cv.INTER_AREA,
+                cv.INTER_LINEAR,
                 scale_width=215,
                 scale_height=200
             )
@@ -576,7 +576,7 @@ class Bot:
         sc_current_map = self.__window_capture.custom_area_capture(
                 self.__window_capture.MAP_DETECTION_REGION,
                 cv.COLOR_RGB2GRAY,
-                cv.INTER_AREA,
+                cv.INTER_LINEAR,
                 scale_width=215,
                 scale_height=200
             )

@@ -49,11 +49,12 @@ class Combat:
 
         """
         ap_screenshot = self.__window_capture.custom_area_capture(
-            self.__window_capture.AP_DETECTION_REGION,
-            cv.COLOR_RGB2GRAY,
-            cv.INTER_AREA,
-            scale_width=215,
-            scale_height=200)
+                self.__window_capture.AP_DETECTION_REGION,
+                cv.COLOR_RGB2GRAY,
+                cv.INTER_LINEAR,
+                scale_width=215,
+                scale_height=200
+            )
 
         r_and_t, _, _ = self.__detection.detect_text_from_image(ap_screenshot)
 
@@ -81,11 +82,12 @@ class Combat:
 
         """
         mp_screenshot = self.__window_capture.custom_area_capture(
-            self.__window_capture.MP_DETECTION_REGION,
-            cv.COLOR_RGB2GRAY,
-            cv.INTER_AREA,
-            scale_width=215,
-            scale_height=200)
+                self.__window_capture.MP_DETECTION_REGION,
+                cv.COLOR_RGB2GRAY,
+                cv.INTER_LINEAR,
+                scale_width=215,
+                scale_height=200
+            )
 
         r_and_t, _, _ = self.__detection.detect_text_from_image(mp_screenshot)
 

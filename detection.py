@@ -341,7 +341,7 @@ class Detection:
     def detect_text_from_image(self,
                                image_path: np.ndarray | str,
                                lang: str = "en",
-                               use_angle_cls: bool = True,
+                               use_angle_cls: bool = False,
                                show_log: bool = False) \
                                -> Tuple[list[Tuple[list[int], str]], \
                                         list[list[int]], \
@@ -362,7 +362,7 @@ class Detection:
             degrees can be recognized. If no text is rotated by 180 
             degrees, use `False` for better performance. Text with 
             rotation of 90 or 270 degrees can be recognized even if 
-            `False`. Defaults to `True`.
+            `False`. Defaults to `False`.
         show_log : bool, optional
             Whether to print log to terminal. Defaults to `False`.
 
