@@ -20,6 +20,8 @@ class ImageData:
     test_monster_images_list = ["test_1.jpg", "test_2.jpg", 
                                 "test_3.jpg", "test_4.jpg"]
 
+    s_i = "status_images\\"
+
     acg_images_path = "monster_images\\amakna_castle_gobballs\\"
     acg_images_list = [
         "Gobball_BL_1.jpg", "Gobball_BR_1.jpg", 
@@ -291,8 +293,28 @@ class Bot:
 
     def __botstate_attacking(self):
         """Attacking state logic."""
+        if self.__botstate_attacking_attack_monster():
+            self.__state = BotState.PREPARATION
+        else:
+            self.__state = BotState.SEARCHING
+
+    def __botstate_attacking_attack_monster(self):
+        """
+        Attack monster.
+        
+        -Gets detected monster coordinates.
+        -Attacks monster.
+        -Waits `__WAIT_AFTER_ATTACKING` seconds for character to attack.
+
+        Returns
+        ----------
+        True : bool
+            If attack was successful.
+        False : bool
+            If attack was unsuccessful.
+
+        """
         # Flow control variables.
-        attack_successful = False
         attack_attempts_allowed = 0
         attack_attempts_total = 0
 
@@ -308,36 +330,24 @@ class Bot:
 
             x_coord, y_coord = coords
 
-            # Separating moving mouse and clicking into two actions, 
+            # Separating moving mouse and clicking into two actions,
             # because otherwise it sometimes right clicks too early,
             # causing the character to fail an attack.
             print(f"[INFO] Attacking monster at: {coords} ... ")
-            pyautogui.moveTo(x=x_coord, 
-                             y=y_coord,
-                             duration=self.__move_duration)
+            pyautogui.moveTo(x_coord, y_coord, duration=self.__move_duration)
             pyautogui.click(button="right")
 
-            # This loop will keep trying to find 'status_images' that 
-            # confirm if the monster was attacked succesfully. The wait 
-            # time is controlled by '__WAIT_AFTER_ATTACKING'.
-            # If images were detected, combat was started successfully 
-            # and state will be changed to 'PREPARATION'.
-            # If images were not detected within the time specified, 
-            # the 'while' loop will break to start next 'for' loop
-            # iteration and try next coordinates.
-            # If char. fails to attack 'self.attack_attempts_allowed' 
-            # times, 'BotState' will be changed to 'SEARCHING'.
             attack_time = time.time()
             while True:
 
                 cc_icon = self.__detection.find(
-                            self.__window_capture.screenshot_for_obj_detection, 
-                            "status_images\\PREPARATION_state_verifier_1.jpg"
-                        )
+                        self.__window_capture.screenshot_for_obj_detection, 
+                        ImageData.s_i + "PREPARATION_state_verifier_1.jpg"
+                    )
                 ready_button = self.__detection.find(
-                            self.__window_capture.screenshot_for_obj_detection, 
-                            "status_images\\PREPARATION_state_verifier_2.jpg"
-                        )
+                        self.__window_capture.screenshot_for_obj_detection, 
+                        ImageData.s_i + "PREPARATION_state_verifier_2.jpg"
+                    )
                 
                 if time.time() - attack_time > self.__WAIT_AFTER_ATTACKING:
                     print(f"[INFO] Failed to attack monster at: {coords}!")
@@ -349,23 +359,14 @@ class Bot:
                           f"{coords}!")
                     print("[INFO] Changing 'BotState' to: "
                           f"'{BotState.PREPARATION}' ... ")
-                    self.__state = BotState.PREPARATION
-                    attack_successful = True
-                    break
+                    return True
 
-            if attack_successful:
-                break
-            elif (not attack_successful and
-                  attack_attempts_allowed == attack_attempts_total):
+            if (attack_attempts_allowed == attack_attempts_total):
                 print("[INFO] Failed to start combat "
                       f"'{attack_attempts_total}' time(s)!")
                 print("[INFO] Changing 'BotState' to: "
                       f"'{BotState.SEARCHING}' ... ")
-                self.__state = BotState.SEARCHING
-                break
-
-    def __botstate_attacking_get_monster_coords(self):
-        pass
+                return False
 
     def __botstate_preparation(self):
         """Preparation state logic."""
@@ -484,7 +485,7 @@ class Bot:
             ready_button_icon = self.__detection.get_click_coords(
                     self.__detection.find(
                             self.__window_capture.screenshot_for_obj_detection, 
-                            "status_images\\PREPARATION_state_verifier_2.jpg",
+                            ImageData.s_i + "PREPARATION_state_verifier_2.jpg",
                             threshold=0.8
                         )
                     )
@@ -508,17 +509,17 @@ class Bot:
 
                 cc_icon = self.__detection.find(
                         self.__window_capture.screenshot_for_obj_detection, 
-                        "status_images\\IN_COMBAT_state_verifier_1.jpg", 
+                        ImageData.s_i + "IN_COMBAT_state_verifier_1.jpg", 
                         threshold=0.8
                     )
                 ap_icon = self.__detection.find(
                         self.__window_capture.screenshot_for_obj_detection, 
-                        "status_images\\IN_COMBAT_state_verifier_2.jpg", 
+                        ImageData.s_i + "IN_COMBAT_state_verifier_2.jpg", 
                         threshold=0.8
                     )
                 mp_icon = self.__detection.find(
                         self.__window_capture.screenshot_for_obj_detection, 
-                        "status_images\\IN_COMBAT_state_verifier_3.jpg", 
+                        ImageData.s_i + "IN_COMBAT_state_verifier_3.jpg", 
                         threshold=0.8
                     )
                 
@@ -549,14 +550,14 @@ class Bot:
             close_button_icon = self.__detection.get_click_coords(
                     self.__detection.find(
                             self.__window_capture.screenshot_for_obj_detection,
-                            "status_images\\END_OF_COMBAT_verifier_1.jpg",
+                            ImageData.s_i + "END_OF_COMBAT_verifier_1.jpg",
                             threshold=0.8
                         )
                     )
             cc_icon = self.__detection.get_click_coords(
                     self.__detection.find(
                             self.__window_capture.screenshot_for_obj_detection, 
-                            "status_images\\END_OF_COMBAT_verifier_2.jpg"
+                            ImageData.s_i + "END_OF_COMBAT_verifier_2.jpg"
                         )
                     )
             
