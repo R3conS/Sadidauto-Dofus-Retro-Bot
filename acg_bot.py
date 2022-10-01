@@ -4,7 +4,6 @@ import threading
 import time
 import os
 import random
-from typing import NoReturn, Tuple
 
 import cv2 as cv
 import pyautogui
@@ -107,7 +106,7 @@ class Bot:
     # allows the black loading screen to disappear.
     __WAIT_MAP_LOADING = 1
 
-    # Private attributes.
+    # Class attributes.
     # Pyautogui mouse movement duration. Default is '0.1' as per docs.
     __move_duration = 0.15
     
@@ -116,10 +115,10 @@ class Bot:
     __Bot_Thread_stopped = True
     __Bot_Thread_thread = None
     # 'Window_VisualDebugOutput_Thread' threading attributes.
-    __Window_VisualDebugOutput_Thread_stopped = True
-    __Window_VisualDebugOutput_Thread_thread = None
+    __VisualDebugWindow_Thread_stopped = True
+    __VisualDebugWindow_Thread_thread = None
 
-    # State attributes.
+    # Bot state attributes.
     # 'BotState.SEARCHING' attributes.
     __obj_rects = []
     __obj_coords = []
@@ -204,7 +203,7 @@ class Bot:
 
         return True
 
-    def __get_current_map_coordinates(self) -> bool | str:
+    def __get_current_map_coordinates(self):
         """
         Get current map's coordinates.
         
@@ -261,7 +260,7 @@ class Bot:
 
         # Starts 'Window_VisualDebugOutput_Thread'.
         if self.__debug_window:
-            self.__Window_VisualDebugOutput_Thread_start()
+            self.__VisualDebugWindow_Thread_start()
 
         print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
         self.__state = BotState.SEARCHING
@@ -365,10 +364,13 @@ class Bot:
                 self.__state = BotState.SEARCHING
                 break
 
+    def __botstate_attacking_get_monster_coords(self):
+        pass
+
     def __botstate_preparation(self):
         """Preparation state logic."""
         # Resetting both values, so the 'output_image' in 
-        # '__Window_VisualDebugOutput_Thread_run()' is clean.
+        # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
 
@@ -380,7 +382,7 @@ class Bot:
                 if self.__botstate_preparation_start_combat():
                     self.__state = BotState.IN_COMBAT
 
-    def __botstate_preparation_detect_map(self) -> bool | NoReturn:
+    def __botstate_preparation_detect_map(self):
         """
         Detect current map.
         
@@ -596,7 +598,7 @@ class Bot:
             if self.__botstate_changing_map_change_map():
                 self.__state = BotState.SEARCHING
 
-    def __botstate_changing_map_detect_map(self) -> bool | NoReturn:
+    def __botstate_changing_map_detect_map(self):
         """
         Detect current map.
         
@@ -635,8 +637,7 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __botstate_changing_map_get_move_coords(self) \
-                                                -> Tuple[Tuple[int, int], str]:
+    def __botstate_changing_map_get_move_coords(self):
         """
         Get move (x, y) coordinates and move choice.
 
@@ -673,7 +674,7 @@ class Bot:
 
         return move_coords, move_choice
 
-    def __botstate_changing_map_change_map(self) -> bool | NoReturn:
+    def __botstate_changing_map_change_map(self):
         """
         Change maps.
 
@@ -780,59 +781,67 @@ class Bot:
         """Stop bot thread."""
         self.__Bot_Thread_stopped = True
         self.__window_capture.WindowCapture_Thread_stop()
-        self.__Window_VisualDebugOutput_Thread_stop()
+        self.__VisualDebugWindow_Thread_stop()
         self.__threading_tools.wait_thread_stop(self.__Bot_Thread_thread)
 
 #----------------------------------------------------------------------#
 
-    def __Window_VisualDebugOutput_Thread_start(self):
+    def __VisualDebugWindow_Thread_start(self):
         """Start VisualDebugOutput thread."""
-        self.__Window_VisualDebugOutput_Thread_stopped = False
-        self.__Window_VisualDebugOutput_Thread_thread = threading.Thread(
-                target=self.__Window_VisualDebugOutput_Thread_run
+        self.__VisualDebugWindow_Thread_stopped = False
+        self.__VisualDebugWindow_Thread_thread = threading.Thread(
+                target=self.__VisualDebugWindow_Thread_run
             )
-        self.__Window_VisualDebugOutput_Thread_thread.start()
+        self.__VisualDebugWindow_Thread_thread.start()
         self.__threading_tools.wait_thread_start(
-                self.__Window_VisualDebugOutput_Thread_thread
+                self.__VisualDebugWindow_Thread_thread
             )
 
-    def __Window_VisualDebugOutput_Thread_stop(self):
+    def __VisualDebugWindow_Thread_stop(self):
         """Stop VisualDebugOutput thread."""
-        self.__Window_VisualDebugOutput_Thread_stopped = True
+        self.__VisualDebugWindow_Thread_stopped = True
         self.__threading_tools.wait_thread_stop(
-                self.__Window_VisualDebugOutput_Thread_thread
+                self.__VisualDebugWindow_Thread_thread
             )
         
-    def __Window_VisualDebugOutput_Thread_run(self):
+    def __VisualDebugWindow_Thread_run(self):
         """Execute this code while thread is alive."""
-        while not self.__Window_VisualDebugOutput_Thread_stopped:
+        start_time = time.time()
+        counter = 0
+        fps = 0
 
-            loop_time = time.time()
+        while not self.__VisualDebugWindow_Thread_stopped:
 
-            # Waiting for first screenshot to come through, otherwise
-            # will throw an exception: (-215:Assertion failed)
-            # size.width>0 && size.height>0 in function 'cv::imshow'.
-            if self.__window_capture.screenshot_for_VDO_Thread is None:
-                continue
+            # Get screenshot of game.
+            screenshot = self.__window_capture.gamewindow_capture()
 
             # Draw boxes around detected monsters.
             output_image = self.__detection.draw_rectangles(
-                    self.__window_capture.screenshot_for_VDO_Thread, 
+                    screenshot,
                     self.__obj_rects
                 )
 
-            # Displaying the processed image.
-            cv.imshow("Visual Debug Window", output_image)
+            # Calculating and displaying debug output FPS.
+            output_image = cv.putText(img=output_image,
+                                      text=f"Debug Window FPS: {fps}",
+                                      org=(750, 47),
+                                      fontFace=cv.FONT_HERSHEY_PLAIN,
+                                      fontScale=0.9,
+                                      color=(0, 255, 255),
+                                      thickness=1)
 
             # Press 'q' while the DEBUG window is focused to exit.
+            # Force killing all threads (not clean).
+            cv.imshow("Visual Debug Window", output_image)
             if cv.waitKey(1) == ord("q"):
-                # Hard exiting and force killing all threads (not clean)
                 cv.destroyAllWindows()
                 print("Done")
                 os._exit(1)
 
-            # Uncomment to display FPS in terminal (spams terminal).
-            # print(f"FPS {round(1 / (time.time() - loop_time), 2)}")
-            loop_time = time.time()
+            counter += 1
+            if (time.time() - start_time) > 1:
+                fps = round(counter / (time.time() - start_time))
+                start_time = time.time()
+                counter = 0
 
 #----------------------------------------------------------------------#

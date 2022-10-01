@@ -1,6 +1,7 @@
 """Provides screen capturing functionality."""
 
 import threading
+import time
 from typing import Tuple
 
 import cv2 as cv
@@ -29,7 +30,7 @@ class WindowCapture:
 
     # Constants.
     # Region of whole game window. Includes windows top bar.
-    __GAMEWINDOW_REGION = (0, 0, 933, 755)
+    GAMEWINDOW_REGION = (0, 0, 933, 755)
     # Region to screenshot for map detection.
     MAP_DETECTION_REGION = (522, 650, 48, 30)
     # Region to screenshot for AP/MP detection.
@@ -38,7 +39,6 @@ class WindowCapture:
 
     # Class attributes.
     screenshot_for_obj_detection = None
-    screenshot_for_VDO_Thread = None
 
     # Threading attributes.
     __WindowCapture_Thread_stopped = True
@@ -48,11 +48,11 @@ class WindowCapture:
     # Objects.
     __threading_tools = ThreadingTools()
 
-    def __gamewindow_capture(
+    def gamewindow_capture(
             self,
-            capture_region: Tuple[int, int, int, int] = __GAMEWINDOW_REGION,
+            capture_region: Tuple[int, int, int, int] = GAMEWINDOW_REGION,
             conversion_code: int = cv.COLOR_RGB2BGR) \
-            -> Tuple[np.ndarray, np.ndarray]:
+            -> np.ndarray:
         """
         Screenshot whole game window, including Windows top bar.
 
@@ -68,21 +68,15 @@ class WindowCapture:
 
         Returns
         ----------
-        sc_obj_detection : np.ndarray
-            Screenshot for object detection.
-        sc_VDO_Thread : np.ndarray
-            Screenshot for visual debug output.
+        screenshot : np.ndarray
+            Screenshot.
 
         """
-        sc_obj_detection = pyautogui.screenshot(region=capture_region)
-        sc_obj_detection = np.array(sc_obj_detection)
-        sc_obj_detection = cv.cvtColor(sc_obj_detection, conversion_code)
+        screenshot = pyautogui.screenshot(region=capture_region)
+        screenshot = np.array(screenshot)
+        screenshot = cv.cvtColor(screenshot, conversion_code)
 
-        sc_VDO_Thread = pyautogui.screenshot(region=capture_region)
-        sc_VDO_Thread = np.array(sc_VDO_Thread)
-        sc_VDO_Thread = cv.cvtColor(sc_VDO_Thread, conversion_code)
-
-        return sc_obj_detection, sc_VDO_Thread
+        return screenshot
 
     def area_around_mouse_capture(self, midpoint: int) -> np.ndarray:
         """
@@ -213,11 +207,10 @@ class WindowCapture:
         """Execute this code while thread is alive."""
         while not self.__WindowCapture_Thread_stopped:
             # Getting an updated image (screenshot) of the game.
-            sc_obj_detection, sc_VDO_Thread = self.__gamewindow_capture()
+            screenshot = self.gamewindow_capture()
             # Locking the thread while updating the results.
             self.__WindowCapture_Thread_lock.acquire()
-            self.screenshot_for_obj_detection = sc_obj_detection
-            self.screenshot_for_VDO_Thread = sc_VDO_Thread
+            self.screenshot_for_obj_detection = screenshot
             self.__WindowCapture_Thread_lock.release()
 
 #----------------------------------------------------------------------#
