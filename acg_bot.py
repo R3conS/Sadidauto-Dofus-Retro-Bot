@@ -8,7 +8,9 @@ import random
 import cv2 as cv
 import pyautogui
 
+from combat import Combat
 from detection import Detection
+from game_window import GameWindow
 from window_capture import WindowCapture
 from threading_tools import ThreadingTools
 
@@ -32,29 +34,33 @@ class ImageData:
         "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg",
     ]
 
-
 class MapData:
     """Holds map data."""
 
     acg = [
         {"3,-9": {"top": (  None  ), "bottom": (500, 580),
                  "left": (  None  ), "right" : (900, 310),
-                 "cell": (395, 290)}},
+                 "cell": [(393, 292), (360, 309), (426, 309), (459, 326)]}},
+
         {"4,-9": {"top": (  None  ), "bottom": (500, 580),
                  "left": (30 , 310), "right" : (900, 275),
-                 "cell": (  None  )}},
+                 "cell": [(226, 308), (259, 292), (259, 326), (293, 310)]}},
+
         {"5,-9": {"top": (  None  ), "bottom": (435, 580),
                  "left": (30 , 270), "right" : (  None  ),
-                 "cell": (395, 395)}},
+                 "cell": [(360, 374), (394, 393), (394, 361), (427, 375)]}},
+
         {"3,-8": {"top": (500 , 70), "bottom": (  None  ),
                  "left": (  None  ), "right" : (900, 310),
-                 "cell": (330, 290)}},
+                 "cell": [(327, 291), (493, 205), (393, 257), (427, 239)]}},
+
         {"4,-8": {"top": (500 , 70), "bottom": (  None  ),
                  "left": (30 , 275), "right" : (900, 310),
-                 "cell": (  None  )}},
+                 "cell": [(260, 256), (228, 273), (193, 257), (226, 239)]}},
+
         {"5,-8": {"top": (430 , 70), "bottom": (  None  ),
                  "left": (30 , 310), "right" : (  None  ),
-                 "cell": (330, 325)}},
+                 "cell": [(326, 326), (293, 306), (325, 291), (359, 308)]}},
     ]
 
 
@@ -104,14 +110,23 @@ class Bot:
     # Determines how long script will wait after character moves to a 
     # new map. The lower the number, the higher the chance that on a 
     # slower machine 'SEARCHING' state will act too fast & try to search 
-    # for monsters on a black "LOADING MAP" screen. This waiting time 
+    # for monsters on a black "LOADING MAP" screen. This wait time 
     # allows the black loading screen to disappear.
     __WAIT_MAP_LOADING = 1
+    # Time to wait after moving character to cell. If omitted,
+    # '__botstate_preparation_check_if_char_moved()' starts checking
+    # before character has time to move and gives false results.
+    __WAIT_AFTER_MOVE_CHAR = 0.5
+    # Giving time for black tooltip that shows map coordinates to
+    # appear. Otherwise on a slower machine the program might take the 
+    # screenshot too fast resulting in an image with no coordinates
+    # to detect.
+    __WAIT_BEFORE_DETECTING_MAP_COORDINATES = 0.25
 
-    # Class attributes.
+    # Private class attributes.
     # Pyautogui mouse movement duration. Default is '0.1' as per docs.
     __move_duration = 0.15
-    
+
     # Threading attributes.
     # 'Bot_Thread' threading attributes.
     __Bot_Thread_stopped = True
@@ -137,7 +152,9 @@ class Bot:
     __window_capture = WindowCapture()
     __detection = Detection()
 
-    def __init__(self, 
+    def __init__(self,
+                 character_name: str,
+                 official_version: bool,
                  objects_list: list[str] = ImageData.acg_images_list,
                  objects_path: str = ImageData.acg_images_path,
                  debug_window: bool = False,
@@ -148,6 +165,11 @@ class Bot:
 
         Parameters
         ----------
+        character_name : str
+            Character's nickname.
+        official_version : bool
+            Controls whether on official or private 'Dofus Retro' 
+            servers. Official = `True`.
         objects_list : list[str], optional
             `list` of monster images. Defaults to 
             `ImageData.acg_images_list`.
@@ -168,7 +190,9 @@ class Bot:
         self.__debug_window = debug_window
         self.__detection_threshold = detection_threshold
         self.__state = bot_state
-
+        self.__game_window = GameWindow(character_name, official_version)
+        self.__combat = Combat(character_name)
+        
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
 #----------------------------------------------------------------------#
@@ -221,6 +245,7 @@ class Bot:
         # over the red area on the minimap for the black map tooltip
         # to appear.
         pyautogui.moveTo(517, 680)
+        time.sleep(self.__WAIT_BEFORE_DETECTING_MAP_COORDINATES)
         screenshot = self.__window_capture.custom_area_capture(
                 capture_region=self.__window_capture.MAP_DETECTION_REGION,
                 conversion_code=cv.COLOR_RGB2GRAY,
@@ -248,6 +273,12 @@ class Bot:
 
     def __botstate_initializing(self):
         """Initializing state logic."""
+        # Making sure 'Dofus.exe' is launched and char is logged in.
+        if self.__game_window.check_if_exists():
+            self.__game_window.resize_and_move()
+        else:
+            os._exit(1)
+
         # Starting 'WindowCapture_Thread' thread. 
         self.__window_capture.WindowCapture_Thread_start()
 
@@ -377,9 +408,12 @@ class Bot:
 
         # Detect current map.
         if self.__botstate_preparation_detect_map():
-            # Move character to starting cell.
-            if self.__botstate_preparation_move_char_on_cell():
-                # Start combat.
+            cells = self.__botstate_preparation_get_cells_from_database(
+                    self.__botstate_preparation_current_map,
+                    MapData.acg
+                )
+            empty_cells = self.__botstate_preparation_get_empty_cells(cells)
+            if self.__botstate_preparation_move_char_to_cell(empty_cells):
                 if self.__botstate_preparation_start_combat():
                     self.__state = BotState.IN_COMBAT
 
@@ -421,61 +455,127 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __botstate_preparation_move_char_on_cell(self):
-        """Move character to a correct cell before starting combat."""
-        click_attempts_total = 0
-        click_attempts_allowed = 3
-
-        # Get current map's starting cell coordinates.
-        for _, value in enumerate(MapData.acg):
+    def __botstate_preparation_get_cells_from_database(self, map, database):
+        """
+        Get map's starting cell coordinates from database.
+        
+        Parameters
+        ----------
+        map : str
+            Map's coordinates as `str`.
+        database : list[dict]
+            `list` of `dict` like `MapData.acg`.
+        
+        Returns
+        ----------
+        cell_coordinates_list : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates of cells.
+        
+        """
+        for _, value in enumerate(database):
             for i_key, i_value in value.items():
-                if self.__botstate_preparation_current_map == i_key:
-                    if i_value["cell"] is not None:
-                        cell_x = i_value["cell"][0]
-                        cell_y = i_value["cell"][1]
-                    else:
-                        print("[INFO] Character is standing on correct cell!")
-                        return True
+                if map == i_key:
+                    cell_coordinates_list = i_value["cell"]
+                    return cell_coordinates_list
 
-        while True:
+    def __botstate_preparation_get_empty_cells(self, cell_coordinates_list):
+        """
+        Get empty cell coordinates from cell coordinates list.
+        
+        Checks for red and blue pixels on every (x, y) coordinate in
+        `cell_coordinates_list`. Creates `empty_cells_list` from 
+        coordinates where red or blue pixels were found 
+        (means those cells are empty).
 
-            # Move the cursor to starting cell coordinates.
-            pyautogui.moveTo(cell_x, cell_y, duration=self.__move_duration)
+        Parameters
+        ----------
+        cell_coordinates_list : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates of cells.
+        
+        Returns
+        ----------
+        empty_cells_list : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates of empty
+            cells.
+        
+        """
+        empty_cells_list = []
+        for cell_coordinates in cell_coordinates_list:
+            red_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
+                                                    cell_coordinates[1],
+                                                    (255, 0, 0),
+                                                    tolerance=10)
 
-            # Take a screenshot before clicking on starting cell.
-            before_click = self.__window_capture.area_around_mouse_capture(15)
+            blue_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
+                                                     cell_coordinates[1],
+                                                     (0, 0, 255),
+                                                     tolerance=10)
+                                                
+            if red_pixel or blue_pixel:
+                empty_cells_list.append(cell_coordinates)
+        return empty_cells_list
 
-            # Clicking on the cell.
-            print(f"[INFO] Clicking on starting cell: {cell_x, cell_y} ... ")
+    def __botstate_preparation_move_char_to_cell(self, cell_coordinates_list):
+        """
+        Move character to cell.
+        
+        Parameters
+        ----------
+        cell_coordinates_list : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates of cells.
+
+        Returns
+        ----------
+        True : bool
+            If character was moved successfully.
+        False : bool
+            If character wasn't moved.
+        
+        """
+        for cell in cell_coordinates_list:
+            print(f"[INFO] Moving character to cell: {cell} ... ")
+            pyautogui.moveTo(cell[0], cell[1])
             pyautogui.click()
-            click_attempts_total += 1
-
-            # Take a screenshot after clicking on starting cell.
-            after_click = self.__window_capture.area_around_mouse_capture(15)
-
-            # Comparing the two screenshots
-            sc_compared = self.__detection.find(before_click, 
-                                              after_click,
-                                              threshold=0.96)
-
-            # Controls failed click attempts.
-            if click_attempts_total >= click_attempts_allowed:
-                print("[ERROR] Failed to select starting cell!")
-                print("[ERROR] Exiting ... ")
-                os._exit(1)
-
-            # If there is NO difference between two screenshots, 
-            # it means character is not standing on the correct cell.
-            elif len(sc_compared) > 0:
-                print("[INFO] Failed to move character to starting cell!")
-                continue
-
-            # If there IS a difference between two screenshots, 
-            # it means character is standing on the correct cell.
-            elif len(sc_compared) <= 0:
-                print("[INFO] Character is standing on correct cell!")
+            time.sleep(self.__WAIT_AFTER_MOVE_CHAR)
+            if self.__botstate_preparation_check_if_char_moved(cell):
                 return True
+        return False
 
+    def __botstate_preparation_check_if_char_moved(self, cell_coordinates):
+        """
+        Check if character moved to cell.
+
+        Checks for red and blue pixels on `cell_coordinates`. If
+        neither are found it means character is standing there.
+        
+        Parameters
+        ----------
+        cell_coordinates : Tuple[int, int]
+
+        Returns
+        ----------
+        True : bool
+            If character was moved successfully.
+        False : bool
+            If character wasn't moved.
+        
+        """
+        red_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
+                                                cell_coordinates[1],
+                                                (255, 0, 0),
+                                                tolerance=5)
+        blue_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
+                                                 cell_coordinates[1],
+                                                 (0, 0, 255),
+                                                 tolerance=5)
+
+        if not red_pixel and not blue_pixel:
+            print("[INFO] Character moved successfully!")
+            return True
+        else:
+            print("[INFO] Failed to move character!")
+            return False
+                                                       
     def __botstate_preparation_start_combat(self):
         """Click ready to start combat."""
         ready_button_clicked = False
@@ -537,8 +637,11 @@ class Bot:
 
     def __botstate_in_combat(self):
         """Combat state logic."""
-        # TO DO
-        # Fighting Logic
+
+        # if self.__combat.detect_turn_start():
+        #     if self.__combat.pass_turn():
+        #         return True
+        # else:
         self.__botstate_in_combat_check_end_of_fight()
 
     def __botstate_in_combat_check_end_of_fight(self):
@@ -554,13 +657,7 @@ class Bot:
                             threshold=0.8
                         )
                     )
-            cc_icon = self.__detection.get_click_coords(
-                    self.__detection.find(
-                            self.__window_capture.screenshot_for_obj_detection, 
-                            ImageData.s_i + "END_OF_COMBAT_verifier_2.jpg"
-                        )
-                    )
-            
+    
             # If the close button is detected.
             if len(close_button_icon) > 0 and not close_button_clicked:
                 print("[INFO] Combat has ended!")
@@ -577,16 +674,16 @@ class Bot:
                 # to be detected again.
                 pyautogui.move(100, 0)
                 continue
-
-            if close_button_clicked:
+            elif len(close_button_icon) <= 0 and not close_button_clicked:
+                return False
+            elif close_button_clicked:
                 # Checking if the 'Fight Results' window was closed.
                 if (len(close_button_icon) > 0 and
                     time.time() - click_time > self.__WAIT_WINDOW_CLOSED):
                     print("[INFO] Failed to close 'Fight Results' window!")
                     print("[INFO] Retrying ... ")
                     close_button_clicked = False
-                
-                elif len(close_button_icon) <= 0 and len(cc_icon) <= 0:
+                elif len(close_button_icon) <= 0:
                     print("[INFO] Successfully closed 'Fight Results' window!")
                     print("[INFO] Changing 'BotState' to: "
                           f"'{BotState.SEARCHING}' ... ")

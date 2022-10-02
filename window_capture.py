@@ -36,6 +36,12 @@ class WindowCapture:
     # Region to screenshot for AP/MP detection.
     AP_DETECTION_REGION = (465, 610, 20, 25)
     MP_DETECTION_REGION = (570, 615, 15, 25)
+    # Region to screnshot for start of turn detection.
+    TURN_START_REGION = (170, 95, 200, 30)
+    # Region to screnshot for end of turn and passing turn detection.
+    TURN_END_REGION = (525, 595, 120, 155)
+    # Region to screenshot for spell detection.
+    SPELL_BAR_REGION = (645, 660, 265, 80)
 
     # Class attributes.
     screenshot_for_obj_detection = None

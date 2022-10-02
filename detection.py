@@ -120,7 +120,8 @@ class Detection:
         return rectangles
 
     def get_click_coords(self, 
-                         rectangles: list[list[int]]) \
+                         rectangles: list[list[int]],
+                         region: Tuple[int, int, int, int] = (0, 0, 0, 0)) \
                          -> list[Tuple[int, int]]:
         """
         Calculate center (x, y) coordinates of bounding box.
@@ -130,7 +131,12 @@ class Detection:
         rectangles : list[list[int]]
             2D `list` containing [[topLeft_x, topLeft_y, width, height]]
             of bounding box.
-
+        region : Tuple[int, int, int, int], optional
+            Screen region (topLeft_x, topLeft_y, width, height) where
+            image found within `rectangles` was taken. Allows to 
+            calculate precise center coordinates of image on the whole 
+            screen. Defaults to (0, 0, 0, 0).
+        
         Returns
         ----------
         coords : list[Tuple[int, int]]
@@ -140,8 +146,8 @@ class Detection:
         coords = []
         for [x, y, w, h] in rectangles:
             # Determining the center positions of found matches.
-            center_x = x + int(w/2)
-            center_y = y + int(h/2)
+            center_x = x + int(w/2) + region[0]
+            center_y = y + int(h/2) + region[1]
             # Saving the center positions.
             coords.append((center_x, center_y))
 

@@ -7,6 +7,14 @@ class GameWindow:
     """
     Holds methods related to working with 'Dofus.exe' window.
 
+    Instance attributes
+    ----------
+    character_name : str
+        Character's nickname.
+    official_version : bool
+        Controls whether playing on official or private 'Dofus
+        Retro' servers. Official = `True`.
+
     Methods
     ----------
     check_if_exists()
@@ -20,7 +28,7 @@ class GameWindow:
         """
         Constructor.
 
-        Attributes
+        Parameters
         ----------
         character_name : str
             Character's nickname.
@@ -46,10 +54,10 @@ class GameWindow:
         """
         gmw = gw.getWindowsWithTitle(self.character_name + " - Dofus Retro")
         if gmw:
-            print("Game window successfully detected.")
+            print("[INFO] Game window successfully detected!")
             return True
         else:
-            print("Couldn't find the game window. Please enter " 
+            print("[INFO] Couldn't find the game window. Please enter " 
                   + "character name and make sure you are logged in.")
             return False
 
