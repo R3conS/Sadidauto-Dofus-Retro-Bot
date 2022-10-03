@@ -14,11 +14,11 @@ class CombatData:
 
 
     images_path = "combat_images\\"
-    earthquake = "earthquake.jpg"
-    poisoned_wind = "poisoned_wind.jpg"
-    sylvan_power = "sylvan_power.jpg"
-    icon_pass_turn = "icon_pass_turn.jpg"
-    end_turn_verifier = "end_turn_verifier.jpg"
+    earthquake = images_path + "earthquake.jpg"
+    poisoned_wind = images_path + "poisoned_wind.jpg"
+    sylvan_power = images_path + "sylvan_power.jpg"
+    icon_pass_turn = images_path + "icon_pass_turn.jpg"
+    end_turn_verifier = images_path + "end_turn_verifier.jpg"
 
 
 class Combat:
@@ -177,7 +177,7 @@ class Combat:
 
             rects = self.__detection.find(
                     screenshot,
-                    CombatData.images_path + CombatData.end_turn_verifier,
+                    CombatData.end_turn_verifier,
                 )
 
             if time.time() - start_time > exit_time:
@@ -207,7 +207,7 @@ class Combat:
 
             rects = self.__detection.find(
                     screenshot, 
-                    CombatData.images_path + CombatData.icon_pass_turn
+                    CombatData.icon_pass_turn
                 )
 
             if len(rects) > 0:
@@ -226,7 +226,7 @@ class Combat:
                     print("[ERROR] Failed to pass turn!")
                     return False
 
-    def check_spell_availability(self):
+    def check_spell_availability(self, spell, threshold=0.85):
         """
         Check if spell is available to cast.
         
@@ -234,6 +234,8 @@ class Combat:
         ----------
         spell : str
             Name of spell.
+        threshold : float, optional
+            Detection threshold used in `find()`. Defaults to 0.85.
 
         Returns
         ----------
@@ -247,7 +249,7 @@ class Combat:
                     self.__window_capture.SPELL_BAR_REGION
                 )
 
-        rects = self.__detection.find(screenshot, spell)
+        rects = self.__detection.find(screenshot, spell, threshold=threshold)
 
         spell = spell.split("\\")
         spell = spell[1].split(".")

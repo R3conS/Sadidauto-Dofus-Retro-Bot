@@ -8,10 +8,10 @@ bot = Bot(character_name=character_name,
           debug_window=True)
 
 # For testing.
-# bot = Bot(ImageData.test_monster_images_list, 
-#           ImageData.test_monster_images_path,
+# bot = Bot(objects_list=ImageData.test_monster_images_list, 
+#           objects_path=ImageData.test_monster_images_path,
 #           character_name=character_name,
-#           official_version=False,
+#           official_version=True,
 #           debug_window=True)
 
 

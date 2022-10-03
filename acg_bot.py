@@ -397,16 +397,24 @@ class Bot:
         self.__obj_rects = []
         self.__obj_coords = []
 
-        # Detect current map.
-        if self.__botstate_preparation_detect_map():
-            cells = self.__botstate_preparation_get_cells_from_database(
-                    self.__botstate_preparation_current_map,
-                    MapData.acg
-                )
-            empty_cells = self.__botstate_preparation_get_empty_cells(cells)
-            if self.__botstate_preparation_move_char_to_cell(empty_cells):
-                if self.__botstate_preparation_start_combat():
-                    self.__state = BotState.IN_COMBAT
+        start_time = time.time()
+        allowed_time = 20
+
+        while time.time() - start_time < allowed_time:
+            if self.__botstate_preparation_detect_map():
+                cells = self.__botstate_preparation_get_cells_from_database(
+                        self.__botstate_preparation_current_map,
+                        MapData.acg
+                    )
+                e_cells = self.__botstate_preparation_get_empty_cells(cells)
+                if self.__botstate_preparation_move_char_to_cell(e_cells):
+                    if self.__botstate_preparation_start_combat():
+                        self.__state = BotState.IN_COMBAT
+        else:
+            print(f"[INFO] Failed to select starting cell in '{allowed_time}' "
+                  "seconds!")
+            print("[INFO] Exiting ... ")
+            os._exit(1)
 
     def __botstate_preparation_detect_map(self):
         """
