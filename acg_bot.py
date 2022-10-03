@@ -279,18 +279,6 @@ class Bot:
         else:
             os._exit(1)
 
-        # Starting 'WindowCapture_Thread' thread. 
-        self.__window_capture.WindowCapture_Thread_start()
-
-        # Waiting for 'WindowCapture_Thread' to complete at least one 
-        # cycle before continuing script execution. If this is omitted, 
-        # script will reach 'self.__detection.detect_objects()' method 
-        # in 'SEARCHING' state faster than the 'WindowCapture_Thread' 
-        # can make the first screenshot for detection. Will throw out an 
-        # error: (-215:Assertion failed) in 'cv::matchTemplate'.
-        while self.__window_capture.screenshot_for_obj_detection is None:
-            continue
-
         # Starts 'Window_VisualDebugOutput_Thread'.
         if self.__debug_window:
             self.__VisualDebugWindow_Thread_start()
@@ -301,10 +289,12 @@ class Bot:
     def __botstate_searching(self):
         """Searching state logic."""
         print(f"[INFO] Searching for monsters ... ")
+
+        screenshot = self.__window_capture.gamewindow_capture()
         self.__obj_rects, self.__obj_coords = self.__detection.detect_objects(
                 self.__objects_list, 
                 self.__objects_path, 
-                self.__window_capture.screenshot_for_obj_detection,
+                screenshot,
                 threshold=self.__detection_threshold
             )
 
@@ -371,12 +361,13 @@ class Bot:
             attack_time = time.time()
             while True:
 
+                screenshot = self.__window_capture.gamewindow_capture()
                 cc_icon = self.__detection.find(
-                        self.__window_capture.screenshot_for_obj_detection, 
+                        screenshot,
                         ImageData.s_i + "PREPARATION_state_verifier_1.jpg"
                     )
                 ready_button = self.__detection.find(
-                        self.__window_capture.screenshot_for_obj_detection, 
+                        screenshot,
                         ImageData.s_i + "PREPARATION_state_verifier_2.jpg"
                     )
                 
@@ -582,9 +573,10 @@ class Bot:
 
         while True:
 
+            screenshot = self.__window_capture.gamewindow_capture()
             ready_button_icon = self.__detection.get_click_coords(
                     self.__detection.find(
-                            self.__window_capture.screenshot_for_obj_detection, 
+                            screenshot,
                             ImageData.s_i + "PREPARATION_state_verifier_2.jpg",
                             threshold=0.8
                         )
@@ -607,18 +599,19 @@ class Bot:
             # Checking if combat started after 'READY' was clicked.
             if ready_button_clicked:
 
+                screenshot = self.__window_capture.gamewindow_capture()
                 cc_icon = self.__detection.find(
-                        self.__window_capture.screenshot_for_obj_detection, 
+                        screenshot,
                         ImageData.s_i + "IN_COMBAT_state_verifier_1.jpg", 
                         threshold=0.8
                     )
                 ap_icon = self.__detection.find(
-                        self.__window_capture.screenshot_for_obj_detection, 
+                        screenshot, 
                         ImageData.s_i + "IN_COMBAT_state_verifier_2.jpg", 
                         threshold=0.8
                     )
                 mp_icon = self.__detection.find(
-                        self.__window_capture.screenshot_for_obj_detection, 
+                        screenshot,
                         ImageData.s_i + "IN_COMBAT_state_verifier_3.jpg", 
                         threshold=0.8
                     )
@@ -650,9 +643,10 @@ class Bot:
 
         while True:
 
+            screenshot = self.__window_capture.gamewindow_capture()
             close_button_icon = self.__detection.get_click_coords(
                     self.__detection.find(
-                            self.__window_capture.screenshot_for_obj_detection,
+                            screenshot,
                             ImageData.s_i + "END_OF_COMBAT_verifier_1.jpg",
                             threshold=0.8
                         )
@@ -878,7 +872,6 @@ class Bot:
     def Bot_Thread_stop(self):
         """Stop bot thread."""
         self.__Bot_Thread_stopped = True
-        self.__window_capture.WindowCapture_Thread_stop()
         self.__VisualDebugWindow_Thread_stop()
         self.__threading_tools.wait_thread_stop(self.__Bot_Thread_thread)
 
