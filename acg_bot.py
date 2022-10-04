@@ -8,7 +8,7 @@ import random
 import cv2 as cv
 import pyautogui
 
-from combat import Combat
+from combat import Combat, CombatData, Spells
 from detection import Detection
 from game_window import GameWindow
 from window_capture import WindowCapture
@@ -38,29 +38,35 @@ class MapData:
     """Holds map data."""
 
     acg = [
+
+        {"3,-7": {"top": (500 , 70), "bottom": (  None  ),
+                 "left": (  None  ), "right" : (  None  ),
+                 "cell": [(393, 256), (359, 342), (459, 290), (426, 307)]}},
+
+        {"3,-8": {"top": (500 , 70), "bottom": (500, 580),
+                 "left": (  None  ), "right" : (900, 310),
+                 "cell": [(327, 291), (493, 205), (393, 257), (427, 239)]}},
+
         {"3,-9": {"top": (  None  ), "bottom": (500, 580),
                  "left": (  None  ), "right" : (900, 310),
                  "cell": [(393, 292), (360, 309), (426, 309), (459, 326)]}},
-
-        {"4,-9": {"top": (  None  ), "bottom": (500, 580),
-                 "left": (30 , 310), "right" : (900, 275),
-                 "cell": [(226, 308), (259, 292), (259, 326), (293, 310)]}},
-
-        {"5,-9": {"top": (  None  ), "bottom": (435, 580),
-                 "left": (30 , 270), "right" : (  None  ),
-                 "cell": [(360, 374), (394, 393), (394, 361), (427, 375)]}},
-
-        {"3,-8": {"top": (500 , 70), "bottom": (  None  ),
-                 "left": (  None  ), "right" : (900, 310),
-                 "cell": [(327, 291), (493, 205), (393, 257), (427, 239)]}},
 
         {"4,-8": {"top": (500 , 70), "bottom": (  None  ),
                  "left": (30 , 275), "right" : (900, 310),
                  "cell": [(260, 256), (228, 273), (193, 257), (226, 239)]}},
 
+        {"4,-9": {"top": (  None  ), "bottom": (500, 580),
+                 "left": (30 , 310), "right" : (900, 275),
+                 "cell": [(226, 308), (259, 292), (259, 326), (293, 310)]}},
+
         {"5,-8": {"top": (430 , 70), "bottom": (  None  ),
                  "left": (30 , 310), "right" : (  None  ),
                  "cell": [(326, 326), (293, 306), (325, 291), (359, 308)]}},
+
+        {"5,-9": {"top": (  None  ), "bottom": (435, 580),
+                 "left": (30 , 270), "right" : (  None  ),
+                 "cell": [(360, 374), (394, 393), (394, 361), (427, 375)]}},
+
     ]
 
 
@@ -95,9 +101,6 @@ class Bot:
     # Time to wait after clicking ready in 'BotState.PREPARATION'. How 
     # long script will keep chacking if combat was started successfully.
     __WAIT_COMBAT_START = 10
-    # Time to wait before checking again if the 'Fight Results' window 
-    # was properly closed in 'BotState.IN_COMBAT'.
-    __WAIT_WINDOW_CLOSED = 3
     # Time to wait before clicking on yellow 'sun' to change maps.
     # Must wait when moving in 'bottom' direction, because 'Dofus' GUI 
     # blocks the sun otherwise.
@@ -112,9 +115,9 @@ class Bot:
     # slower machine 'SEARCHING' state will act too fast & try to search 
     # for monsters on a black "LOADING MAP" screen. This wait time 
     # allows the black loading screen to disappear.
-    __WAIT_MAP_LOADING = 1
+    __WAIT_MAP_LOADING = 0.5
     # Time to wait after moving character to cell. If omitted,
-    # '__botstate_preparation_check_if_char_moved()' starts checking
+    # '__preparation_check_if_char_moved()' starts checking
     # before character has time to move and gives false results.
     __WAIT_AFTER_MOVE_CHAR = 0.5
     # Giving time for black tooltip that shows map coordinates to
@@ -143,9 +146,11 @@ class Bot:
     # Failed attack attempts allowed before searching for monsters.
     __attack_attempts_allowed = 3
     # 'BotState.PREPARATION' attributes.
-    __botstate_preparation_current_map = None
+    __preparation_current_map = None
+    # Cell combat was started on. For use in "IN_COMBAT" state.
+    __preparation_combat_start_cell = None
     # 'BotState.CHANGING_MAP' attributes.
-    __botstate_changing_map_current_map = None
+    __changing_map_current_map = None
 
     # Objects.
     __threading_tools = ThreadingTools()
@@ -239,6 +244,8 @@ class Bot:
             Map coordinates as a `str`.
         False : bool
             If map wasn't detected.
+        NoReturn
+            If detected map doesn't exist in database.
 
         """
         # Get a screenshot of coordinates on minimap. Moving mouse
@@ -265,13 +272,18 @@ class Bot:
         except IndexError:
             return False
 
-        return map_coords
+        if self.__check_if_map_in_database(map_coords, MapData.acg):
+            return map_coords
+        else:
+            print(f"[ERROR] Map ({map_coords}) doesn't exist in database!")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
 #----------------------------------------------------------------------#
 
-    def __botstate_initializing(self):
+    def __initializing(self):
         """Initializing state logic."""
         # Making sure 'Dofus.exe' is launched and char is logged in.
         if self.__game_window.check_if_exists():
@@ -286,7 +298,7 @@ class Bot:
         print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
         self.__state = BotState.SEARCHING
 
-    def __botstate_searching(self):
+    def __searching(self):
         """Searching state logic."""
         print(f"[INFO] Searching for monsters ... ")
 
@@ -312,14 +324,14 @@ class Bot:
                   f"'{BotState.CHANGING_MAP}' ... ")
             self.__state = BotState.CHANGING_MAP
 
-    def __botstate_attacking(self):
+    def __attacking(self):
         """Attacking state logic."""
-        if self.__botstate_attacking_attack_monster():
+        if self.__attacking_attack_monster():
             self.__state = BotState.PREPARATION
         else:
             self.__state = BotState.SEARCHING
 
-    def __botstate_attacking_attack_monster(self):
+    def __attacking_attack_monster(self):
         """
         Attack monster.
         
@@ -390,7 +402,7 @@ class Bot:
                       f"'{BotState.SEARCHING}' ... ")
                 return False
 
-    def __botstate_preparation(self):
+    def __preparation(self):
         """Preparation state logic."""
         # Resetting both values, so the 'output_image' in 
         # '__VisualDebugWindow_Thread_run()' is clean.
@@ -401,22 +413,23 @@ class Bot:
         allowed_time = 20
 
         while time.time() - start_time < allowed_time:
-            if self.__botstate_preparation_detect_map():
-                cells = self.__botstate_preparation_get_cells_from_database(
-                        self.__botstate_preparation_current_map,
+            if self.__preparation_detect_map():
+                cells = self.__preparation_get_cells_from_database(
+                        self.__preparation_current_map,
                         MapData.acg
                     )
-                e_cells = self.__botstate_preparation_get_empty_cells(cells)
-                if self.__botstate_preparation_move_char_to_cell(e_cells):
-                    if self.__botstate_preparation_start_combat():
+                e_cells = self.__preparation_get_empty_cells(cells)
+                if self.__preparation_move_char_to_cell(e_cells):
+                    if self.__preparation_start_combat():
                         self.__state = BotState.IN_COMBAT
+                        break
         else:
-            print(f"[INFO] Failed to select starting cell in '{allowed_time}' "
-                  "seconds!")
-            print("[INFO] Exiting ... ")
+            print(f"[ERROR] Failed to select starting cell in '{allowed_time}'"
+                  " seconds!")
+            print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __botstate_preparation_detect_map(self):
+    def __preparation_detect_map(self):
         """
         Detect current map.
         
@@ -435,26 +448,17 @@ class Bot:
         while time.time() - start_time < wait_time_before_exit:
             map_coords = self.__get_current_map_coordinates()
             if map_coords:
-                if not self.__check_if_map_in_database(map_coords, 
-                                                       MapData.acg):
-                    print("[ERROR] Fatal error in "
-                        "'__botstate_preparation_detect_map()'!")
-                    print(f"[ERROR] Map ({map_coords}) doesn't exist "
-                        "in database!")
-                    print("[ERROR] Exiting ... ")
-                    os._exit(1)
-                else:
-                    self.__botstate_preparation_current_map = map_coords
-                    return True
+                self.__preparation_current_map = map_coords
+                return True
         else:
             print("[ERROR] Fatal error in "
-                  "'__botstate_preparation_detect_map()'!")
+                  "'__preparation_detect_map()'!")
             print("[ERROR] Exceeded detection time limit of "
                   f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __botstate_preparation_get_cells_from_database(self, map, database):
+    def __preparation_get_cells_from_database(self, map, database):
         """
         Get map's starting cell coordinates from database.
         
@@ -477,7 +481,7 @@ class Bot:
                     cell_coordinates_list = i_value["cell"]
                     return cell_coordinates_list
 
-    def __botstate_preparation_get_empty_cells(self, cell_coordinates_list):
+    def __preparation_get_empty_cells(self, cell_coordinates_list):
         """
         Get empty cell coordinates from cell coordinates list.
         
@@ -514,9 +518,12 @@ class Bot:
                 empty_cells_list.append(cell_coordinates)
         return empty_cells_list
 
-    def __botstate_preparation_move_char_to_cell(self, cell_coordinates_list):
+    def __preparation_move_char_to_cell(self, cell_coordinates_list):
         """
         Move character to cell.
+
+        Also saves the starting cell coordinates for use in "IN_COMBAT"
+        state.
         
         Parameters
         ----------
@@ -535,12 +542,13 @@ class Bot:
             print(f"[INFO] Moving character to cell: {cell} ... ")
             pyautogui.moveTo(cell[0], cell[1])
             pyautogui.click()
+            self.__preparation_combat_start_cell = cell
             time.sleep(self.__WAIT_AFTER_MOVE_CHAR)
-            if self.__botstate_preparation_check_if_char_moved(cell):
+            if self.__preparation_check_if_char_moved(cell):
                 return True
         return False
 
-    def __botstate_preparation_check_if_char_moved(self, cell_coordinates):
+    def __preparation_check_if_char_moved(self, cell_coordinates):
         """
         Check if character moved to cell.
 
@@ -575,7 +583,7 @@ class Bot:
             print("[INFO] Failed to move character!")
             return False
                                                        
-    def __botstate_preparation_start_combat(self):
+    def __preparation_start_combat(self):
         """Click ready to start combat."""
         ready_button_clicked = False
 
@@ -636,69 +644,126 @@ class Bot:
                           f"'{BotState.IN_COMBAT}' ... ")
                     return True
 
-    def __botstate_in_combat(self):
+    def __in_combat(self):
         """Combat state logic."""
+        while True:
+            if self.__combat.turn_detect_start():
+                if self.__in_combat_cast_spells():
+                    if self.__combat.turn_pass():
+                        print("[INFO] Waiting for turn ... ")
+                        continue
+            elif self.__in_combat_detect_end_of_fight():
+                self.__state = BotState.SEARCHING
+                break
 
-        # if self.__combat.detect_turn_start():
-        #     if self.__combat.pass_turn():
-        #         return True
-        # else:
-        self.__botstate_in_combat_check_end_of_fight()
-
-    def __botstate_in_combat_check_end_of_fight(self):
-        """Check if combat has ended and close fight results window."""
-        close_button_clicked = False
-
+    def __in_combat_cast_spells(self):
+        """Cast spells."""
         while True:
 
-            screenshot = self.__window_capture.gamewindow_capture()
-            close_button_icon = self.__detection.get_click_coords(
-                    self.__detection.find(
-                            screenshot,
-                            ImageData.s_i + "END_OF_COMBAT_verifier_1.jpg",
-                            threshold=0.8
-                        )
-                    )
-    
-            # If the close button is detected.
-            if len(close_button_icon) > 0 and not close_button_clicked:
-                print("[INFO] Combat has ended!")
-                print("[INFO] Closing 'Fight Results' window ... ")
-                # Separating moving mouse and clicking into two actions, 
-                # because otherwise it sometimes right clicks too early.
-                pyautogui.moveTo(x=close_button_icon[0][0], 
-                                 y=close_button_icon[0][1], 
-                                 duration=self.__move_duration)
-                pyautogui.click()
-                click_time = time.time()
-                close_button_clicked = True
-                # Moving mouse off the 'Close' button in case it needs 
-                # to be detected again.
-                pyautogui.move(100, 0)
-                continue
-            elif len(close_button_icon) <= 0 and not close_button_clicked:
-                return False
-            elif close_button_clicked:
-                # Checking if the 'Fight Results' window was closed.
-                if (len(close_button_icon) > 0 and
-                    time.time() - click_time > self.__WAIT_WINDOW_CLOSED):
-                    print("[INFO] Failed to close 'Fight Results' window!")
-                    print("[INFO] Retrying ... ")
-                    close_button_clicked = False
-                elif len(close_button_icon) <= 0:
-                    print("[INFO] Successfully closed 'Fight Results' window!")
-                    print("[INFO] Changing 'BotState' to: "
-                          f"'{BotState.SEARCHING}' ... ")
-                    self.__state = BotState.SEARCHING
-                    break
+            available_spells = self.__combat.get_available_spells()
 
-    def __botstate_changing_map(self):
+            if len(available_spells) <= 0:
+                print("[INFO] No spells available!")
+                return True
+
+            for spell in available_spells:
+
+                spell_coords = self.__combat.get_spell_coordinates(spell)
+                cast_coords = self.__combat.get_spell_cast_coordinates(
+                        spell,
+                        self.__preparation_current_map,
+                        self.__preparation_combat_start_cell
+                    )
+                self.__combat.cast_spell(spell, spell_coords, cast_coords)
+
+                break
+
+    def __in_combat_detect_fight_results_window(self):
+        """
+        Detect close button of 'Fight Results' window.
+
+        Returns
+        ----------
+        close_button : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates.
+
+        """
+        screenshot = self.__window_capture.gamewindow_capture()
+        close_button = self.__detection.get_click_coords(
+                self.__detection.find(
+                        screenshot,
+                        ImageData.s_i + "END_OF_COMBAT_verifier_1.jpg",
+                        threshold=0.8
+                    )
+                )
+
+        return close_button
+
+    def __in_combat_detect_end_of_fight(self):
+        """
+        Detect 'Fight Results' window and close it.
+        
+        Returns
+        ----------
+        True : bool
+            If window was successfully closed.
+        False : bool
+            If 'Fight Results' window couldn't be detected.
+        NoReturn
+            Exits program if 'Fight Results' window couldn't be closed
+            within 'timeout_time' seconds.
+
+        """
+        while True:
+
+            close_button = self.__in_combat_detect_fight_results_window()
+
+            if len(close_button) <= 0:
+                return False
+
+            elif len(close_button) > 0:
+
+                print("[INFO] Combat has ended!")
+                start_time = time.time()
+                timeout_time = 10
+
+                while time.time() - start_time < timeout_time:
+
+                    print("[INFO] Closing 'Fight Results' window ... ")
+                    # Separating mouse move and click actions, because
+                    # otherwise it sometimes right clicks too early.
+                    pyautogui.moveTo(x=close_button[0][0], 
+                                     y=close_button[0][1], 
+                                     duration=self.__move_duration)
+                    pyautogui.click()
+                    # Moving mouse off the 'Close' button in case it needs 
+                    # to be detected again.
+                    pyautogui.move(100, 0)
+
+                    close_button = self.__in_combat_detect_fight_results_window()
+
+                    if len(close_button) > 0:
+                        print("[INFO] Failed to close 'Fight Results' window!")
+                    elif len(close_button) <= 0:
+                        print("[INFO] Successfully closed 'Fight Results' "
+                              "window!")
+                        print("[INFO] Changing 'BotState' to: "
+                              f"'{BotState.SEARCHING}' ... ")
+                        return True
+                else:
+                    print("[ERROR] Couldn't close 'Fight Results' window in "
+                          f"{timeout_time} second(s)!")
+                    print(f"[ERROR] Timed out!")
+                    print(f"[ERROR] Exiting ... ")
+                    os._exit(1)
+
+    def __changing_map(self):
         """Changing map state logic."""
-        if self.__botstate_changing_map_detect_map():
-            if self.__botstate_changing_map_change_map():
+        if self.__changing_map_detect_map():
+            if self.__changing_map_change_map():
                 self.__state = BotState.SEARCHING
 
-    def __botstate_changing_map_detect_map(self):
+    def __changing_map_detect_map(self):
         """
         Detect current map.
         
@@ -715,29 +780,22 @@ class Bot:
         wait_time_before_exit = 10
 
         while time.time() - start_time < wait_time_before_exit:
+
             map_coords = self.__get_current_map_coordinates()
+
             if map_coords:
                 print(f"[INFO] Character is on map: ({map_coords}) ... ")
-                if not self.__check_if_map_in_database(map_coords,
-                                                       MapData.acg):
-                    print("[ERROR] Fatal error in "
-                          "'__botstate_changing_map_detect_map()'!")
-                    print(f"[ERROR] Map ({map_coords}) doesn't exist "
-                          "in database!")
-                    print("[ERROR] Exiting ... ")
-                    os._exit(1)
-                else:
-                    self.__botstate_changing_map_current_map = map_coords
-                    return True
+                self.__changing_map_current_map = map_coords
+                return True
         else:
             print("[ERROR] Fatal error in "
-                  "'__botstate_changing_map_detect_map()'!")
+                  "'__changing_map_detect_map()'!")
             print("[ERROR] Exceeded detection time limit of "
                   f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __botstate_changing_map_get_move_coords(self):
+    def __changing_map_get_move_coords(self):
         """
         Get move (x, y) coordinates and move choice.
 
@@ -758,7 +816,7 @@ class Bot:
         map_index = None
         for index, value in enumerate(MapData.acg):
             for i_key, i_value in value.items():
-                if self.__botstate_changing_map_current_map == i_key:
+                if self.__changing_map_current_map == i_key:
                     for j_key, j_value in i_value.items():
                         if j_value is not None and j_key in directions:
                             possible_directions.append(j_key)
@@ -769,19 +827,19 @@ class Bot:
 
         # Getting (x, y) coordinates.
         move_coords = MapData.acg[map_index]\
-                                 [self.__botstate_changing_map_current_map]\
+                                 [self.__changing_map_current_map]\
                                  [move_choice]
 
         return move_coords, move_choice
 
-    def __botstate_changing_map_change_map(self):
+    def __changing_map_change_map(self):
         """
         Change maps.
 
         - Gets coordinates to click on for map change. 
         - Clicks.
         - Starts comparing current map's coordinates to global
-        coordinates generated by `__botstate_changing_map_detect_map()`,
+        coordinates generated by `__changing_map_detect_map()`,
         has `__WAIT_CHANGE_MAP` seconds for comparison.
         - If coordinates are the same after `__WAIT_CHANGE_MAP` seconds
         of comparing, increments `change_attempts_total`, gets new click
@@ -802,7 +860,7 @@ class Bot:
 
         while change_attempts_total < change_attempts_allowed:
             # Changing maps.
-            coords, choice = self.__botstate_changing_map_get_move_coords()
+            coords, choice = self.__changing_map_get_move_coords()
             print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
                   f"'{choice}' ... ")
             pyautogui.keyDown('e')
@@ -816,7 +874,7 @@ class Bot:
 
             while time.time() - start_time < self.__WAIT_CHANGE_MAP:
                 map_coords = self.__get_current_map_coordinates()
-                if (self.__botstate_changing_map_current_map != map_coords 
+                if (self.__changing_map_current_map != map_coords 
                     and map_coords):
                     print(f"[INFO] Waiting '{self.__WAIT_MAP_LOADING}' "
                           "second(s) for map to load!")
@@ -827,7 +885,7 @@ class Bot:
                     return True
         else:
             print("[ERROR] Fatal error in "
-                  "'__botstate_changing_map_change_map()'!")
+                  "'__changing_map_change_map()'!")
             print("[ERROR] Too many failed attemps to change map!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
@@ -842,27 +900,27 @@ class Bot:
 
             # The bot always starts up in this (INITIALIZING) state. 
             if self.__state == BotState.INITIALIZING:
-                self.__botstate_initializing()
+                self.__initializing()
 
             # Handles monster detection.
             elif self.__state == BotState.SEARCHING:
-                self.__botstate_searching()
+                self.__searching()
 
             # Handles attacking found monsters.
             elif self.__state == BotState.ATTACKING:
-                self.__botstate_attacking()
+                self.__attacking()
 
             # Handles combat preparation actions.
             elif self.__state == BotState.PREPARATION:
-                self.__botstate_preparation()
+                self.__preparation()
 
             # Handles combat actions.
             elif self.__state == BotState.IN_COMBAT:
-                self.__botstate_in_combat()
+                self.__in_combat()
                         
             # Handles map changing actions.
             elif self.__state == BotState.CHANGING_MAP:
-                self.__botstate_changing_map()
+                self.__changing_map()
                       
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#
