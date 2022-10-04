@@ -183,16 +183,26 @@ class Combat:
 
         """
         while True:
-            screenshot = self.__window_capture.custom_area_capture(
-                    self.__window_capture.TURN_START_REGION
-                )
+       
+            orange_px = pyautogui.pixelMatchesColor(407, 106, (250, 103, 0),
+                                                    tolerance=3)
+            white_px = pyautogui.pixelMatchesColor(407, 116, (247, 250, 244),
+                                                   tolerance=3)
+            gray_px = pyautogui.pixelMatchesColor(110, 100, (232, 228, 198),
+                                                  tolerance=3)
 
-            r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+            if orange_px and white_px and not gray_px:
 
-            if r_and_t:
-                if r_and_t[0][1] == self.character_name:
-                    print("[INFO] Turn started!")
-                    return True
+                screenshot = self.__window_capture.custom_area_capture(
+                        self.__window_capture.TURN_START_REGION
+                    )
+
+                r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+
+                if r_and_t:
+                    if r_and_t[0][1] == self.character_name:
+                        print("[INFO] Turn started!")
+                        return True
             else:
                 return False
 
