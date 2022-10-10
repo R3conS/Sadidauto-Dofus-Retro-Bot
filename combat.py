@@ -20,27 +20,30 @@ class CombatData:
 class Spells:
     """Holds spell data."""
 
-    cast_data = [
-        {"3,-7": {"earthquake"  : (  None  ), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"3,-8": {"earthquake"  : (433, 238), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"3,-9": {"earthquake"  : (467, 323), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"4,-8": {"earthquake"  : (  None  ), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"4,-9": {"earthquake"  : (  None  ), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"5,-8": {"earthquake"  : (  None  ), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-        {"5,-9": {"earthquake"  : (465, 358), "poisoned_wind": (  None  ),
-                  "sylvan_power": (  None  )}},
-    ]
-
     e_quake = CombatData.images_path + "earthquake.jpg"
     p_wind = CombatData.images_path + "poisoned_wind.jpg"
     s_power = CombatData.images_path + "sylvan_power.jpg"
     spells = [e_quake, p_wind, s_power]
+
+    # Spell cast data for 'Amakna Castle Gobballs'.
+    acg = [
+        {"3,-7": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
+                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
+        {"3,-8": {"r": {"e": (433, 238), "p": (  None  ), "s": (  None  )},
+                  "b": {"e": (433, 238), "p": (  None  ), "s": (  None  )}}},
+        {"3,-9": {"r": {"e": (467, 323), "p": (  None  ), "s": (  None  )},
+                  "b": {"e": (467, 323), "p": (  None  ), "s": (  None  )}}},
+        {"4,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
+                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
+        {"4,-9": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
+                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
+        {"5,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
+                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
+        {"5,-9": {"r": {"e": (465, 358), "p": (  None  ), "s": (  None  )}, 
+                  "b": {"e": (465, 358), "p": (  None  ), "s": (  None  )}}},
+    ]
+
+    af = []
 
 
 class Combat:
@@ -84,15 +87,19 @@ class Combat:
     # Otherwise when character passes quickly at the start of turn,
     # detection starts too early and falsely detects another turn.
     __WAIT_AFTER_TURN_PASS = 0.5
+
+    # Private class attributes.
     # 'Pyautogui' mouse movement duration. Default is 0.1, basically
     # instant. Messes up spell casting if left on default.
     __move_duration = 0.15
+    # Stores spell casting data according to loaded bot script.
+    __spell_cast_data = None
 
     # Objects
     __window_capture = WindowCapture()
     __detection = Detection()
 
-    def __init__(self, character_name: str):
+    def __init__(self, character_name: str, script: str):
         """
         Constructor
 
@@ -103,6 +110,15 @@ class Combat:
 
         """
         self.character_name = character_name
+
+        # Loading proper spell cast data according to 'script'.
+        # The validity of 'script' is checked within main bot logic.
+        if isinstance(script, str):
+            script = script.lower()
+            if script == "amakna_castle_gobballs":
+                self.__spell_cast_data = Spells.acg
+            elif script == "astrub_forest":
+                self.__spell_cast_data = Spells.af
 
     def get_ap(self):
         """
@@ -271,6 +287,8 @@ class Combat:
                                  coords[0][1],
                                  duration=self.__move_duration)
                 pyautogui.click()
+                # Moving mouse off 'pass turn' button.
+                pyautogui.move(0, 30)
                 time.sleep(self.__WAIT_AFTER_TURN_PASS)
                 
                 if self.turn_detect_end():
@@ -363,7 +381,11 @@ class Combat:
             return coords[0][0], coords[0][1]
         return False
 
-    def get_spell_cast_coordinates(self, spell, map_coordinates, start_cell):
+    def get_spell_cast_coordinates(self, 
+                                   spell, 
+                                   map_coordinates, 
+                                   start_cell_coords,
+                                   start_cell_color):
         """
         Get coordinates of point to click on to cast spell.
         
@@ -373,8 +395,10 @@ class Combat:
             Name of `spell`.
         map_coordinates : str
             Current map's coordinates.
-        start_cell : Tuple[int, int]
+        start_cell_coords : Tuple[int, int]
             Coordinates of cell on which character started combat.
+        start_cell_color : str
+            Color of starting cell.
 
         Returns
         ----------
@@ -382,21 +406,38 @@ class Combat:
             (x, y) `coordinates` of where to click to cast `spell`.
 
         """
+        # Converting parameters to be compatible with keys in
+        # 'self.__spell_cast_data'.
         if "\\" in spell:
             spell = spell.split("\\")
             spell = spell[1].split(".")
             spell = spell[0]
 
+        if spell == "earthquake":
+            spell = "e"
+        elif spell == "poisoned_wind":
+            spell = "p"
+        elif spell == "sylvan_power":
+            spell = "s"
+
+        if start_cell_color == "red":
+            start_cell_color = "r"
+        elif start_cell_color == "blue":
+            start_cell_color = "b"
+
+        # Getting cast coordinates.
         coordinates = None
-        for _, value in enumerate(Spells.cast_data):
+        for _, value in enumerate(self.__spell_cast_data):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
-                    if i_value[spell] is not None:
-                        coordinates = i_value[spell]
-                    else:
-                        coordinates = start_cell
-
-        return coordinates
+                    for j_key, j_value in i_value.items():
+                        if j_key == start_cell_color:
+                            if j_value[spell] is not None:
+                                coordinates = j_value[spell]
+                                return coordinates
+                            else:
+                                coordinates = start_cell_coords
+                                return coordinates
 
     def cast_spell(self, spell, spell_coordinates, cast_coordinates):
         """

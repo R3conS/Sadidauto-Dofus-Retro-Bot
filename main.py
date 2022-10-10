@@ -1,15 +1,16 @@
-from acg_bot import Bot, ImageData
+from bot import Bot
 
 
 # Initializing 'bot' object
 character_name = "Bobas"
-bot = Bot(character_name=character_name, 
+bot = Bot(script="amakna_castle_gobballs",
+          character_name=character_name, 
           official_version=False,
-          debug_window=True)
+          debug_window=True,
+          detection_threshold=0.6)
 
 # For testing.
-# bot = Bot(objects_list=ImageData.test_monster_images_list, 
-#           objects_path=ImageData.test_monster_images_path,
+# bot = Bot(script="testing"
 #           character_name=character_name,
 #           official_version=False,
 #           debug_window=True)
