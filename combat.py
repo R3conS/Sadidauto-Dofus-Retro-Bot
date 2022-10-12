@@ -7,43 +7,8 @@ import cv2 as cv
 import pyautogui
 
 from detection import Detection
+from data import CombatData, SpellData, MovementData
 from window_capture import WindowCapture
-
-
-class CombatData:
-    """Holds paths, verifiers."""
-
-    images_path = "combat_images\\"
-    icon_turn_pass = images_path + "icon_turn_pass.jpg"
-
-
-class Spells:
-    """Holds spell data."""
-
-    e_quake = CombatData.images_path + "earthquake.jpg"
-    p_wind = CombatData.images_path + "poisoned_wind.jpg"
-    s_power = CombatData.images_path + "sylvan_power.jpg"
-    spells = [e_quake, p_wind, s_power]
-
-    # Spell cast data for 'Amakna Castle Gobballs'.
-    acg = [
-        {"3,-7": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"3,-8": {"r": {"e": (433, 238), "p": (  None  ), "s": (  None  )},
-                  "b": {"e": (433, 238), "p": (  None  ), "s": (  None  )}}},
-        {"3,-9": {"r": {"e": (467, 323), "p": (  None  ), "s": (  None  )},
-                  "b": {"e": (467, 323), "p": (  None  ), "s": (  None  )}}},
-        {"4,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"4,-9": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"5,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"5,-9": {"r": {"e": (465, 358), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (465, 358), "p": (  None  ), "s": (  None  )}}},
-    ]
-
-    af = []
 
 
 class Combat:
@@ -87,6 +52,8 @@ class Combat:
     # Otherwise when character passes quickly at the start of turn,
     # detection starts too early and falsely detects another turn.
     __WAIT_AFTER_TURN_PASS = 0.5
+    # Giving time for character to run to cell after clicking.
+    __WAIT_CHARACTER_MOVING = 1.5
 
     # Private class attributes.
     # 'Pyautogui' mouse movement duration. Default is 0.1, basically
@@ -94,6 +61,8 @@ class Combat:
     __move_duration = 0.15
     # Stores spell casting data according to loaded bot script.
     __spell_cast_data = None
+    # Stores combat movement data according to loaded bot script.
+    __movement_data = None
 
     # Objects
     __window_capture = WindowCapture()
@@ -112,13 +81,13 @@ class Combat:
         self.character_name = character_name
 
         # Loading proper spell cast data according to 'script'.
-        # The validity of 'script' is checked within main bot logic.
+        # The validity of 'script' is checked within
+        #  '__initializing_load_bot_script_data()'.
         if isinstance(script, str):
             script = script.lower()
-            if script == "amakna_castle_gobballs":
-                self.__spell_cast_data = Spells.acg
-            elif script == "astrub_forest":
-                self.__spell_cast_data = Spells.af
+            if script == "astrub_forest":
+                self.__spell_cast_data = SpellData.af
+                self.__movement_data = MovementData.af
 
     def get_ap(self):
         """
@@ -313,7 +282,7 @@ class Combat:
 
         """
         available_spells = []
-        for spell in Spells.spells:
+        for spell in SpellData.spells:
             if self.get_spell_status(spell):
                 available_spells.append(spell)
         return available_spells
@@ -383,8 +352,7 @@ class Combat:
 
     def get_spell_cast_coordinates(self, 
                                    spell, 
-                                   map_coordinates, 
-                                   start_cell_coords,
+                                   map_coordinates,
                                    start_cell_color):
         """
         Get coordinates of point to click on to cast spell.
@@ -395,8 +363,6 @@ class Combat:
             Name of `spell`.
         map_coordinates : str
             Current map's coordinates.
-        start_cell_coords : Tuple[int, int]
-            Coordinates of cell on which character started combat.
         start_cell_color : str
             Color of starting cell.
 
@@ -435,9 +401,87 @@ class Combat:
                             if j_value[spell] is not None:
                                 coordinates = j_value[spell]
                                 return coordinates
-                            else:
-                                coordinates = start_cell_coords
-                                return coordinates
+
+    def get_movement_coordinates(self, map_coordinates, start_cell_color):
+        """
+        Get coordinates to click on to move character on correct cell.
+
+        Parameters
+        ----------
+        map_coordinates : str
+            Current map's coordinates.
+        start_cell_color : str
+            Starting cell's color.
+
+        Returns
+        ----------
+        cell_coords : tuple[int, int]
+            (x, y) coordinates of cell to click on.
+
+        """
+        for _, value in enumerate(self.__movement_data):
+            for i_key, i_value in value.items():
+                if i_key == map_coordinates:
+                    for j_key, j_value in i_value.items():
+                        if j_key == start_cell_color:
+                            cell_coords = j_value
+                            return cell_coords
+
+    def get_if_char_on_correct_cell(self, cell_coordinates):
+        """
+        Check if character is standing on correct cell.
+
+        Parameters
+        ----------
+        cell_coordinates : tuple[int, int]
+            (x, y) coordinates of cell to check.
+        
+        Returns
+        ----------
+        True : bool
+            If character is standing on correct cell.
+        False : bool
+            If character is standing on wrong cell.
+
+        """
+        x, y = cell_coordinates
+
+        # All colors except last one are from tactical mode.
+        # First one is from 'Ascalion', next 4 are from official 
+        # 'Dofus Retro'. The last color is orange color that appears when 
+        # cursor is hovered over cells for movement.
+        colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
+                  (118, 122, 127), (131, 135, 141), (255, 102, 0)]
+
+        # Comparing every color from 'colors' list to pixel color 
+        # at (x, y) coordinates. Counting failed matches.
+        counter = 0
+        for color in colors:
+            pixel = pyautogui.pixelMatchesColor(x, y, color)
+            if not pixel:
+                counter += 1
+
+        # If no colors from 'colors' list match pixel color at
+        # (x, y), then character is standing on correct cell.
+        if counter == len(colors):
+            return True
+        else:
+            return False
+
+    def move_character(self, cell_coordinates):
+        """
+        Click on provided coordinates to move character.
+
+        Parameters
+        ----------
+        cell_coordinates : tuple[int, int]
+            Coordinates to click on.
+
+        """
+        x, y = cell_coordinates
+        pyautogui.moveTo(x=x, y=y, duration=self.__move_duration)
+        pyautogui.click()
+        time.sleep(self.__WAIT_CHARACTER_MOVING)
 
     def cast_spell(self, spell, spell_coordinates, cast_coordinates):
         """

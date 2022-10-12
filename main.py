@@ -3,7 +3,7 @@ from bot import Bot
 
 # Initializing 'bot' object
 character_name = "Bobas"
-bot = Bot(script="amakna_castle_gobballs",
+bot = Bot(script="astrub_forest",
           character_name=character_name, 
           official_version=False,
           debug_window=True,

@@ -9,100 +9,11 @@ import cv2 as cv
 import pyautogui
 
 from combat import Combat
+from data import ImageData, MapData
 from detection import Detection
 from game_window import GameWindow
-from window_capture import WindowCapture
 from threading_tools import ThreadingTools
-
-
-class ImageData:
-    """Holds image data."""
-
-    # Test images.
-    test_monster_images_path = "test_monster_images\\"
-    test_monster_images_list = ["test_1.jpg", "test_2.jpg", 
-                                "test_3.jpg", "test_4.jpg"]
-
-    # Status images path.
-    s_i = "status_images\\"
-
-    # Amakna Castle Gobbals.
-    acg_images_path = "monster_images\\amakna_castle_gobballs\\"
-    acg_images_list = [
-            "Gobball_BL_1.jpg", "Gobball_BR_1.jpg", 
-            "Gobball_TL_1.jpg", "Gobball_TR_1.jpg",
-            "GobblyBlack_BL_1.jpg", "GobblyBlack_BR_1.jpg",
-            "GobblyBlack_TL_1.jpg", "GobblyBlack_TR_1.jpg",
-            "GobblyWhite_BL_1.jpg", "GobblyWhite_BR_1.jpg",
-            "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg",
-        ]
-
-    # Astrub Forest.
-    af_images_path = "monster_images\\astrub_forest\\"
-    af_images_list = [
-            "Boar_BL_1.jpg", "Boar_BR_1.jpg", "Boar_TL_1.jpg", "Boar_TR_1.jpg",
-            "Boar_BL_2.jpg", "Boar_BR_2.jpg", "Boar_TL_2.jpg", "Boar_TR_2.jpg",
-            "Boar_BL_3.jpg", "Boar_BR_3.jpg", "Boar_TL_3.jpg", "Boar_TR_3.jpg",
-            "Boar_BL_4.jpg", "Boar_BR_4.jpg", "Boar_TL_4.jpg", "Boar_TR_4.jpg",
-
-            "Mosk_BL_1.jpg", "Mosk_BR_1.jpg", "Mosk_TL_1.jpg", "Mosk_TR_1.jpg",
-            "Mosk_BL_2.jpg", "Mosk_BR_2.jpg", "Mosk_TL_2.jpg", "Mosk_TR_2.jpg",
-            "Mosk_BL_3.jpg", "Mosk_BR_3.jpg", "Mosk_TL_3.jpg", "Mosk_TR_3.jpg",
-            "Mosk_BL_4.jpg", "Mosk_BR_4.jpg", "Mosk_TL_4.jpg", "Mosk_TR_4.jpg", 
-
-            "Mush_BL_1.jpg", "Mush_BR_1.jpg", "Mush_TL_1.jpg", "Mush_TR_1.jpg",
-            "Mush_BL_2.jpg", "Mush_BR_2.jpg", "Mush_TL_2.jpg", "Mush_TR_2.jpg",
-            "Mush_BL_3.jpg", "Mush_BR_3.jpg", "Mush_TL_3.jpg", "Mush_TR_3.jpg",
-            "Mush_BL_4.jpg", "Mush_BR_4.jpg", "Mush_TL_4.jpg", "Mush_TR_4.jpg",
-
-            "Pres_BL_1.jpg", "Pres_BR_1.jpg", "Pres_TL_1.jpg", "Pres_TR_1.jpg",
-            "Pres_BL_2.jpg", "Pres_BR_2.jpg", "Pres_TL_2.jpg", "Pres_TR_2.jpg",
-            "Pres_BL_3.jpg", "Pres_BR_3.jpg", "Pres_TL_3.jpg", "Pres_TR_3.jpg",
-            "Pres_BL_4.jpg", "Pres_BR_4.jpg", "Pres_TL_4.jpg", "Pres_TR_4.jpg",
-
-            "Wolf_BL_1.jpg", "Wolf_BR_1.jpg", "Wolf_TL_1.jpg", "Wolf_TR_1.jpg",
-            "Wolf_BL_2.jpg", "Wolf_BR_2.jpg", "Wolf_TL_2.jpg", "Wolf_TR_2.jpg",
-            "Wolf_BL_3.jpg", "Wolf_BR_3.jpg", "Wolf_TL_3.jpg", "Wolf_TR_3.jpg",
-            "Wolf_BL_4.jpg", "Wolf_BR_4.jpg", "Wolf_TL_4.jpg", "Wolf_TR_4.jpg",
-        ]
-
-
-class MapData:
-    """
-    Holds map data.
-    
-    When adding cell coordinates to maps, the first two coordinates must 
-    be red color cells and the last two must be blue. A total of 4 cells 
-    is accepted.
-    
-    """
-    # Amakna Castle Gobballs.
-    acg = [
-        {"3,-7": {"top": (500 , 70), "bottom": (  None  ),
-                 "left": (  None  ), "right" : (  None  ),
-                 "cell": [(393, 256), (359, 342), (459, 290), (426, 307)]}},
-        {"3,-8": {"top": (500 , 70), "bottom": (500, 580),
-                 "left": (  None  ), "right" : (900, 310),
-                 "cell": [(327, 291), (493, 205), (393, 257), (427, 239)]}},
-        {"3,-9": {"top": (  None  ), "bottom": (500, 580),
-                 "left": (  None  ), "right" : (900, 310),
-                 "cell": [(393, 292), (360, 309), (426, 309), (459, 326)]}},
-        {"4,-8": {"top": (500 , 70), "bottom": (  None  ),
-                 "left": (30 , 275), "right" : (900, 310),
-                 "cell": [(260, 256), (228, 273), (193, 257), (226, 239)]}},
-        {"4,-9": {"top": (  None  ), "bottom": (500, 580),
-                 "left": (30 , 310), "right" : (900, 275),
-                 "cell": [(226, 308), (259, 292), (259, 326), (293, 310)]}},
-        {"5,-8": {"top": (430 , 70), "bottom": (  None  ),
-                 "left": (30 , 310), "right" : (  None  ),
-                 "cell": [(326, 326), (293, 306), (325, 291), (359, 308)]}},
-        {"5,-9": {"top": (  None  ), "bottom": (435, 580),
-                 "left": (30 , 270), "right" : (  None  ),
-                 "cell": [(360, 374), (394, 393), (394, 361), (427, 375)]}},
-    ]
-
-    # Astrub Forest.
-    af = []
+from window_capture import WindowCapture
 
 
 class BotState:
@@ -114,11 +25,14 @@ class BotState:
     PREPARATION = "PREPARATION"
     IN_COMBAT = "IN_COMBAT"
     CHANGING_MAP = "CHANGING_MAP"
+    BANKING = "BANKING"
 
 
 class Bot:
     """
-    Main bot logic.
+    Main bot class.
+
+    Logic flow is controlled by '__Bot_Thread_run()'.
     
     Methods
     ----------  
@@ -132,7 +46,7 @@ class Bot:
     # Constants.
     # Time to wait after clicking on a monster. How long script will 
     # keep chacking if the monster was successfully attacked.
-    __WAIT_AFTER_ATTACKING = 10
+    __WAIT_AFTER_ATTACKING = 7
     # Time to wait after clicking ready in 'BotState.PREPARATION'. How 
     # long script will keep chacking if combat was started successfully.
     __WAIT_COMBAT_START = 10
@@ -164,9 +78,12 @@ class Bot:
     # Private class attributes.
     # Pyautogui mouse movement duration. Default is '0.1' as per docs.
     __move_duration = 0.15
-    # For storage of chosen script's map data, monster images and monster 
-    # images folder path.
+    # Stores currently needed map data.
     __data_map = None
+    # Stores loaded map data based on 'self.__script'.
+    __data_map_killing = None
+    __data_map_banking = None
+    # Stores monster image data and path to the folder with the images.
     __data_objects_list = None
     __data_objects_path = None
 
@@ -192,6 +109,8 @@ class Bot:
     __preparation_combat_start_cell_color = None
     # 'BotState.CHANGING_MAP' attributes.
     __changing_map_current_map = None
+    # 'BotState.IN_COMBAT' attributes.
+    __in_combat_character_moved = False
 
     # Objects.
     __threading_tools = ThreadingTools()
@@ -318,9 +237,34 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __load_bot_script(self, script):
+#----------------------------------------------------------------------#
+#--------------------------BOT STATE METHODS---------------------------#
+#----------------------------------------------------------------------#
+
+    def __initializing(self):
+        """Initializing state logic."""
+        # Making sure 'Dofus.exe' is launched and char is logged in.
+        if self.__game_window.check_if_exists():
+            self.__game_window.resize_and_move()
+        else:
+            os._exit(1)
+
+        # Starts 'Window_VisualDebugOutput_Thread' if needed.
+        if self.__debug_window:
+            self.__VisualDebugWindow_Thread_start()
+
+        # Loading bot script data.
+        if self.__initializing_load_bot_script_data(self.__script):
+            print(f"[INFO] Successfully loaded '{self.__script}' script!")
+
+        # Setting correct 'BotState' after initialization.
+        if self.__initializing_set_botstate():
+            print("[INFO] Successfully set initial 'BotState' to "
+                  f"'{self.__state}'!")
+
+    def __initializing_load_bot_script_data(self, script):
         """
-        Assign map and image data according to `script`.
+        Load map and image data based on `script`.
 
         Parameters
         ----------
@@ -343,49 +287,41 @@ class Bot:
 
         script = script.lower()
 
-        if script == "amakna_castle_gobballs":
-            self.__data_map = MapData.acg
-            self.__data_objects_list = ImageData.acg_images_list
-            self.__data_objects_path = ImageData.acg_images_path
-            self.__script = "Amakna Castle Gobballs"
-            return True
-        elif script == "astrub_forest":
-            self.__data_map = MapData.af
+        if script == "astrub_forest":
+            self.__data_map_killing = MapData.af_killing
+            self.__data_map_banking = MapData.af_banking
             self.__data_objects_list = ImageData.af_images_list
             self.__data_objects_path = ImageData.af_images_path
             self.__script = "Astrub Forest"
             return True
         elif script == "testing":
+            # Change this to whatever MapData is being tested.
+            # self.__data_map = None
             self.__data_objects_list = ImageData.test_monster_images_list
             self.__data_objects_path = ImageData.test_monster_images_path
             self.__script = "Testing"
+            return True
         else:
             print(f"[ERROR] Couldn't find script '{script}' in database ... ")
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-#----------------------------------------------------------------------#
-#--------------------------BOT STATE METHODS---------------------------#
-#----------------------------------------------------------------------#
+    def __initializing_set_botstate(self):
+        """Set 'BotState' after initialization."""
+        # TO DO
+        # Pods % getter.
+        # These values are placeholders.
+        pod_percentage = 89
+        pod_limit = 90
 
-    def __initializing(self):
-        """Initializing state logic."""
-        # Making sure 'Dofus.exe' is launched and char is logged in.
-        if self.__game_window.check_if_exists():
-            self.__game_window.resize_and_move()
-        else:
-            os._exit(1)
-
-        # Loading bot script.
-        if self.__load_bot_script(self.__script):
-            print(f"[INFO] Successfully loaded '{self.__script}' script!")
-
-        # Starts 'Window_VisualDebugOutput_Thread'.
-        if self.__debug_window:
-            self.__VisualDebugWindow_Thread_start()
-
-        print(f"[INFO] Changing 'BotState' to: '{BotState.SEARCHING}' ... ")
-        self.__state = BotState.SEARCHING
+        if pod_percentage >= pod_limit:
+            self.__data_map = self.__data_map_banking
+            self.__state = BotState.BANKING
+            return True
+        elif pod_percentage < pod_limit:
+            self.__data_map = self.__data_map_killing
+            self.__state = BotState.CHANGING_MAP
+            return True
 
     def __searching(self):
         """Searching state logic."""
@@ -776,14 +712,51 @@ class Bot:
     def __in_combat(self):
         """Combat state logic."""
         while True:
+
             if self.__combat.turn_detect_start():
-                if self.__in_combat_cast_spells():
-                    if self.__combat.turn_pass():
-                        print("[INFO] Waiting for turn ... ")
-                        continue
+
+                if not self.__in_combat_character_moved:
+                    if self.__in_combat_move_character():
+                        self.__in_combat_character_moved = True
+
+                if self.__in_combat_character_moved:
+                    if self.__in_combat_cast_spells():
+                        if self.__combat.turn_pass():
+                            print("[INFO] Waiting for turn ... ")
+                            continue
+
             elif self.__in_combat_detect_end_of_fight():
+                self.__in_combat_character_moved = False
                 self.__state = BotState.SEARCHING
                 break
+
+    def __in_combat_move_character(self):
+
+        attempts = 0
+        attempts_allowed = 3
+
+        while attempts < attempts_allowed:
+
+            move_coords = self.__combat.get_movement_coordinates(
+                    self.__preparation_current_map,
+                    self.__preparation_combat_start_cell_color
+                )
+
+            if self.__combat.get_if_char_on_correct_cell(move_coords):
+                print("[INFO] Character is standing on correct cell!")
+                # Moving mouse cursor off character so that spell bar
+                # is visible and ready for detection.
+                pyautogui.moveTo(x=609, y=752)
+                return True
+            else:
+                print("[INFO] Moving character ... ")
+                self.__combat.move_character(move_coords)
+                attempts += 1
+
+        else:
+            print(f"[ERROR] Failed to move character in '{attempts}' attempts!")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
     def __in_combat_cast_spells(self):
         """Cast spells."""
@@ -801,7 +774,6 @@ class Bot:
                 cast_coords = self.__combat.get_spell_cast_coordinates(
                         spell,
                         self.__preparation_current_map,
-                        self.__preparation_combat_start_cell_coords,
                         self.__preparation_combat_start_cell_color
                     )
                 self.__combat.cast_spell(spell, spell_coords, cast_coords)
@@ -888,9 +860,30 @@ class Bot:
 
     def __changing_map(self):
         """Changing map state logic."""
-        if self.__changing_map_detect_map():
-            if self.__changing_map_change_map():
-                self.__state = BotState.SEARCHING
+        while True:
+
+            if self.__changing_map_detect_map():
+
+                map_type = self.__changing_map_get_map_type()
+
+                if map_type == "fightable":
+                    print(f"[INFO] Current map's type is '{map_type}'!")
+                    print("[INFO] Changing 'BotState' to: "
+                         f"'{BotState.SEARCHING}' ... ")
+                    self.__state = BotState.SEARCHING
+                    break
+
+                elif map_type == "traversable":
+                    print(f"[INFO] Current map's type is '{map_type}'!")
+                    print(f"[INFO] Changing map ... ")
+                    if self.__changing_map_change_map():
+                        continue
+
+                else:
+                    print(f"[ERROR] Invalid map type '{map_type}' for map "
+                          f"'{self.__changing_map_current_map}'!")
+                    print(f"[ERROR] Exiting ... ")
+                    os._exit(1)
 
     def __changing_map_detect_map(self):
         """
@@ -930,7 +923,7 @@ class Bot:
 
         Returns
         ----------
-        move_coords: tuple[int, int]
+        move_coords: Tuple[int, int]
             (x, y) coordinates to click on for map change.
         move_choice: str
             Move direction.
@@ -1011,8 +1004,6 @@ class Bot:
                           "second(s) for map to load!")
                     time.sleep(self.__WAIT_MAP_LOADING)
                     print("[INFO] Map changed successfully!")
-                    print("[INFO] Changing 'BotState' to: "
-                        f"'{BotState.SEARCHING}' ... ")
                     return True
         else:
             print("[ERROR] Fatal error in "
@@ -1020,6 +1011,14 @@ class Bot:
             print("[ERROR] Too many failed attemps to change map!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
+
+    def __changing_map_get_map_type(self):
+        """Get current map's type."""
+        for _, value in enumerate(self.__data_map):
+            for i_key, i_value in value.items():
+                if self.__changing_map_current_map == i_key:
+                    map_type = i_value["map_type"]
+                    return map_type
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
@@ -1053,6 +1052,11 @@ class Bot:
             elif self.__state == BotState.CHANGING_MAP:
                 self.__changing_map()
                       
+            elif self.__state == BotState.BANKING:
+                # TO DO:
+                # Create banking logic.
+                pass
+
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#
 #----------------------------------------------------------------------#
