@@ -257,25 +257,6 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __detect_inside_or_outside_astrub_bank(self):
-        """
-        Check if character is inside or outside bank.
-        
-        Character must be on '4,-16' map.
-
-        """
-        color = (0, 0, 0)
-        black_pixel_1 = pyautogui.pixelMatchesColor(117, 525, color)
-        black_pixel_2 = pyautogui.pixelMatchesColor(821, 526, color)
-        black_pixel_3 = pyautogui.pixelMatchesColor(454, 90, color)
-
-        if black_pixel_1 and black_pixel_2 and black_pixel_3:
-            print("[INFO] Character is inside bank!")
-            return "inside"
-        else:
-            print("[INFO] Character is outside the bank!")
-            return "outside"
-
     def __get_map_type(self, map_coordinates):
         """
         Get current map's type.
@@ -296,6 +277,25 @@ class Bot:
                 if map_coordinates == i_key:
                     map_type = i_value["map_type"]
                     return map_type
+
+    def __detect_inside_or_outside_astrub_bank(self):
+        """
+        Check if character is inside or outside bank.
+        
+        Character must be on '4,-16' map.
+
+        """
+        color = (0, 0, 0)
+        black_pixel_1 = pyautogui.pixelMatchesColor(117, 525, color)
+        black_pixel_2 = pyautogui.pixelMatchesColor(821, 526, color)
+        black_pixel_3 = pyautogui.pixelMatchesColor(454, 90, color)
+
+        if black_pixel_1 and black_pixel_2 and black_pixel_3:
+            print("[INFO] Character is inside bank!")
+            return "inside"
+        else:
+            print("[INFO] Character is outside the bank!")
+            return "outside"
 
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
@@ -349,10 +349,10 @@ class Bot:
         if script == "astrub_forest":
             self.__data_map_killing = MapData.af_killing
             self.__data_map_banking = MapData.af_banking
-            # self.__data_objects_list = ImageData.af_images_list
-            # self.__data_objects_path = ImageData.af_images_path
-            self.__data_objects_list = ImageData.test_monster_images_list
-            self.__data_objects_path = ImageData.test_monster_images_path
+            self.__data_objects_list = ImageData.af_images_list
+            self.__data_objects_path = ImageData.af_images_path
+            # self.__data_objects_list = ImageData.test_monster_images_list
+            # self.__data_objects_path = ImageData.test_monster_images_path
             self.__script = "Astrub Forest"
             return True
         else:
@@ -991,6 +991,7 @@ class Bot:
         change_attempts_total = 0
 
         while change_attempts_total < change_attempts_allowed:
+
             # Changing maps.
             coords, choice = self.__changing_map_get_move_coords()
             print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
@@ -1002,24 +1003,66 @@ class Bot:
             pyautogui.click()
             pyautogui.keyUp('e')
             change_attempts_total += 1
+
+            # Checking if map was changed.
             start_time = time.time()
+            sc_current_map = self.__changing_map_screenshot_minimap()
 
             while time.time() - start_time < self.__WAIT_CHANGE_MAP:
-                map_coords = self.__get_current_map_coordinates(
-                        self.__data_map
+
+                sc_comparison_map = self.__changing_map_screenshot_minimap()
+                rects = self.__detection.find(
+                        sc_current_map,
+                        sc_comparison_map,
+                        threshold=0.99
                     )
-                if (self.__map_coordinates != map_coords and map_coords):
-                    print(f"[INFO] Waiting '{self.__WAIT_MAP_LOADING}' "
+
+                # If screenshots are different.
+                if len(rects) <= 0:
+                    print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
                           "second(s) for map to load!")
                     time.sleep(self.__WAIT_MAP_LOADING)
                     print("[INFO] Map changed successfully!")
                     return True
+
         else:
             print("[ERROR] Fatal error in "
                   "'__changing_map_change_map()'!")
             print("[ERROR] Too many failed attemps to change map!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
+
+    def __changing_map_screenshot_minimap(self):
+        """
+        Get screenshot of coordinates on minimap.
+
+        Used in '__changing_map_change_map()' when checking if map was
+        changed successfully.
+        
+        Returns
+        ----------
+        screenshot : np.ndarray
+            Screenshot of coordinates on the minimap.
+
+        """
+        # Moving mouse over the red area on the minimap for the black 
+        # map tooltip to appear.
+        pyautogui.moveTo(517, 680)
+        # Waiting makes overall performance better because of less
+        # screenshots.
+        time.sleep(0.25)
+        screenshot = self.__window_capture.custom_area_capture(
+                capture_region=self.__window_capture.MAP_DETECTION_REGION,
+                conversion_code=cv.COLOR_RGB2GRAY,
+                interpolation_flag=cv.INTER_LINEAR,
+                scale_width=100,
+                scale_height=100
+            )
+        # Moving mouse off the red area on the minimap in case a new 
+        # screenshot is required for another detection.
+        pyautogui.move(20, 0)
+
+        return screenshot
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
