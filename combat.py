@@ -40,6 +40,12 @@ class Combat:
         Get coordinates of spell in spellbar.
     get_spell_cast_coordinates()
         Get coordinates of point to click on to cast spell.
+    get_movement_coordinates()
+        Get coordinates to click on to move character on correct cell.
+    get_if_char_on_correct_cell()
+        Check if character is standing on correct cell.
+    move_character()
+        Click on provided coordinates to move character.
     cast_spell()
         Cast spell.
 
@@ -353,7 +359,8 @@ class Combat:
     def get_spell_cast_coordinates(self, 
                                    spell, 
                                    map_coordinates,
-                                   start_cell_color):
+                                   start_cell_color,
+                                   start_cell_coordinates):
         """
         Get coordinates of point to click on to cast spell.
         
@@ -365,6 +372,8 @@ class Combat:
             Current map's coordinates.
         start_cell_color : str
             Color of starting cell.
+        start_cell_coordinates : Tuple[int, int]
+            Coordinates of starting cell.
 
         Returns
         ----------
@@ -392,17 +401,23 @@ class Combat:
             start_cell_color = "b"
 
         # Getting cast coordinates.
-        coordinates = None
+        coords = None
         for _, value in enumerate(self.__spell_cast_data):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
                         if j_key == start_cell_color:
-                            if j_value[spell] is not None:
-                                coordinates = j_value[spell]
-                                return coordinates
+                            if isinstance(j_value[spell], dict):
+                                coords = j_value[spell][start_cell_coordinates]
+                                return coords
+                            else:
+                                coords = j_value[spell]
+                                return coords
 
-    def get_movement_coordinates(self, map_coordinates, start_cell_color):
+    def get_movement_coordinates(self, 
+                                 map_coordinates, 
+                                 start_cell_color,
+                                 start_cell_coordinates):
         """
         Get coordinates to click on to move character on correct cell.
 
@@ -412,6 +427,8 @@ class Combat:
             Current map's coordinates.
         start_cell_color : str
             Starting cell's color.
+        start_cell_coordinates : Tuple[int, int]
+            Starting cell's (x, y) coordinates.
 
         Returns
         ----------
@@ -424,8 +441,12 @@ class Combat:
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
                         if j_key == start_cell_color:
-                            cell_coords = j_value
-                            return cell_coords
+                            if isinstance(j_value, dict):
+                                cell_coords = j_value[start_cell_coordinates]
+                                return cell_coords
+                            else:
+                                cell_coords = j_value
+                                return cell_coords
 
     def get_if_char_on_correct_cell(self, cell_coordinates):
         """

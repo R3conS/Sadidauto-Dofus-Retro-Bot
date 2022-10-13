@@ -237,6 +237,26 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
+    def __detect_inside_or_outside_astrub_bank(self):
+        """
+        Check if character is inside or outside bank.
+        
+        Character must be on '4,-16' map.
+
+        """
+        color = (0, 0, 0)
+        black_pixel_1 = pyautogui.pixelMatchesColor(117, 525, color)
+        black_pixel_2 = pyautogui.pixelMatchesColor(821, 526, color)
+        black_pixel_3 = pyautogui.pixelMatchesColor(454, 90, color)
+
+        if black_pixel_1 and black_pixel_2 and black_pixel_3:
+            print("[INFO] Character is inside bank!")
+            return "inside"
+        else:
+            print("[INFO] Character is outside the bank!")
+            return "outside"
+
+
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
 #----------------------------------------------------------------------#
@@ -290,16 +310,11 @@ class Bot:
         if script == "astrub_forest":
             self.__data_map_killing = MapData.af_killing
             self.__data_map_banking = MapData.af_banking
-            self.__data_objects_list = ImageData.af_images_list
-            self.__data_objects_path = ImageData.af_images_path
-            self.__script = "Astrub Forest"
-            return True
-        elif script == "testing":
-            # Change this to whatever MapData is being tested.
-            # self.__data_map = None
+            # self.__data_objects_list = ImageData.af_images_list
+            # self.__data_objects_path = ImageData.af_images_path
             self.__data_objects_list = ImageData.test_monster_images_list
             self.__data_objects_path = ImageData.test_monster_images_path
-            self.__script = "Testing"
+            self.__script = "Astrub Forest"
             return True
         else:
             print(f"[ERROR] Couldn't find script '{script}' in database ... ")
@@ -321,6 +336,7 @@ class Bot:
         elif pod_percentage < pod_limit:
             self.__data_map = self.__data_map_killing
             self.__state = BotState.CHANGING_MAP
+            #self.__state = BotState.PREPARATION
             return True
 
     def __searching(self):
@@ -739,7 +755,8 @@ class Bot:
 
             move_coords = self.__combat.get_movement_coordinates(
                     self.__preparation_current_map,
-                    self.__preparation_combat_start_cell_color
+                    self.__preparation_combat_start_cell_color,
+                    self.__preparation_combat_start_cell_coords,
                 )
 
             if self.__combat.get_if_char_on_correct_cell(move_coords):
@@ -774,7 +791,8 @@ class Bot:
                 cast_coords = self.__combat.get_spell_cast_coordinates(
                         spell,
                         self.__preparation_current_map,
-                        self.__preparation_combat_start_cell_color
+                        self.__preparation_combat_start_cell_color,
+                        self.__preparation_combat_start_cell_coords
                     )
                 self.__combat.cast_spell(spell, spell_coords, cast_coords)
                 break
@@ -923,14 +941,14 @@ class Bot:
 
         Returns
         ----------
-        move_coords: Tuple[int, int]
+        move_coords : Tuple[int, int]
             (x, y) coordinates to click on for map change.
-        move_choice: str
+        move_choice : str
             Move direction.
 
         """
-        # List of valid directions for moving to change maps.
-        directions = ["top", "bottom", "left", "right"]
+        # List of valid directions for moving.
+        directions = ["top", "bottom", "left", "right", "exit_bank"]
 
         # Loop gets current map's moving directions that are not 'None' 
         # and current map's index in 'MapData'.
@@ -944,8 +962,15 @@ class Bot:
                             possible_directions.append(j_key)
                             map_index = index
 
-        # Generating a random choice from 'possible_directions'.
-        move_choice = random.choice(possible_directions)
+        # 'exit_bank' direction takes precedence over normal directions.
+        if "exit_bank" not in possible_directions:
+            move_choice = random.choice(possible_directions)
+        else:
+            if self.__detect_inside_or_outside_astrub_bank() == "inside":
+                move_choice = "exit_bank"
+            else:
+                possible_directions.remove("exit_bank")
+                move_choice = random.choice(possible_directions)
 
         # Getting (x, y) coordinates.
         move_coords = self.__data_map[map_index]\

@@ -6,8 +6,7 @@ character_name = "Bobas"
 bot = Bot(script="astrub_forest",
           character_name=character_name, 
           official_version=False,
-          debug_window=True,
-          detection_threshold=0.6)
+          debug_window=True)
 
 # For testing.
 # bot = Bot(script="testing"
