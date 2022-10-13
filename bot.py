@@ -20,6 +20,7 @@ class BotState:
     """Bot states enum."""
 
     INITIALIZING = "INITIALIZING"
+    CONTROLLER = "CONTROLLER"
     SEARCHING = "SEARCHING"
     ATTACKING = "ATTACKING"
     PREPARATION = "PREPARATION"
@@ -96,6 +97,12 @@ class Bot:
     __VisualDebugWindow_Thread_thread = None
 
     # Bot state attributes.
+    # 'BotState.CONTROLLER' attributes.
+    # Stores if map that character is on was searched for monsters.
+    # Helps '__controller' determine which 'BotState' to set.
+    __map_searched = False
+    # Stores current map's coordinates.
+    __map_coordinates = None
     # 'BotState.SEARCHING' attributes.
     __obj_rects = []
     __obj_coords = []
@@ -103,13 +110,11 @@ class Bot:
     # Failed attack attempts allowed before searching for monsters.
     __attack_attempts_allowed = 3
     # 'BotState.PREPARATION' attributes.
-    __preparation_current_map = None
-    # Cell combat was started on. For use in "IN_COMBAT" state.
+    # Info of cell the combat was started on.
     __preparation_combat_start_cell_coords = None
     __preparation_combat_start_cell_color = None
-    # 'BotState.CHANGING_MAP' attributes.
-    __changing_map_current_map = None
     # 'BotState.IN_COMBAT' attributes.
+    # Stores if character was moved in combat.
     __in_combat_character_moved = False
 
     # Objects.
@@ -193,6 +198,8 @@ class Bot:
         """
         Get current map's coordinates.
 
+        Parameters
+        ----------
         map_database : list[dict]
             Map's database.
         
@@ -206,34 +213,47 @@ class Bot:
             If detected map doesn't exist in database.
 
         """
-        # Get a screenshot of coordinates on minimap. Moving mouse
-        # over the red area on the minimap for the black map tooltip
-        # to appear.
-        pyautogui.moveTo(517, 680)
-        time.sleep(self.__WAIT_BEFORE_DETECTING_MAP_COORDINATES)
-        screenshot = self.__window_capture.custom_area_capture(
-                capture_region=self.__window_capture.MAP_DETECTION_REGION,
-                conversion_code=cv.COLOR_RGB2GRAY,
-                interpolation_flag=cv.INTER_LINEAR,
-                scale_width=215,
-                scale_height=200
-            )
-        # Moving mouse off the red area on the minimap in case a new 
-        # screenshot is required for another detection.
-        pyautogui.move(20, 0)
+        start_time = time.time()
+        wait_time_before_exit = 10
 
-        # Get map coordinates as a string.
-        r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
-        try:
-            map_coords = r_and_t[0][1]
-            map_coords = map_coords.replace(".", ",")
-        except IndexError:
-            return False
+        while time.time() - start_time < wait_time_before_exit:
 
-        if self.__check_if_map_in_database(map_coords, map_database):
-            return map_coords
+            # Get a screenshot of coordinates on minimap. Moving mouse
+            # over the red area on the minimap for the black map tooltip
+            # to appear.
+            pyautogui.moveTo(517, 680)
+            time.sleep(self.__WAIT_BEFORE_DETECTING_MAP_COORDINATES)
+            screenshot = self.__window_capture.custom_area_capture(
+                    capture_region=self.__window_capture.MAP_DETECTION_REGION,
+                    conversion_code=cv.COLOR_RGB2GRAY,
+                    interpolation_flag=cv.INTER_LINEAR,
+                    scale_width=215,
+                    scale_height=200
+                )
+            # Moving mouse off the red area on the minimap in case a new 
+            # screenshot is required for another detection.
+            pyautogui.move(20, 0)
+
+            # Get map coordinates as a string.
+            r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+            try:
+                map_coords = r_and_t[0][1]
+                map_coords = map_coords.replace(".", ",")
+            except IndexError:
+                continue
+
+            if self.__check_if_map_in_database(map_coords, map_database):
+                return map_coords
+            else:
+                print(f"[ERROR] Map ({map_coords}) doesn't exist in database!")
+                print("[ERROR] Exiting ... ")
+                os._exit(1)
+
         else:
-            print(f"[ERROR] Map ({map_coords}) doesn't exist in database!")
+            print("[ERROR] Fatal error in "
+                  "'__get_current_map_coordinates()'!")
+            print("[ERROR] Exceeded detection time limit of "
+                  f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
@@ -256,6 +276,26 @@ class Bot:
             print("[INFO] Character is outside the bank!")
             return "outside"
 
+    def __get_map_type(self, map_coordinates):
+        """
+        Get current map's type.
+        
+        Parameters
+        ----------
+        map_coordinates : str
+            Current map's coordinates.
+
+        Returns
+        ----------
+        map_type : str
+            Current map's type.
+        
+        """
+        for _, value in enumerate(self.__data_map):
+            for i_key, i_value in value.items():
+                if map_coordinates == i_key:
+                    map_type = i_value["map_type"]
+                    return map_type
 
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
@@ -277,10 +317,9 @@ class Bot:
         if self.__initializing_load_bot_script_data(self.__script):
             print(f"[INFO] Successfully loaded '{self.__script}' script!")
 
-        # Setting correct 'BotState' after initialization.
-        if self.__initializing_set_botstate():
-            print("[INFO] Successfully set initial 'BotState' to "
-                  f"'{self.__state}'!")
+        # Passing control to 'CONTROLLER' state.
+        print(f"[INFO] Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
+        self.__state = BotState.CONTROLLER
 
     def __initializing_load_bot_script_data(self, script):
         """
@@ -321,10 +360,10 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __initializing_set_botstate(self):
-        """Set 'BotState' after initialization."""
+    def __controller(self):
+        """Set bot state according to situation."""
         # TO DO
-        # Pods % getter.
+        # Pods % get method..
         # These values are placeholders.
         pod_percentage = 89
         pod_limit = 90
@@ -333,11 +372,37 @@ class Bot:
             self.__data_map = self.__data_map_banking
             self.__state = BotState.BANKING
             return True
+
         elif pod_percentage < pod_limit:
+
             self.__data_map = self.__data_map_killing
-            self.__state = BotState.CHANGING_MAP
-            #self.__state = BotState.PREPARATION
-            return True
+            self.__map_coordinates = self.__get_current_map_coordinates(
+                    self.__data_map
+                )
+            map_type = self.__get_map_type(self.__map_coordinates)
+
+            if map_type == "fightable":
+
+                if self.__map_searched == False:
+                    print("[INFO] Changing 'BotState' to: "
+                         f"'{BotState.SEARCHING}' ... ")
+                    self.__state = BotState.SEARCHING
+
+                elif self.__map_searched == True:
+                    print("[INFO] Changing 'BotState' to: "
+                         f"'{BotState.CHANGING_MAP}' ... ")
+                    self.__state = BotState.CHANGING_MAP
+
+            elif map_type == "traversable":
+                print("[INFO] Changing 'BotState' to: "
+                     f"'{BotState.CHANGING_MAP}' ... ")
+                self.__state = BotState.CHANGING_MAP
+
+            else:
+                print(f"[ERROR] Invalid map type '{map_type}' for map "
+                        f"'{self.__map_coordinates}'!")
+                print(f"[ERROR] Exiting ... ")
+                os._exit(1)
 
     def __searching(self):
         """Searching state logic."""
@@ -357,28 +422,30 @@ class Bot:
             print("[INFO] Changing 'BotState' to: "
                   f"'{BotState.ATTACKING}' ... ")
             self.__state = BotState.ATTACKING
+            self.__map_searched = False
                 
         # If monsters were NOT detected.
         elif len(self.__obj_coords) <= 0:
             print("[INFO] Couldn't find any monsters!")
             print("[INFO] Changing 'BotState' to: "
-                  f"'{BotState.CHANGING_MAP}' ... ")
-            self.__state = BotState.CHANGING_MAP
+                  f"'{BotState.CONTROLLER}' ... ")
+            self.__state = BotState.CONTROLLER
+            self.__map_searched = True
 
     def __attacking(self):
         """Attacking state logic."""
         if self.__attacking_attack_monster():
             self.__state = BotState.PREPARATION
         else:
-            self.__state = BotState.SEARCHING
+            self.__state = BotState.CONTROLLER
 
     def __attacking_attack_monster(self):
         """
         Attack monster.
         
-        -Gets detected monster coordinates.
-        -Attacks monster.
-        -Waits `__WAIT_AFTER_ATTACKING` seconds for character to attack.
+        - Gets detected monster coordinates.
+        - Attacks monster.
+        - Waits `__WAIT_AFTER_ATTACKING` seconds for character to attack.
 
         Returns
         ----------
@@ -440,7 +507,7 @@ class Bot:
                 print("[INFO] Failed to start combat "
                       f"'{attack_attempts_total}' time(s)!")
                 print("[INFO] Changing 'BotState' to: "
-                      f"'{BotState.SEARCHING}' ... ")
+                      f"'{BotState.CONTROLLER}' ... ")
                 return False
 
     def __preparation(self):
@@ -454,54 +521,24 @@ class Bot:
         allowed_time = 20
 
         while time.time() - start_time < allowed_time:
-            if self.__preparation_detect_map():
-                cells = self.__preparation_get_cells_from_database(
-                        self.__preparation_current_map,
-                        self.__data_map
-                    )
-                e_cells = self.__preparation_get_empty_cells(cells)
-                if self.__preparation_move_char_to_cell(e_cells):
-                    self.__preparation_combat_start_cell_color = \
-                            self.__preparation_get_start_cell_color(
-                                    self.__preparation_current_map,
-                                    self.__data_map,
-                                    self.__preparation_combat_start_cell_coords
-                                )
-                    if self.__preparation_start_combat():
-                        self.__state = BotState.IN_COMBAT
-                        break
+            cells = self.__preparation_get_cells_from_database(
+                    self.__map_coordinates,
+                    self.__data_map
+                )
+            e_cells = self.__preparation_get_empty_cells(cells)
+            if self.__preparation_move_char_to_cell(e_cells):
+                self.__preparation_combat_start_cell_color = \
+                        self.__preparation_get_start_cell_color(
+                                self.__map_coordinates,
+                                self.__data_map,
+                                self.__preparation_combat_start_cell_coords
+                            )
+                if self.__preparation_start_combat():
+                    self.__state = BotState.IN_COMBAT
+                    break
         else:
             print(f"[ERROR] Failed to select starting cell in '{allowed_time}'"
                   " seconds!")
-            print("[ERROR] Exiting ... ")
-            os._exit(1)
-
-    def __preparation_detect_map(self):
-        """
-        Detect current map.
-        
-        Returns
-        ----------
-        True : bool
-            If map was detected successfully.
-        NoReturn
-            Exit program if map wasn't detected within
-            `wait_time_before_exit` seconds.
-        
-        """
-        start_time = time.time()
-        wait_time_before_exit = 10
-
-        while time.time() - start_time < wait_time_before_exit:
-            map_coords = self.__get_current_map_coordinates(self.__data_map)
-            if map_coords:
-                self.__preparation_current_map = map_coords
-                return True
-        else:
-            print("[ERROR] Fatal error in "
-                  "'__preparation_detect_map()'!")
-            print("[ERROR] Exceeded detection time limit of "
-                  f"{wait_time_before_exit} second(s)!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
@@ -743,7 +780,7 @@ class Bot:
 
             elif self.__in_combat_detect_end_of_fight():
                 self.__in_combat_character_moved = False
-                self.__state = BotState.SEARCHING
+                self.__state = BotState.CONTROLLER
                 break
 
     def __in_combat_move_character(self):
@@ -754,7 +791,7 @@ class Bot:
         while attempts < attempts_allowed:
 
             move_coords = self.__combat.get_movement_coordinates(
-                    self.__preparation_current_map,
+                    self.__map_coordinates,
                     self.__preparation_combat_start_cell_color,
                     self.__preparation_combat_start_cell_coords,
                 )
@@ -790,7 +827,7 @@ class Bot:
                 spell_coords = self.__combat.get_spell_coordinates(spell)
                 cast_coords = self.__combat.get_spell_cast_coordinates(
                         spell,
-                        self.__preparation_current_map,
+                        self.__map_coordinates,
                         self.__preparation_combat_start_cell_color,
                         self.__preparation_combat_start_cell_coords
                     )
@@ -867,7 +904,7 @@ class Bot:
                         print("[INFO] Successfully closed 'Fight Results' "
                               "window!")
                         print("[INFO] Changing 'BotState' to: "
-                              f"'{BotState.SEARCHING}' ... ")
+                              f"'{BotState.CONTROLLER}' ... ")
                         return True
                 else:
                     print("[ERROR] Couldn't close 'Fight Results' window in "
@@ -879,61 +916,10 @@ class Bot:
     def __changing_map(self):
         """Changing map state logic."""
         while True:
-
-            if self.__changing_map_detect_map():
-
-                map_type = self.__changing_map_get_map_type()
-
-                if map_type == "fightable":
-                    print(f"[INFO] Current map's type is '{map_type}'!")
-                    print("[INFO] Changing 'BotState' to: "
-                         f"'{BotState.SEARCHING}' ... ")
-                    self.__state = BotState.SEARCHING
-                    break
-
-                elif map_type == "traversable":
-                    print(f"[INFO] Current map's type is '{map_type}'!")
-                    print(f"[INFO] Changing map ... ")
-                    if self.__changing_map_change_map():
-                        continue
-
-                else:
-                    print(f"[ERROR] Invalid map type '{map_type}' for map "
-                          f"'{self.__changing_map_current_map}'!")
-                    print(f"[ERROR] Exiting ... ")
-                    os._exit(1)
-
-    def __changing_map_detect_map(self):
-        """
-        Detect current map.
-        
-        Returns
-        ----------
-        True : bool
-            If map was detected successfully.
-        NoReturn
-            Exit program if map wasn't detected within
-            `wait_time_before_exit` seconds.
-
-        """
-        start_time = time.time()
-        wait_time_before_exit = 10
-
-        while time.time() - start_time < wait_time_before_exit:
-
-            map_coords = self.__get_current_map_coordinates(self.__data_map)
-
-            if map_coords:
-                print(f"[INFO] Character is on map: ({map_coords}) ... ")
-                self.__changing_map_current_map = map_coords
-                return True
-        else:
-            print("[ERROR] Fatal error in "
-                  "'__changing_map_detect_map()'!")
-            print("[ERROR] Exceeded detection time limit of "
-                  f"{wait_time_before_exit} second(s)!")
-            print("[ERROR] Exiting ... ")
-            os._exit(1)
+            if self.__changing_map_change_map():
+                self.__map_searched = False
+                self.__state = BotState.CONTROLLER
+                break
 
     def __changing_map_get_move_coords(self):
         """
@@ -956,7 +942,7 @@ class Bot:
         map_index = None
         for index, value in enumerate(self.__data_map):
             for i_key, i_value in value.items():
-                if self.__changing_map_current_map == i_key:
+                if self.__map_coordinates == i_key:
                     for j_key, j_value in i_value.items():
                         if j_value is not None and j_key in directions:
                             possible_directions.append(j_key)
@@ -974,7 +960,7 @@ class Bot:
 
         # Getting (x, y) coordinates.
         move_coords = self.__data_map[map_index]\
-                                     [self.__changing_map_current_map]\
+                                     [self.__map_coordinates]\
                                      [move_choice]
 
         return move_coords, move_choice
@@ -985,9 +971,8 @@ class Bot:
 
         - Gets coordinates to click on for map change. 
         - Clicks.
-        - Starts comparing current map's coordinates to global
-        coordinates generated by `__changing_map_detect_map()`,
-        has `__WAIT_CHANGE_MAP` seconds for comparison.
+        - Starts comparing locally generated map's coordinates to global
+        coordinates generated in 'BotState.CONTROLLER'.
         - If coordinates are the same after `__WAIT_CHANGE_MAP` seconds
         of comparing, increments `change_attempts_total`, gets new click
         coordinates and tries to change maps again.
@@ -1023,8 +1008,7 @@ class Bot:
                 map_coords = self.__get_current_map_coordinates(
                         self.__data_map
                     )
-                if (self.__changing_map_current_map != map_coords 
-                    and map_coords):
+                if (self.__map_coordinates != map_coords and map_coords):
                     print(f"[INFO] Waiting '{self.__WAIT_MAP_LOADING}' "
                           "second(s) for map to load!")
                     time.sleep(self.__WAIT_MAP_LOADING)
@@ -1037,14 +1021,6 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __changing_map_get_map_type(self):
-        """Get current map's type."""
-        for _, value in enumerate(self.__data_map):
-            for i_key, i_value in value.items():
-                if self.__changing_map_current_map == i_key:
-                    map_type = i_value["map_type"]
-                    return map_type
-
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
 #----------------------------------------------------------------------#
@@ -1056,6 +1032,10 @@ class Bot:
             # The bot always starts up in this (INITIALIZING) state. 
             if self.__state == BotState.INITIALIZING:
                 self.__initializing()
+
+            # Determines what state to switch to when out of combat.
+            elif self.__state == BotState.CONTROLLER:
+                self.__controller()
 
             # Handles monster detection.
             elif self.__state == BotState.SEARCHING:
