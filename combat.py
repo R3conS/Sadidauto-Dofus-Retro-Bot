@@ -58,8 +58,6 @@ class Combat:
     # Otherwise when character passes quickly at the start of turn,
     # detection starts too early and falsely detects another turn.
     __WAIT_AFTER_TURN_PASS = 0.5
-    # Giving time for character to run to cell after clicking.
-    __WAIT_CHARACTER_MOVING = 1.5
 
     # Private class attributes.
     # 'Pyautogui' mouse movement duration. Default is 0.1, basically
@@ -381,13 +379,16 @@ class Combat:
             (x, y) `coordinates` of where to click to cast `spell`.
 
         """
-        # Converting parameters to be compatible with keys in
-        # 'self.__spell_cast_data'.
-        if "\\" in spell:
-            spell = spell.split("\\")
-            spell = spell[1].split(".")
+        # Getting spell name out of path to spell image.
+        if "." in spell:
+            spell = spell.split(".")
             spell = spell[0]
+            if "\\" in spell:
+                spell = spell[::-1]
+                spell = spell.split("\\")
+                spell = spell[0][::-1]
 
+        # Converting parameters to be compatible with keys in 'data.py'.
         if spell == "earthquake":
             spell = "e"
         elif spell == "poisoned_wind":
@@ -502,7 +503,6 @@ class Combat:
         x, y = cell_coordinates
         pyautogui.moveTo(x=x, y=y, duration=self.__move_duration)
         pyautogui.click()
-        time.sleep(self.__WAIT_CHARACTER_MOVING)
 
     def cast_spell(self, spell, spell_coordinates, cast_coordinates):
         """
@@ -518,10 +518,16 @@ class Combat:
             (x, y) coordinates of where to click to cast `spell`.
         
         """
-        spell = spell.split("\\")
-        spell = spell[1].split(".")
-        spell = spell[0].replace("_", " ")
-        spell = spell.title()
+        # Formatting spell name.
+        if "." in spell:
+            spell = spell.split(".")
+            spell = spell[0]
+            if "\\" in spell:
+                spell = spell[::-1]
+                spell = spell.split("\\")
+                spell = spell[0][::-1]
+                spell = spell.replace("_", " ")
+                spell = spell.title()
 
         print(f"[INFO] Casting spell: {spell} ... ")
         pyautogui.moveTo(spell_coordinates[0], 

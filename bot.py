@@ -1,4 +1,4 @@
-"""Amakna Castle Gobballs script."""
+"""Main bot logic."""
 
 import threading
 import time
@@ -8,6 +8,7 @@ import random
 import cv2 as cv
 import pyautogui
 
+from bank import Bank
 from combat import Combat
 from data import ImageData, MapData
 from detection import Detection
@@ -96,23 +97,36 @@ class Bot:
     __VisualDebugWindow_Thread_stopped = True
     __VisualDebugWindow_Thread_thread = None
 
-    # Bot state attributes.
+    # 'BotState' attributes.
+    #-----------------------
     # 'BotState.CONTROLLER' attributes.
     # Stores if map that character is on was searched for monsters.
     # Helps '__controller' determine which 'BotState' to set.
     __map_searched = False
     # Stores current map's coordinates.
     __map_coordinates = None
+    # Store maximum allowed pod percentage, bot banks when reached.
+    __pod_limit = 15
+    # Counts total fights. Used to determine if it's time to check pods.
+    __fight_counter = 0
+    # Is character overloaded with pods or not.
+    __character_overloaded = False
+    # Counts total completed fights. Just for statistics.
+    __total_fights = 0
+
     # 'BotState.SEARCHING' attributes.
     __obj_rects = []
     __obj_coords = []
+
     # 'BotState.ATTACKING' attributes.
     # Failed attack attempts allowed before searching for monsters.
     __attack_attempts_allowed = 3
+
     # 'BotState.PREPARATION' attributes.
     # Info of cell the combat was started on.
     __preparation_combat_start_cell_coords = None
     __preparation_combat_start_cell_color = None
+
     # 'BotState.IN_COMBAT' attributes.
     # Stores if character was moved in combat.
     __in_combat_character_moved = False
@@ -121,6 +135,7 @@ class Bot:
     __threading_tools = ThreadingTools()
     __window_capture = WindowCapture()
     __detection = Detection()
+    __bank = Bank()
 
 #----------------------------------------------------------------------#
 #-----------------------------CONSTRUCTOR------------------------------#
@@ -278,25 +293,6 @@ class Bot:
                     map_type = i_value["map_type"]
                     return map_type
 
-    def __detect_inside_or_outside_astrub_bank(self):
-        """
-        Check if character is inside or outside bank.
-        
-        Character must be on '4,-16' map.
-
-        """
-        color = (0, 0, 0)
-        black_pixel_1 = pyautogui.pixelMatchesColor(117, 525, color)
-        black_pixel_2 = pyautogui.pixelMatchesColor(821, 526, color)
-        black_pixel_3 = pyautogui.pixelMatchesColor(454, 90, color)
-
-        if black_pixel_1 and black_pixel_2 and black_pixel_3:
-            print("[INFO] Character is inside bank!")
-            return "inside"
-        else:
-            print("[INFO] Character is outside the bank!")
-            return "outside"
-
 #----------------------------------------------------------------------#
 #--------------------------BOT STATE METHODS---------------------------#
 #----------------------------------------------------------------------#
@@ -362,19 +358,29 @@ class Bot:
 
     def __controller(self):
         """Set bot state according to situation."""
-        # TO DO
-        # Pods % get method..
-        # These values are placeholders.
-        pod_percentage = 89
-        pod_limit = 90
+        if self.__fight_counter % 6 == 0:
+            # Incrementing by '1' instantly so bot doesn't check pods
+            # everytime 'controller' is called.
+            self.__fight_counter += 1
 
-        if pod_percentage >= pod_limit:
+            pods_percentage = self.__bank.get_pods_percentage()
+
+            if pods_percentage >= self.__pod_limit:
+                print("[INFO] Overloaded! Going to bank ... ")
+                self.__character_overloaded = True
+            else:
+                print("[INFO] Not overloaded! Continuing to hunt ... ")
+                self.__character_overloaded = False
+
+        if self.__character_overloaded:
             self.__data_map = self.__data_map_banking
+            self.__map_coordinates = self.__get_current_map_coordinates(
+                    self.__data_map
+                )
+            map_type = self.__get_map_type(self.__map_coordinates)
             self.__state = BotState.BANKING
-            return True
 
-        elif pod_percentage < pod_limit:
-
+        elif not self.__character_overloaded:
             self.__data_map = self.__data_map_killing
             self.__map_coordinates = self.__get_current_map_coordinates(
                     self.__data_map
@@ -780,6 +786,8 @@ class Bot:
 
             elif self.__in_combat_detect_end_of_fight():
                 self.__in_combat_character_moved = False
+                self.__fight_counter += 1
+                self.__total_fights += 1
                 self.__state = BotState.CONTROLLER
                 break
 
@@ -802,10 +810,20 @@ class Bot:
                 # is visible and ready for detection.
                 pyautogui.moveTo(x=609, y=752)
                 return True
+
             else:
                 print("[INFO] Moving character ... ")
                 self.__combat.move_character(move_coords)
-                attempts += 1
+
+                start_time = time.time()
+                wait_time = 3
+
+                while time.time() - start_time < wait_time:
+                    if self.__combat.get_if_char_on_correct_cell(move_coords):
+                        pyautogui.moveTo(x=609, y=752)
+                        return True
+                else:
+                    attempts += 1
 
         else:
             print(f"[ERROR] Failed to move character in '{attempts}' attempts!")
@@ -934,30 +952,22 @@ class Bot:
 
         """
         # List of valid directions for moving.
-        directions = ["top", "bottom", "left", "right", "exit_bank"]
+        directions = ["top", "bottom", "left", "right"]
 
-        # Loop gets current map's moving directions that are not 'None' 
-        # and current map's index in 'MapData'.
-        possible_directions = []
+        # Get all possible moving directions from 'MapData'. 
+        p_directions = []
         map_index = None
         for index, value in enumerate(self.__data_map):
             for i_key, i_value in value.items():
                 if self.__map_coordinates == i_key:
-                    for j_key, j_value in i_value.items():
-                        if j_value is not None and j_key in directions:
-                            possible_directions.append(j_key)
+                    for j_key, _ in i_value.items():
+                        if j_key in directions:
+                            p_directions.append(j_key)
                             map_index = index
 
-        # 'exit_bank' direction takes precedence over normal directions.
-        if "exit_bank" not in possible_directions:
-            move_choice = random.choice(possible_directions)
-        else:
-            if self.__detect_inside_or_outside_astrub_bank() == "inside":
-                move_choice = "exit_bank"
-            else:
-                possible_directions.remove("exit_bank")
-                move_choice = random.choice(possible_directions)
-
+        # Generating a random choice from gathered directions.
+        move_choice = random.choice(p_directions)
+  
         # Getting (x, y) coordinates.
         move_coords = self.__data_map[map_index]\
                                      [self.__map_coordinates]\
@@ -971,12 +981,10 @@ class Bot:
 
         - Gets coordinates to click on for map change. 
         - Clicks.
-        - Starts comparing locally generated map's coordinates to global
-        coordinates generated in 'BotState.CONTROLLER'.
-        - If coordinates are the same after `__WAIT_CHANGE_MAP` seconds
-        of comparing, increments `change_attempts_total`, gets new click
-        coordinates and tries to change maps again.
-        - If coordinates are different, means map change was successful.
+        - Checks if map was changed successfully.
+        - If map wasn't changed after `__WAIT_CHANGE_MAP` seconds, 
+        increments `change_attempts_total`, gets new click coordinates 
+        and tries to change maps again.
 
         Returns
         ----------
@@ -1006,23 +1014,10 @@ class Bot:
 
             # Checking if map was changed.
             start_time = time.time()
-            sc_current_map = self.__changing_map_screenshot_minimap()
+            sc_mm = self.__changing_map_screenshot_minimap()
 
             while time.time() - start_time < self.__WAIT_CHANGE_MAP:
-
-                sc_comparison_map = self.__changing_map_screenshot_minimap()
-                rects = self.__detection.find(
-                        sc_current_map,
-                        sc_comparison_map,
-                        threshold=0.99
-                    )
-
-                # If screenshots are different.
-                if len(rects) <= 0:
-                    print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
-                          "second(s) for map to load!")
-                    time.sleep(self.__WAIT_MAP_LOADING)
-                    print("[INFO] Map changed successfully!")
+                if self.__changing_map_detect_if_map_changed(sc_mm):
                     return True
 
         else:
@@ -1064,6 +1059,62 @@ class Bot:
 
         return screenshot
 
+    def __changing_map_detect_if_map_changed(self, sc_minimap):
+        """
+        Check if map was changed successfully.
+
+        Compares `sc_minimap` against locally taken screenshot
+        of minimap `sc_minimap_needle`. If images are different means
+        map was changed successfully.
+
+        Parameters
+        ----------
+        sc_minimap : np.ndarray
+            Screenshot of minimap.
+
+        Returns
+        ----------
+        True : bool
+            If map was changed successfully.
+
+        """
+        sc_minimap_needle = self.__changing_map_screenshot_minimap()
+        minimap_rects = self.__detection.find(sc_minimap,
+                                              sc_minimap_needle,
+                                              threshold=0.99)
+
+        # If screenshots are different.
+        if len(minimap_rects) <= 0:
+            print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
+                    "second(s) for map to load!")
+            time.sleep(self.__WAIT_MAP_LOADING)
+            print("[INFO] Map changed successfully!")
+            return True
+
+    def __banking(self):
+        """Banking logic."""
+        while True:
+
+            if self.__map_coordinates == "4,-16":
+
+                character_inside_bank = self.__bank.inside_or_outside()
+
+                if not character_inside_bank:
+                    if self.__bank.enter_bank():
+                        continue
+
+                elif character_inside_bank:
+                    if self.__bank.open_bank_vault():
+                        if self.__bank.deposit_items():
+                            if self.__bank.close_bank_vault():
+                                if self.__bank.exit_bank():
+                                    self.__fight_counter = 0
+                                    self.__state = BotState.CONTROLLER
+                                    break
+
+            else:
+                self.__state = BotState.CHANGING_MAP
+
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
 #----------------------------------------------------------------------#
@@ -1099,11 +1150,10 @@ class Bot:
             # Handles map changing actions.
             elif self.__state == BotState.CHANGING_MAP:
                 self.__changing_map()
-                      
+
+            # Handles banking.
             elif self.__state == BotState.BANKING:
-                # TO DO:
-                # Create banking logic.
-                pass
+                self.__banking()
 
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#

@@ -9,26 +9,19 @@ class ImageData:
     """Holds image data."""
 
     # Test images.
-    test_monster_images_path = "test_monster_images\\"
+    test_monster_images_path = "images\\test_monster_images\\"
     test_monster_images_list = ["test_1.jpg", "test_2.jpg", 
                                 "test_3.jpg", "test_4.jpg"]
 
     # Status images path.
-    s_i = "status_images\\"
+    s_i = "images\\status_images\\"
 
-    # Amakna Castle Gobbals.
-    acg_images_path = "monster_images\\amakna_castle_gobballs\\"
-    acg_images_list = [
-            "Gobball_BL_1.jpg", "Gobball_BR_1.jpg", 
-            "Gobball_TL_1.jpg", "Gobball_TR_1.jpg",
-            "GobblyBlack_BL_1.jpg", "GobblyBlack_BR_1.jpg",
-            "GobblyBlack_TL_1.jpg", "GobblyBlack_TR_1.jpg",
-            "GobblyWhite_BL_1.jpg", "GobblyWhite_BR_1.jpg",
-            "GobblyWhite_TL_1.jpg", "GobblyWhite_TR_1.jpg",
-        ]
+    # Bank images.
+    bank_images_path = "images\\bank_images\\"
+    empty_bank_slot = bank_images_path + "empty_bank_slot.jpg"
 
     # Astrub Forest.
-    af_images_path = "monster_images\\astrub_forest\\"
+    af_images_path = "images\\monster_images\\astrub_forest\\"
     af_images_list = [
             "Boar_BL_1.jpg", "Boar_BR_1.jpg", "Boar_TL_1.jpg", "Boar_TR_1.jpg",
             "Boar_BL_2.jpg", "Boar_BR_2.jpg", "Boar_TL_2.jpg", "Boar_TR_2.jpg",
@@ -56,6 +49,14 @@ class ImageData:
             "Wolf_BL_4.jpg", "Wolf_BR_4.jpg", "Wolf_TL_4.jpg", "Wolf_TR_4.jpg",
         ]
 
+    # NPC Images
+    astrub_banker_path = "images\\npc_images\\astrub_banker\\"
+    astrub_banker_list = [
+            "bnkr_BL_1.jpg", "bnkr_BR_1.jpg", "bnkr_TL_1.jpg","bnkr_TR_1.jpg",
+            "bnkr_BL_2.jpg", "bnkr_BR_2.jpg", "bnkr_TL_2.jpg","bnkr_TR_2.jpg",
+            "bnkr_BL_3.jpg", "bnkr_BR_3.jpg", "bnkr_TL_3.jpg","bnkr_TR_3.jpg",
+            "bnkr_BL_4.jpg", "bnkr_BR_4.jpg", "bnkr_TL_4.jpg","bnkr_TR_4.jpg",
+        ]
 
 #----------------------------------------------------------------------#
 #---------------------------MOVEMENT RELATED---------------------------#
@@ -87,8 +88,7 @@ class MapData:
     # 'Astrub Forest' script map data for hunting mobs.
     af_killing = [
         # 'Astrub Bank' map.
-        {"4,-16" : {"top" : (467, 87), "exit_bank": (266, 495),
-                    "map_type": "traversable"}},
+        {"4,-16" : {"top"   : (467, 87),  "map_type": "traversable"}},
         {"4,-17" : {"top"   : (434, 71),  "map_type": "traversable"}},
         {"4,-18" : {"top"   : (499, 70),  "map_type": "traversable"}},
         {"4,-19" : {"top"   : (501, 69),  "map_type": "traversable"}},
@@ -143,7 +143,7 @@ class MapData:
 
     # 'Astrub Forest' script map data for banking.
     af_banking = [
-        # TO DO
+        {"4,-16" : {"top" : (467, 87), "map_type": "traversable"}},
     ]
 
 
@@ -155,7 +155,7 @@ class MapData:
 class CombatData:
     """Holds paths, verifiers."""
 
-    images_path = "combat_images\\"
+    images_path = "images\\combat_images\\"
     icon_turn_pass = images_path + "icon_turn_pass.jpg"
 
 
