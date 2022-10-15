@@ -26,7 +26,7 @@ class WindowCapture:
     # Region of whole game window. Includes windows top bar.
     GAMEWINDOW_REGION = (0, 0, 933, 755)
     # Region to screenshot for map detection.
-    MAP_DETECTION_REGION = (522, 650, 48, 30)
+    MAP_DETECTION_REGION = (525, 650, 45, 30)
     # Region to screenshot for AP/MP detection.
     AP_DETECTION_REGION = (465, 610, 20, 25)
     MP_DETECTION_REGION = (570, 615, 15, 25)

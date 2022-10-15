@@ -7,43 +7,8 @@ import cv2 as cv
 import pyautogui
 
 from detection import Detection
+from data import CombatData
 from window_capture import WindowCapture
-
-
-class CombatData:
-    """Holds paths, verifiers."""
-
-    images_path = "combat_images\\"
-    icon_turn_pass = images_path + "icon_turn_pass.jpg"
-
-
-class Spells:
-    """Holds spell data."""
-
-    e_quake = CombatData.images_path + "earthquake.jpg"
-    p_wind = CombatData.images_path + "poisoned_wind.jpg"
-    s_power = CombatData.images_path + "sylvan_power.jpg"
-    spells = [e_quake, p_wind, s_power]
-
-    # Spell cast data for 'Amakna Castle Gobballs'.
-    acg = [
-        {"3,-7": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"3,-8": {"r": {"e": (433, 238), "p": (  None  ), "s": (  None  )},
-                  "b": {"e": (433, 238), "p": (  None  ), "s": (  None  )}}},
-        {"3,-9": {"r": {"e": (467, 323), "p": (  None  ), "s": (  None  )},
-                  "b": {"e": (467, 323), "p": (  None  ), "s": (  None  )}}},
-        {"4,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"4,-9": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"5,-8": {"r": {"e": (  None  ), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (  None  ), "p": (  None  ), "s": (  None  )}}},
-        {"5,-9": {"r": {"e": (465, 358), "p": (  None  ), "s": (  None  )}, 
-                  "b": {"e": (465, 358), "p": (  None  ), "s": (  None  )}}},
-    ]
-
-    af = []
 
 
 class Combat:
@@ -54,6 +19,13 @@ class Combat:
     ----------
     character_name : str
         Character's nickname.
+
+    Public class attributes
+    ----------
+    data_spell_cast : list[dict]
+        Stores spell cast data based on loaded bot script (in 'bot.py').
+    data_movement : list[dict]
+        Stores movement data based on loaded bot script (in 'bot.py').
 
     Methods
     ----------
@@ -75,6 +47,12 @@ class Combat:
         Get coordinates of spell in spellbar.
     get_spell_cast_coordinates()
         Get coordinates of point to click on to cast spell.
+    get_movement_coordinates()
+        Get coordinates to click on to move character on correct cell.
+    get_if_char_on_correct_cell()
+        Check if character is standing on correct cell.
+    move_character()
+        Click on provided coordinates to move character.
     cast_spell()
         Cast spell.
 
@@ -92,14 +70,18 @@ class Combat:
     # 'Pyautogui' mouse movement duration. Default is 0.1, basically
     # instant. Messes up spell casting if left on default.
     __move_duration = 0.15
-    # Stores spell casting data according to loaded bot script.
-    __spell_cast_data = None
 
     # Objects
     __window_capture = WindowCapture()
     __detection = Detection()
 
-    def __init__(self, character_name: str, script: str):
+    # Public class attributes.
+    # Stores spell cast data based on loaded bot script (in 'bot.py').
+    data_spell_cast = None
+    # Stores movement data based on loaded bot script (in 'bot.py').
+    data_movement = None
+
+    def __init__(self, character_name: str):
         """
         Constructor
 
@@ -110,15 +92,6 @@ class Combat:
 
         """
         self.character_name = character_name
-
-        # Loading proper spell cast data according to 'script'.
-        # The validity of 'script' is checked within main bot logic.
-        if isinstance(script, str):
-            script = script.lower()
-            if script == "amakna_castle_gobballs":
-                self.__spell_cast_data = Spells.acg
-            elif script == "astrub_forest":
-                self.__spell_cast_data = Spells.af
 
     def get_ap(self):
         """
@@ -313,7 +286,7 @@ class Combat:
 
         """
         available_spells = []
-        for spell in Spells.spells:
+        for spell in CombatData.Spell.spells:
             if self.get_spell_status(spell):
                 available_spells.append(spell)
         return available_spells
@@ -383,9 +356,9 @@ class Combat:
 
     def get_spell_cast_coordinates(self, 
                                    spell, 
-                                   map_coordinates, 
-                                   start_cell_coords,
-                                   start_cell_color):
+                                   map_coordinates,
+                                   start_cell_color,
+                                   start_cell_coordinates):
         """
         Get coordinates of point to click on to cast spell.
         
@@ -395,10 +368,10 @@ class Combat:
             Name of `spell`.
         map_coordinates : str
             Current map's coordinates.
-        start_cell_coords : Tuple[int, int]
-            Coordinates of cell on which character started combat.
         start_cell_color : str
             Color of starting cell.
+        start_cell_coordinates : Tuple[int, int]
+            Coordinates of starting cell.
 
         Returns
         ----------
@@ -406,13 +379,16 @@ class Combat:
             (x, y) `coordinates` of where to click to cast `spell`.
 
         """
-        # Converting parameters to be compatible with keys in
-        # 'self.__spell_cast_data'.
-        if "\\" in spell:
-            spell = spell.split("\\")
-            spell = spell[1].split(".")
+        # Getting spell name out of path to spell image.
+        if "." in spell:
+            spell = spell.split(".")
             spell = spell[0]
+            if "\\" in spell:
+                spell = spell[::-1]
+                spell = spell.split("\\")
+                spell = spell[0][::-1]
 
+        # Converting parameters to be compatible with keys in 'data.py'.
         if spell == "earthquake":
             spell = "e"
         elif spell == "poisoned_wind":
@@ -426,18 +402,107 @@ class Combat:
             start_cell_color = "b"
 
         # Getting cast coordinates.
-        coordinates = None
-        for _, value in enumerate(self.__spell_cast_data):
+        coords = None
+        for _, value in enumerate(self.data_spell_cast):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
                         if j_key == start_cell_color:
-                            if j_value[spell] is not None:
-                                coordinates = j_value[spell]
-                                return coordinates
+                            if isinstance(j_value[spell], dict):
+                                coords = j_value[spell][start_cell_coordinates]
+                                return coords
                             else:
-                                coordinates = start_cell_coords
-                                return coordinates
+                                coords = j_value[spell]
+                                return coords
+
+    def get_movement_coordinates(self, 
+                                 map_coordinates, 
+                                 start_cell_color,
+                                 start_cell_coordinates):
+        """
+        Get coordinates to click on to move character on correct cell.
+
+        Parameters
+        ----------
+        map_coordinates : str
+            Current map's coordinates.
+        start_cell_color : str
+            Starting cell's color.
+        start_cell_coordinates : Tuple[int, int]
+            Starting cell's (x, y) coordinates.
+
+        Returns
+        ----------
+        cell_coords : tuple[int, int]
+            (x, y) coordinates of cell to click on.
+
+        """
+        for _, value in enumerate(self.data_movement):
+            for i_key, i_value in value.items():
+                if i_key == map_coordinates:
+                    for j_key, j_value in i_value.items():
+                        if j_key == start_cell_color:
+                            if isinstance(j_value, dict):
+                                cell_coords = j_value[start_cell_coordinates]
+                                return cell_coords
+                            else:
+                                cell_coords = j_value
+                                return cell_coords
+
+    def get_if_char_on_correct_cell(self, cell_coordinates):
+        """
+        Check if character is standing on correct cell.
+
+        Parameters
+        ----------
+        cell_coordinates : tuple[int, int]
+            (x, y) coordinates of cell to check.
+        
+        Returns
+        ----------
+        True : bool
+            If character is standing on correct cell.
+        False : bool
+            If character is standing on wrong cell.
+
+        """
+        x, y = cell_coordinates
+
+        # All colors except last one are from tactical mode.
+        # First one is from 'Ascalion', next 4 are from official 
+        # 'Dofus Retro'. The last color is orange color that appears when 
+        # cursor is hovered over cells for movement.
+        colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
+                  (118, 122, 127), (131, 135, 141), (255, 102, 0)]
+
+        # Comparing every color from 'colors' list to pixel color 
+        # at (x, y) coordinates. Counting failed matches.
+        counter = 0
+        for color in colors:
+            pixel = pyautogui.pixelMatchesColor(x, y, color)
+            if not pixel:
+                counter += 1
+
+        # If no colors from 'colors' list match pixel color at
+        # (x, y), then character is standing on correct cell.
+        if counter == len(colors):
+            return True
+        else:
+            return False
+
+    def move_character(self, cell_coordinates):
+        """
+        Click on provided coordinates to move character.
+
+        Parameters
+        ----------
+        cell_coordinates : tuple[int, int]
+            Coordinates to click on.
+
+        """
+        x, y = cell_coordinates
+        pyautogui.moveTo(x=x, y=y, duration=self.__move_duration)
+        pyautogui.click()
 
     def cast_spell(self, spell, spell_coordinates, cast_coordinates):
         """
@@ -453,12 +518,18 @@ class Combat:
             (x, y) coordinates of where to click to cast `spell`.
         
         """
-        spell = spell.split("\\")
-        spell = spell[1].split(".")
-        spell = spell[0].replace("_", " ")
-        spell = spell.title()
+        # Formatting spell name.
+        if "." in spell:
+            spell = spell.split(".")
+            spell = spell[0]
+            if "\\" in spell:
+                spell = spell[::-1]
+                spell = spell.split("\\")
+                spell = spell[0][::-1]
+                spell = spell.replace("_", " ")
+                spell = spell.title()
 
-        print(f"[INFO] Casting spell: {spell} ... ")
+        print(f"[INFO] Casting spell: '{spell}' ... ")
         pyautogui.moveTo(spell_coordinates[0], 
                          spell_coordinates[1], 
                          duration=self.__move_duration)
