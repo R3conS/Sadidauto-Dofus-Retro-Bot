@@ -16,6 +16,13 @@ class Bank:
     """
     Holds methods related to banking.
 
+    Public class attributes
+    ----------
+    img_list : list[str]
+        `list` of banker 'NPC' images. Loaded in 'bot.py'.
+    img_path : str
+        Path to folder where images are stored. Loaded in 'bot.py'.
+    
     Methods
     ----------
     get_pods_percentage()
@@ -35,12 +42,18 @@ class Bank:
     
     """
 
+    # Private class attributes.
     # Pyautogui mouse movement duration. Default is '0.1', too fast.
     __move_duration = 0.15
 
     # Objects
     __detection = Detection()
     __window_capture = WindowCapture()
+
+    # Public class attributes.
+    # Stores banker 'NPC' image data. Loaded in 'bot.py'.
+    img_list = None
+    img_path = None
 
     def __inventory(self):
         """Get status of inventory (opened/closed)."""
@@ -126,8 +139,8 @@ class Bank:
 
             screenshot = self.__window_capture.gamewindow_capture()
             rectangles, coordinates = self.__detection.detect_objects(
-                    ImageData.astrub_banker_list,
-                    ImageData.astrub_banker_path,
+                    self.img_list,
+                    self.img_path,
                     screenshot
                 )
 

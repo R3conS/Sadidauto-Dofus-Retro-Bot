@@ -8,12 +8,6 @@ bot = Bot(script="astrub_forest",
           official_version=False,
           debug_window=True)
 
-# For testing.
-# bot = Bot(script="testing"
-#           character_name=character_name,
-#           official_version=False,
-#           debug_window=True)
-
 
 def main():
     bot.Bot_Thread_start()

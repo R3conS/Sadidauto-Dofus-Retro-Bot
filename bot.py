@@ -10,7 +10,7 @@ import pyautogui
 
 from bank import Bank
 from combat import Combat
-from data import ImageData, MapData
+from data import ImageData, MapData, CombatData
 from detection import Detection
 from game_window import GameWindow
 from threading_tools import ThreadingTools
@@ -97,16 +97,24 @@ class Bot:
     __VisualDebugWindow_Thread_stopped = True
     __VisualDebugWindow_Thread_thread = None
 
+    # Objects.
+    __threading_tools = ThreadingTools()
+    __window_capture = WindowCapture()
+    __detection = Detection()
+    __bank = Bank()
+
     # 'BotState' attributes.
     #-----------------------
-    # 'BotState.CONTROLLER' attributes.
+    # 'BotState.CONTROLLER'.
     # Stores if map that character is on was searched for monsters.
     # Helps '__controller' determine which 'BotState' to set.
     __map_searched = False
     # Stores current map's coordinates.
     __map_coordinates = None
     # Store maximum allowed pod percentage, bot banks when reached.
-    __pod_limit = 15
+    # If character has at least 1 pod taken, the calculated % will be 
+    # '14'.
+    __pod_limit = 85
     # Counts total fights. Used to determine if it's time to check pods.
     __fight_counter = 0
     # Is character overloaded with pods or not.
@@ -114,28 +122,22 @@ class Bot:
     # Counts total completed fights. Just for statistics.
     __total_fights = 0
 
-    # 'BotState.SEARCHING' attributes.
+    # 'BotState.SEARCHING'.
     __obj_rects = []
     __obj_coords = []
 
-    # 'BotState.ATTACKING' attributes.
+    # 'BotState.ATTACKING'.
     # Failed attack attempts allowed before searching for monsters.
     __attack_attempts_allowed = 3
 
-    # 'BotState.PREPARATION' attributes.
+    # 'BotState.PREPARATION'.
     # Info of cell the combat was started on.
     __preparation_combat_start_cell_coords = None
     __preparation_combat_start_cell_color = None
 
-    # 'BotState.IN_COMBAT' attributes.
+    # 'BotState.IN_COMBAT'.
     # Stores if character was moved in combat.
     __in_combat_character_moved = False
-
-    # Objects.
-    __threading_tools = ThreadingTools()
-    __window_capture = WindowCapture()
-    __detection = Detection()
-    __bank = Bank()
 
 #----------------------------------------------------------------------#
 #-----------------------------CONSTRUCTOR------------------------------#
@@ -159,7 +161,8 @@ class Bot:
             Controls whether on official or private 'Dofus Retro' 
             servers. Official = `True`.
         script : str
-            Bot script to load. Available: 'astrub_forest'.
+            Bot script to load. Available: 'astrub_forest',
+            'astrub_forest_reversed'.
         debug_window : bool, optional
             Whether to open visual debug window. Defaults to: `False`.
         detection_threshold : bool, optional
@@ -174,7 +177,7 @@ class Bot:
         self.__detection_threshold = detection_threshold
         self.__state = bot_state
         self.__game_window = GameWindow(character_name, official_version)
-        self.__combat = Combat(character_name, script)
+        self.__combat = Combat(character_name)
         
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
@@ -319,7 +322,7 @@ class Bot:
 
     def __initializing_load_bot_script_data(self, script):
         """
-        Load map and image data based on `script`.
+        Load data based on `script`.
 
         Parameters
         ----------
@@ -343,14 +346,31 @@ class Bot:
         script = script.lower()
 
         if script == "astrub_forest":
-            self.__data_map_killing = MapData.af_killing
-            self.__data_map_banking = MapData.af_banking
-            self.__data_objects_list = ImageData.af_images_list
-            self.__data_objects_path = ImageData.af_images_path
-            # self.__data_objects_list = ImageData.test_monster_images_list
+            self.__data_map_killing = MapData.AstrubForest.killing
+            self.__data_map_banking = MapData.AstrubForest.banking
+            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
+            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
+            self.__combat.data_movement = CombatData.Movement.AstrubForest.af
+            self.__bank.img_path = ImageData.AstrubForest.banker_images_path
+            self.__bank.img_list = ImageData.AstrubForest.banker_images_list
             # self.__data_objects_path = ImageData.test_monster_images_path
+            # self.__data_objects_list = ImageData.test_monster_images_list
             self.__script = "Astrub Forest"
             return True
+
+        elif script == "astrub_forest_reversed":
+            self.__data_map_killing = MapData.AstrubForest.killing_reversed
+            self.__data_map_banking = MapData.AstrubForest.banking
+            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
+            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
+            self.__combat.data_movement = CombatData.Movement.AstrubForest.af
+            self.__bank.img_path = ImageData.AstrubForest.banker_images_path
+            self.__bank.img_list = ImageData.AstrubForest.banker_images_list
+            self.__script = "Astrub Forest - Reversed"
+            return True
+
         else:
             print(f"[ERROR] Couldn't find script '{script}' in database ... ")
             print("[ERROR] Exiting ... ")
@@ -369,7 +389,7 @@ class Bot:
                 print("[INFO] Overloaded! Going to bank ... ")
                 self.__character_overloaded = True
             else:
-                print("[INFO] Not overloaded! Continuing to hunt ... ")
+                print("[INFO] Not overloaded! Hunting ... ")
                 self.__character_overloaded = False
 
         if self.__character_overloaded:
@@ -377,7 +397,6 @@ class Bot:
             self.__map_coordinates = self.__get_current_map_coordinates(
                     self.__data_map
                 )
-            map_type = self.__get_map_type(self.__map_coordinates)
             self.__state = BotState.BANKING
 
         elif not self.__character_overloaded:
@@ -390,18 +409,18 @@ class Bot:
             if map_type == "fightable":
 
                 if self.__map_searched == False:
-                    print("[INFO] Changing 'BotState' to: "
-                         f"'{BotState.SEARCHING}' ... ")
+                    # print("[INFO] Changing 'BotState' to: "
+                    #      f"'{BotState.SEARCHING}' ... ")
                     self.__state = BotState.SEARCHING
 
                 elif self.__map_searched == True:
-                    print("[INFO] Changing 'BotState' to: "
-                         f"'{BotState.CHANGING_MAP}' ... ")
+                    # print("[INFO] Changing 'BotState' to: "
+                    #      f"'{BotState.CHANGING_MAP}' ... ")
                     self.__state = BotState.CHANGING_MAP
 
             elif map_type == "traversable":
-                print("[INFO] Changing 'BotState' to: "
-                     f"'{BotState.CHANGING_MAP}' ... ")
+                # print("[INFO] Changing 'BotState' to: "
+                #      f"'{BotState.CHANGING_MAP}' ... ")
                 self.__state = BotState.CHANGING_MAP
 
             else:
@@ -425,16 +444,16 @@ class Bot:
         # If monsters were detected.
         if len(self.__obj_coords) > 0:
             print(f"[INFO] Monsters found at: {self.__obj_coords}!")
-            print("[INFO] Changing 'BotState' to: "
-                  f"'{BotState.ATTACKING}' ... ")
+            # print("[INFO] Changing 'BotState' to: "
+            #       f"'{BotState.ATTACKING}' ... ")
             self.__state = BotState.ATTACKING
             self.__map_searched = False
                 
         # If monsters were NOT detected.
         elif len(self.__obj_coords) <= 0:
             print("[INFO] Couldn't find any monsters!")
-            print("[INFO] Changing 'BotState' to: "
-                  f"'{BotState.CONTROLLER}' ... ")
+            # print("[INFO] Changing 'BotState' to: "
+            #       f"'{BotState.CONTROLLER}' ... ")
             self.__state = BotState.CONTROLLER
             self.__map_searched = True
 
@@ -505,15 +524,15 @@ class Bot:
                 elif len(cc_icon) > 0 and len(ready_button) > 0:
                     print("[INFO] Successfully attacked monster at: "
                           f"{coords}!")
-                    print("[INFO] Changing 'BotState' to: "
-                          f"'{BotState.PREPARATION}' ... ")
+                    # print("[INFO] Changing 'BotState' to: "
+                    #       f"'{BotState.PREPARATION}' ... ")
                     return True
 
             if (attack_attempts_allowed == attack_attempts_total):
                 print("[INFO] Failed to start combat "
                       f"'{attack_attempts_total}' time(s)!")
-                print("[INFO] Changing 'BotState' to: "
-                      f"'{BotState.CONTROLLER}' ... ")
+                # print("[INFO] Changing 'BotState' to: "
+                #       f"'{BotState.CONTROLLER}' ... ")
                 return False
 
     def __preparation(self):
@@ -540,6 +559,8 @@ class Bot:
                                 self.__preparation_combat_start_cell_coords
                             )
                 if self.__preparation_start_combat():
+                    # print("[INFO] Changing 'BotState' to: "
+                    #       f"'{BotState.IN_COMBAT}' ... ")
                     self.__state = BotState.IN_COMBAT
                     break
         else:
@@ -764,8 +785,6 @@ class Bot:
 
                 if len(cc_icon) > 0 and len(ap_icon) > 0 and len(mp_icon) > 0:
                     print("[INFO] Successfully started combat!")
-                    print("[INFO] Changing 'BotState' to: "
-                          f"'{BotState.IN_COMBAT}' ... ")
                     return True
 
     def __in_combat(self):
@@ -921,8 +940,8 @@ class Bot:
                     elif len(close_button) <= 0:
                         print("[INFO] Successfully closed 'Fight Results' "
                               "window!")
-                        print("[INFO] Changing 'BotState' to: "
-                              f"'{BotState.CONTROLLER}' ... ")
+                        # print("[INFO] Changing 'BotState' to: "
+                        #       f"'{BotState.CONTROLLER}' ... ")
                         return True
                 else:
                     print("[ERROR] Couldn't close 'Fight Results' window in "
@@ -1085,8 +1104,8 @@ class Bot:
 
         # If screenshots are different.
         if len(minimap_rects) <= 0:
-            print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
-                    "second(s) for map to load!")
+            # print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
+            #         "second(s) for map to load!")
             time.sleep(self.__WAIT_MAP_LOADING)
             print("[INFO] Map changed successfully!")
             return True
@@ -1114,6 +1133,7 @@ class Bot:
 
             else:
                 self.__state = BotState.CHANGING_MAP
+                break
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#

@@ -7,7 +7,7 @@ import cv2 as cv
 import pyautogui
 
 from detection import Detection
-from data import CombatData, SpellData, MovementData
+from data import CombatData
 from window_capture import WindowCapture
 
 
@@ -19,6 +19,13 @@ class Combat:
     ----------
     character_name : str
         Character's nickname.
+
+    Public class attributes
+    ----------
+    data_spell_cast : list[dict]
+        Stores spell cast data based on loaded bot script (in 'bot.py').
+    data_movement : list[dict]
+        Stores movement data based on loaded bot script (in 'bot.py').
 
     Methods
     ----------
@@ -63,16 +70,18 @@ class Combat:
     # 'Pyautogui' mouse movement duration. Default is 0.1, basically
     # instant. Messes up spell casting if left on default.
     __move_duration = 0.15
-    # Stores spell casting data according to loaded bot script.
-    __spell_cast_data = None
-    # Stores combat movement data according to loaded bot script.
-    __movement_data = None
 
     # Objects
     __window_capture = WindowCapture()
     __detection = Detection()
 
-    def __init__(self, character_name: str, script: str):
+    # Public class attributes.
+    # Stores spell cast data based on loaded bot script (in 'bot.py').
+    data_spell_cast = None
+    # Stores movement data based on loaded bot script (in 'bot.py').
+    data_movement = None
+
+    def __init__(self, character_name: str):
         """
         Constructor
 
@@ -83,15 +92,6 @@ class Combat:
 
         """
         self.character_name = character_name
-
-        # Loading proper spell cast data according to 'script'.
-        # The validity of 'script' is checked within
-        #  '__initializing_load_bot_script_data()'.
-        if isinstance(script, str):
-            script = script.lower()
-            if script == "astrub_forest":
-                self.__spell_cast_data = SpellData.af
-                self.__movement_data = MovementData.af
 
     def get_ap(self):
         """
@@ -286,7 +286,7 @@ class Combat:
 
         """
         available_spells = []
-        for spell in SpellData.spells:
+        for spell in CombatData.Spell.spells:
             if self.get_spell_status(spell):
                 available_spells.append(spell)
         return available_spells
@@ -403,7 +403,7 @@ class Combat:
 
         # Getting cast coordinates.
         coords = None
-        for _, value in enumerate(self.__spell_cast_data):
+        for _, value in enumerate(self.data_spell_cast):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
@@ -437,7 +437,7 @@ class Combat:
             (x, y) coordinates of cell to click on.
 
         """
-        for _, value in enumerate(self.__movement_data):
+        for _, value in enumerate(self.data_movement):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
@@ -529,7 +529,7 @@ class Combat:
                 spell = spell.replace("_", " ")
                 spell = spell.title()
 
-        print(f"[INFO] Casting spell: {spell} ... ")
+        print(f"[INFO] Casting spell: '{spell}' ... ")
         pyautogui.moveTo(spell_coordinates[0], 
                          spell_coordinates[1], 
                          duration=self.__move_duration)
