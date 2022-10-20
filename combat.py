@@ -51,10 +51,14 @@ class Combat:
         Get coordinates to click on to move character on correct cell.
     get_if_char_on_correct_cell()
         Check if character is standing on correct cell.
+    get_char_position()
+        Get (x, y) position of character on screen.
     move_character()
         Click on provided coordinates to move character.
     cast_spell()
         Cast spell.
+    hide_models()
+        Hide player and monster models.
 
     """
 
@@ -631,3 +635,38 @@ class Combat:
         # detection in 'Bot.__in_combat_cast_spells()'.
         pyautogui.moveTo(574, 749)
         time.sleep(self.__WAIT_BETWEEN_SPELL_CASTS)
+
+    def hide_models(self):
+        """
+        Hide player and monster models.
+        
+        Returns
+        ----------  
+        True : bool
+            If models were hidden successfully.
+        False : bool
+            If models were not hidden during `wait_time` seconds.
+
+        """
+        print("[INFO] Hiding models ... ")
+
+        x, y = (865, 533)
+        color = (0, 153, 0)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            button_clicked = pyautogui.pixelMatchesColor(x, y, color)
+
+            if button_clicked:
+                print("[INFO] Models hidden successfully!")
+                return True
+            else:
+                pyautogui.moveTo(x, y, duration=self.__move_duration)
+                pyautogui.click()
+                pyautogui.moveTo(574, 749)
+
+        else:
+            print(f"[INFO] Failed to hide models in {wait_time} seconds!")
+            return False

@@ -789,8 +789,13 @@ class Bot:
         """Combat state logic."""
         character_moved = False
         first_turn = True
+        models_hidden = False
 
         while True:
+
+            if not models_hidden:
+                self.__combat.hide_models()
+                models_hidden = True
 
             if self.__combat.turn_detect_start():
 
@@ -888,8 +893,7 @@ class Bot:
                         )
                 else:
                     cast_coords = self.__combat.get_char_position(
-                            self.__preparation_combat_start_cell_color,
-                            self.__preparation_combat_start_cell_coords
+                            self.__preparation_combat_start_cell_color
                         )
 
                 self.__combat.cast_spell(spell, spell_coords, cast_coords)
