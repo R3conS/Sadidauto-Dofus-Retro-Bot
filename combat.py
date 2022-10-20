@@ -704,3 +704,47 @@ class Combat:
         else:
             print(f"[INFO] Failed to enable in {wait_time} seconds!")
             return False
+
+    def shrink_turn_bar(self):
+        """
+        Shrink turn bar.
+        
+        - Click on white arrows to shrink the turn bar.
+        - Check if the closest 'information card' has disappeared by 
+        looping through all possible `colors` on its (x, y) location.
+        - If any of the `colors` were found, the turn bar was shrunk
+        successfully.
+
+        Returns
+        ----------  
+        True : bool
+            If turn bar was shrunk successfully.
+        False : bool
+            If turn bar was not shrunk.
+
+        """
+        print("[INFO] Shrinking `Turn Bar` ... ")
+        
+        # All possible tile colors in 'Tactical Mode'.
+        colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
+                  (118, 122, 127), (131, 135, 141), (51, 51, 51),
+                  (0, 0, 0)]
+
+        x, y = (925, 567)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            pyautogui.moveTo(x, y, self.__move_duration)
+            pyautogui.click()
+
+            for color in colors:
+                pixel = pyautogui.pixelMatchesColor(x-40, y, color)
+                if pixel:
+                    print("[INFO] Successfully shrunk 'Turn Bar'!")
+                    return True
+
+        else:
+            print("[INFO] Failed to shrink 'Turn Bar'!")
+            return False

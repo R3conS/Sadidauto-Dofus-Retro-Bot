@@ -786,22 +786,27 @@ class Bot:
 
     def __in_combat(self):
         """Combat state logic."""
-        character_moved = False
         first_turn = True
+        character_moved = False
         models_hidden = False
         tmode_enabled = False
+        tbar_shrunk = False
 
         while True:
 
             if self.__combat.turn_detect_start():
 
                 if not tmode_enabled:
-                    self.__combat.enable_tactical_mode()
-                    tmode_enabled = True
+                    if self.__combat.enable_tactical_mode():
+                        tmode_enabled = True
+
+                if not tbar_shrunk:
+                    if self.__combat.shrink_turn_bar():
+                        tbar_shrunk = True
 
                 if not models_hidden:
-                    self.__combat.hide_models()
-                    models_hidden = True
+                    if self.__combat.hide_models():
+                        models_hidden = True
 
                 if not character_moved:
                     if self.__in_combat_move_character():
