@@ -51,10 +51,14 @@ class Combat:
         Get coordinates to click on to move character on correct cell.
     get_if_char_on_correct_cell()
         Check if character is standing on correct cell.
+    get_char_position()
+        Get (x, y) position of character on screen.
     move_character()
         Click on provided coordinates to move character.
     cast_spell()
         Cast spell.
+    hide_models()
+        Hide player and monster models.
 
     """
 
@@ -490,6 +494,94 @@ class Combat:
         else:
             return False
 
+    def get_char_position(self, start_cell_color):
+        """
+        Get (x, y) position of character on screen.
+
+        Parameters
+        ----------
+        start_cell_color : str  
+            Color of starting cell.
+
+        Returns
+        ----------
+        position : Tuple[int, int]
+            (x, y) position of character.
+        False : bool
+            If position of character couldn't be detected.
+
+        """
+        coords = self.__get_pixel_coords(start_cell_color)
+        if coords is not None:
+            position = self.__get_click_coords(coords[0], coords[1])
+            return position
+        else:
+            print("[INFO] Couldn't get character position!")
+            return False
+
+    def __get_pixel_coords(self, start_cell_color):
+        """
+        Get coordinates of first found 'red' or 'blue' pixel.
+
+        - Takes a screenshot of game window (capture_region = `reg`).
+        - Tries to find `start_cell_color`.
+        - If found, returns (x, y) coordinates and `reg`.
+        - If not found returns `None`.
+
+        Parameters
+        ----------
+        start_cell_color : str  
+            Color of starting cell.
+
+        Returns
+        ----------
+        coords, reg : Tuple[Tuple[int, int], Tuple[int, int, int, int]]
+            Coordinates of found pixel and capture region.
+        None : NoneType
+            If pixel wasn't found.
+
+        """
+        # Region of area to screenshot.
+        reg = (0, 53, 933, 537)
+
+        if start_cell_color == "red":
+            start_cell_color = (255, 0, 0)
+        elif start_cell_color == "blue":
+            start_cell_color = (0, 0, 255)
+
+        sc = self.__window_capture.gamewindow_capture(capture_region=reg,
+                                                      convert=False)
+
+        for x in range(sc.width):
+            for y in range(sc.height):
+                if sc.getpixel((x, y)) == start_cell_color:
+                    coords = x, y
+                    return coords, reg
+
+        return None
+
+    def __get_click_coords(self, pixel_coords, region):
+        """
+        Calculate clickable coordinates on screen.
+
+        Parameters
+        ----------
+        pixel_coords : Tuple[int, int]
+            (x, y) coordinates of pixel.
+        region : Tuple[int, int, int, int]
+            Region of screen where pixel was found.
+
+        Returns
+        ----------
+        coords : Tuple[int, int]
+            (x, y) coordinates to click on.
+
+        """
+        rects = [[pixel_coords[0], pixel_coords[1], 1, 1]]
+        coords = self.__detection.get_click_coords(rects, region=region)
+        coords = coords[0][0], coords[0][1]
+        return coords
+
     def move_character(self, cell_coordinates):
         """
         Click on provided coordinates to move character.
@@ -543,3 +635,116 @@ class Combat:
         # detection in 'Bot.__in_combat_cast_spells()'.
         pyautogui.moveTo(574, 749)
         time.sleep(self.__WAIT_BETWEEN_SPELL_CASTS)
+
+    def hide_models(self):
+        """
+        Hide player and monster models.
+        
+        Returns
+        ----------  
+        True : bool
+            If models were hidden successfully.
+        False : bool
+            If models were not hidden during `wait_time` seconds.
+
+        """
+        print("[INFO] Hiding models ... ")
+
+        x, y = (865, 533)
+        color = (0, 153, 0)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            button_clicked = pyautogui.pixelMatchesColor(x, y, color)
+
+            if button_clicked:
+                print("[INFO] Models hidden successfully!")
+                return True
+            else:
+                pyautogui.moveTo(x, y, duration=self.__move_duration)
+                pyautogui.click()
+                pyautogui.moveTo(574, 749)
+
+        else:
+            print(f"[INFO] Failed to hide models in {wait_time} seconds!")
+            return False
+
+    def enable_tactical_mode(self):
+        """
+        Enable tactical mode.
+        
+        Returns
+        ----------  
+        True : bool
+            If tactical mode enabled.
+        False : bool
+            If tactical mode not enabled.
+
+        """
+        x, y = (843, 523)
+        color = (0, 153, 0)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            button_clicked = pyautogui.pixelMatchesColor(x, y, color)
+
+            if button_clicked:
+                print("[INFO] 'Tactical Mode' enabled!")
+                return True
+            else:
+                print("[INFO] Enabling 'Tactical Mode' ... ")
+                pyautogui.moveTo(x, y, duration=self.__move_duration)
+                pyautogui.click()
+                pyautogui.moveTo(574, 749)
+
+        else:
+            print(f"[INFO] Failed to enable in {wait_time} seconds!")
+            return False
+
+    def shrink_turn_bar(self):
+        """
+        Shrink turn bar.
+        
+        - Click on white arrows to shrink the turn bar.
+        - Check if the closest 'information card' has disappeared by 
+        looping through all possible `colors` on its (x, y) location.
+        - If any of the `colors` were found, the turn bar was shrunk
+        successfully.
+
+        Returns
+        ----------  
+        True : bool
+            If turn bar was shrunk successfully.
+        False : bool
+            If turn bar was not shrunk.
+
+        """
+        print("[INFO] Shrinking `Turn Bar` ... ")
+        
+        # All possible tile colors in 'Tactical Mode'.
+        colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
+                  (118, 122, 127), (131, 135, 141), (51, 51, 51),
+                  (0, 0, 0)]
+
+        x, y = (925, 567)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            pyautogui.moveTo(x, y, self.__move_duration)
+            pyautogui.click()
+
+            for color in colors:
+                pixel = pyautogui.pixelMatchesColor(x-40, y, color)
+                if pixel:
+                    print("[INFO] Successfully shrunk 'Turn Bar'!")
+                    return True
+
+        else:
+            print("[INFO] Failed to shrink 'Turn Bar'!")
+            return False

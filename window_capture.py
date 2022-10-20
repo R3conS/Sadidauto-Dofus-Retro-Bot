@@ -40,8 +40,9 @@ class WindowCapture:
     def gamewindow_capture(
             self,
             capture_region: Tuple[int, int, int, int] = GAMEWINDOW_REGION,
-            conversion_code: int = cv.COLOR_RGB2BGR) \
-            -> np.ndarray:
+            conversion_code: int = cv.COLOR_RGB2BGR,
+            convert: bool = True
+        ):
         """
         Screenshot whole game window, including Windows top bar.
 
@@ -54,20 +55,30 @@ class WindowCapture:
         conversion_code: int, optional
             OpenCV color conversion code. Defaults to: 
             `cv.COLOR_RGB2BGR`.
+        convert : bool
+            Whether to convert image to `np.ndarray` or not. Defaults to 
+            `True`.
 
         Returns
         ----------
         screenshot : np.ndarray
-            Screenshot.
+            If `convert` is `True`, return `screenshot` as `np.ndarray`.
+        screenshot : PIL.Image
+            If `convert` is `False`, return `screenshot` as `PIL.Image`.
 
         """
         screenshot = pyautogui.screenshot(region=capture_region)
-        screenshot = np.array(screenshot)
-        screenshot = cv.cvtColor(screenshot, conversion_code)
+        if not convert:
+            return screenshot
+        else:
+            screenshot = np.array(screenshot)
+            screenshot = cv.cvtColor(screenshot, conversion_code)
+            return screenshot
 
-        return screenshot
-
-    def area_around_mouse_capture(self, midpoint: int) -> np.ndarray:
+    def area_around_mouse_capture(self,
+                                  midpoint: int,
+                                  pos: Tuple[int, int] = pyautogui.position(),
+                                  convert: bool = True):
         """
         Screenshot area around mouse cursor.
 
@@ -76,11 +87,22 @@ class WindowCapture:
         midpoint : int
             Midpoint of length and width value of screenshot area.
             Screenshot area in pixels: (`midpoint`*2) * (`midpoint*2`).
+        pos : Tuple[int, int]
+            Center (x, y) coordinates of screenshot area. Defaults to
+            current coordinates of mouse cursor.
+        convert : bool
+            Whether to convert image to `np.ndarray` or not. Defaults to 
+            `True`.
 
         Returns
         ----------
         screenshot : np.ndarray
-            Screenshot of area around the mouse cursor.
+            If `convert` is `True`, return `screenshot` of area around 
+            `pos`.
+        screenshot, region : Tuple[PIL.Image, Tuple[int, int, int, int]]
+            If `convert` is `False`, return `screenshot` as `PIL.Image` 
+            object and `region` where the `screenshot` was taken on 
+            screen as `tuple`.
 
         Raises
         ----------
@@ -91,7 +113,7 @@ class WindowCapture:
 
         """
         # Getting current (x, y) coordinates of mouse cursor.
-        mouse_pos = pyautogui.position()
+        mouse_pos = pos
         center_x = mouse_pos[0]
         center_y = mouse_pos[1]
         # Calculating top left coordinates of capture area.
@@ -104,13 +126,15 @@ class WindowCapture:
         width = bottomright_x - topleft_x
         height = bottomright_y - topleft_y
         # Declaring the screenshot region.
-        capture_region = (topleft_x, topleft_y, width, height)
+        region = (topleft_x, topleft_y, width, height)
         # Taking the screenshot.
-        screenshot = pyautogui.screenshot(region=capture_region)
-        screenshot = np.array(screenshot)
-        screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
-
-        return screenshot
+        screenshot = pyautogui.screenshot(region=region)
+        if not convert:
+            return screenshot, region
+        else:
+            screenshot = np.array(screenshot)
+            screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
+            return screenshot
 
     def custom_area_capture(self, 
                             capture_region: Tuple[int, int, int, int],
