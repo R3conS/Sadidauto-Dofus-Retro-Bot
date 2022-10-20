@@ -539,7 +539,6 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
-
         start_time = time.time()
         allowed_time = 20
 
@@ -725,7 +724,7 @@ class Bot:
         else:
             print("[INFO] Failed to move character!")
             return False
-                                                       
+
     def __preparation_start_combat(self):
         """Click ready to start combat."""
         ready_button_clicked = False
@@ -790,14 +789,19 @@ class Bot:
         character_moved = False
         first_turn = True
         models_hidden = False
+        tmode_enabled = False
 
         while True:
 
-            if not models_hidden:
-                self.__combat.hide_models()
-                models_hidden = True
-
             if self.__combat.turn_detect_start():
+
+                if not tmode_enabled:
+                    self.__combat.enable_tactical_mode()
+                    tmode_enabled = True
+
+                if not models_hidden:
+                    self.__combat.hide_models()
+                    models_hidden = True
 
                 if not character_moved:
                     if self.__in_combat_move_character():

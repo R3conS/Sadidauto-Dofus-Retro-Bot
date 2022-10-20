@@ -670,3 +670,37 @@ class Combat:
         else:
             print(f"[INFO] Failed to hide models in {wait_time} seconds!")
             return False
+
+    def enable_tactical_mode(self):
+        """
+        Enable tactical mode.
+        
+        Returns
+        ----------  
+        True : bool
+            If tactical mode enabled.
+        False : bool
+            If tactical mode not enabled.
+
+        """
+        x, y = (843, 523)
+        color = (0, 153, 0)
+        start_time = time.time()
+        wait_time = 5
+
+        while time.time() - start_time < wait_time:
+
+            button_clicked = pyautogui.pixelMatchesColor(x, y, color)
+
+            if button_clicked:
+                print("[INFO] 'Tactical Mode' enabled!")
+                return True
+            else:
+                print("[INFO] Enabling 'Tactical Mode' ... ")
+                pyautogui.moveTo(x, y, duration=self.__move_duration)
+                pyautogui.click()
+                pyautogui.moveTo(574, 749)
+
+        else:
+            print(f"[INFO] Failed to enable in {wait_time} seconds!")
+            return False
