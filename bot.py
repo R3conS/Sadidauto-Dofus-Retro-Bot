@@ -119,8 +119,6 @@ class Bot:
     __fight_counter = 0
     # Is character overloaded with pods or not.
     __character_overloaded = False
-    # Counts total completed fights. Just for statistics.
-    __total_fights = 0
 
     # 'BotState.SEARCHING'.
     __obj_rects = []
@@ -136,8 +134,8 @@ class Bot:
     __preparation_combat_start_cell_color = None
 
     # 'BotState.IN_COMBAT'.
-    # Stores if character was moved in combat.
-    __in_combat_character_moved = False
+    # Counts total completed fights. Just for statistics.
+    __total_fights = 0
 
 #----------------------------------------------------------------------#
 #-----------------------------CONSTRUCTOR------------------------------#
@@ -789,25 +787,35 @@ class Bot:
 
     def __in_combat(self):
         """Combat state logic."""
+        character_moved = False
+        first_turn = True
+
         while True:
 
             if self.__combat.turn_detect_start():
 
-                if not self.__in_combat_character_moved:
+                if not character_moved:
                     if self.__in_combat_move_character():
-                        self.__in_combat_character_moved = True
+                        character_moved = True
 
-                if self.__in_combat_character_moved:
-                    if self.__in_combat_cast_spells():
+                if character_moved and first_turn:
+                    if self.__in_combat_cast_spells(first_turn=True):
+                        if self.__combat.turn_pass():
+                            print("[INFO] Waiting for turn ... ")
+                            first_turn = False
+                            continue
+
+                elif character_moved and not first_turn:
+                    if self.__in_combat_cast_spells(first_turn=False):
                         if self.__combat.turn_pass():
                             print("[INFO] Waiting for turn ... ")
                             continue
 
             elif self.__in_combat_detect_end_of_fight():
-                self.__in_combat_character_moved = False
                 self.__fight_counter += 1
                 self.__total_fights += 1
                 self.__state = BotState.CONTROLLER
+                print(f"[INFO] Total fights: {self.__total_fights} ... ")
                 break
 
     def __in_combat_move_character(self):
@@ -849,8 +857,16 @@ class Bot:
             print("[ERROR] Exiting ... ")
             os._exit(1)
 
-    def __in_combat_cast_spells(self):
-        """Cast spells."""
+    def __in_combat_cast_spells(self, first_turn):
+        """
+        Cast spells.
+        
+        Parameters
+        ----------    
+        first_turn : bool
+            Whether it's the first turn of combat or not.
+        
+        """
         while True:
 
             available_spells = self.__combat.get_available_spells()
@@ -862,12 +878,20 @@ class Bot:
             for spell in available_spells:
 
                 spell_coords = self.__combat.get_spell_coordinates(spell)
-                cast_coords = self.__combat.get_spell_cast_coordinates(
-                        spell,
-                        self.__map_coordinates,
-                        self.__preparation_combat_start_cell_color,
-                        self.__preparation_combat_start_cell_coords
-                    )
+
+                if first_turn:
+                    cast_coords = self.__combat.get_spell_cast_coordinates(
+                            spell,
+                            self.__map_coordinates,
+                            self.__preparation_combat_start_cell_color,
+                            self.__preparation_combat_start_cell_coords
+                        )
+                else:
+                    cast_coords = self.__combat.get_char_position(
+                            self.__preparation_combat_start_cell_color,
+                            self.__preparation_combat_start_cell_coords
+                        )
+
                 self.__combat.cast_spell(spell, spell_coords, cast_coords)
                 break
 

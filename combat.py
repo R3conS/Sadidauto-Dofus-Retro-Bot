@@ -490,6 +490,94 @@ class Combat:
         else:
             return False
 
+    def get_char_position(self, start_cell_color):
+        """
+        Get (x, y) position of character on screen.
+
+        Parameters
+        ----------
+        start_cell_color : str  
+            Color of starting cell.
+
+        Returns
+        ----------
+        position : Tuple[int, int]
+            (x, y) position of character.
+        False : bool
+            If position of character couldn't be detected.
+
+        """
+        coords = self.__get_pixel_coords(start_cell_color)
+        if coords is not None:
+            position = self.__get_click_coords(coords[0], coords[1])
+            return position
+        else:
+            print("[INFO] Couldn't get character position!")
+            return False
+
+    def __get_pixel_coords(self, start_cell_color):
+        """
+        Get coordinates of first found 'red' or 'blue' pixel.
+
+        - Takes a screenshot of game window (capture_region = `reg`).
+        - Tries to find `start_cell_color`.
+        - If found, returns (x, y) coordinates and `reg`.
+        - If not found returns `None`.
+
+        Parameters
+        ----------
+        start_cell_color : str  
+            Color of starting cell.
+
+        Returns
+        ----------
+        coords, reg : Tuple[Tuple[int, int], Tuple[int, int, int, int]]
+            Coordinates of found pixel and capture region.
+        None : NoneType
+            If pixel wasn't found.
+
+        """
+        # Region of area to screenshot.
+        reg = (0, 53, 933, 537)
+
+        if start_cell_color == "red":
+            start_cell_color = (255, 0, 0)
+        elif start_cell_color == "blue":
+            start_cell_color = (0, 0, 255)
+
+        sc = self.__window_capture.gamewindow_capture(capture_region=reg,
+                                                      convert=False)
+
+        for x in range(sc.width):
+            for y in range(sc.height):
+                if sc.getpixel((x, y)) == start_cell_color:
+                    coords = x, y
+                    return coords, reg
+
+        return None
+
+    def __get_click_coords(self, pixel_coords, region):
+        """
+        Calculate clickable coordinates on screen.
+
+        Parameters
+        ----------
+        pixel_coords : Tuple[int, int]
+            (x, y) coordinates of pixel.
+        region : Tuple[int, int, int, int]
+            Region of screen where pixel was found.
+
+        Returns
+        ----------
+        coords : Tuple[int, int]
+            (x, y) coordinates to click on.
+
+        """
+        rects = [[pixel_coords[0], pixel_coords[1], 1, 1]]
+        coords = self.__detection.get_click_coords(rects, region=region)
+        coords = coords[0][0], coords[0][1]
+        return coords
+
     def move_character(self, cell_coordinates):
         """
         Click on provided coordinates to move character.
