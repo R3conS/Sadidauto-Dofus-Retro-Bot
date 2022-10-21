@@ -515,31 +515,82 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
+        # 'Tactical Mode' status.
+        tactical_mode = False
         # Loop control variables.
         start_time = time.time()
         allowed_time = 20
 
         while time.time() - start_time < allowed_time:
-            cells = self.__preparation_get_cells_from_database(
-                    self.__map_coordinates,
-                    self.__data_map
-                )
-            e_cells = self.__preparation_get_empty_cells(cells)
-            if self.__preparation_move_char_to_cell(e_cells):
-                self.__preparation_combat_start_cell_color = \
-                        self.__preparation_get_start_cell_color(
-                                self.__map_coordinates,
-                                self.__data_map,
-                                self.__preparation_combat_start_cell_coords
-                            )
-                if self.__preparation_start_combat():
-                    self.__state = BotState.IN_COMBAT
-                    break
+
+            if not tactical_mode:
+                if self.__preparation_enable_tactical_mode():
+                    tactical_mode = True
+
+            if tactical_mode:
+                cells = self.__preparation_get_cells_from_database(
+                        self.__map_coordinates,
+                        self.__data_map
+                    )
+                e_cells = self.__preparation_get_empty_cells(cells)
+                if self.__preparation_move_char_to_cell(e_cells):
+                    self.__preparation_combat_start_cell_color = \
+                            self.__preparation_get_start_cell_color(
+                                    self.__map_coordinates,
+                                    self.__data_map,
+                                    self.__preparation_combat_start_cell_coords
+                                )
+                    if self.__preparation_start_combat():
+                        self.__state = BotState.IN_COMBAT
+                        break
+
         else:
             print(f"[ERROR] Failed to select starting cell in '{allowed_time}'"
                   " seconds!")
             print("[ERROR] Exiting ... ")
             os._exit(1)
+
+    def __preparation_enable_tactical_mode(self):
+        """Enable tactical mode."""
+        # Wait time after clicking on 'Tactical Mode' icon. Giving time
+        # for green check mark to appear.
+        wait_time_click = 0.25
+        # Colors.
+        c_green = (0, 153, 0)
+        c_gray = (216, 202, 150)
+        # Loop control variables.
+        start_time = time.time()
+        wait_time = 7
+
+        while time.time() - start_time < wait_time:
+
+            group = pyautogui.pixelMatchesColor(818, 526, c_gray)
+
+            if group:
+                tactical_mode = pyautogui.pixelMatchesColor(790, 526, c_green)
+                if not tactical_mode:
+                    print("[INFO] Enabling 'Tactical Mode' ... ")
+                    pyautogui.moveTo(790, 526, duration=self.__move_duration)
+                    pyautogui.click()
+                    time.sleep(wait_time_click)
+                else:
+                    print("[INFO] 'Tactical Mode' enabled!")
+                    return True
+
+            else:
+                tactical_mode = pyautogui.pixelMatchesColor(817, 524, c_green)
+                if not tactical_mode:
+                    print("[INFO] Enabling 'Tactical Mode' ... ")
+                    pyautogui.moveTo(817, 524, duration=self.__move_duration)
+                    pyautogui.click()
+                    time.sleep(wait_time_click)
+                else:
+                    print("[INFO] 'Tactical Mode' enabled!")
+                    return True
+
+        else:
+            print(f"[INFO] Failed to enable in {wait_time} seconds!")
+            return False
 
     def __preparation_get_cells_from_database(self, map_coords, database):
         """
@@ -773,16 +824,11 @@ class Bot:
         first_turn = True
         character_moved = False
         models_hidden = False
-        tmode_enabled = False
         tbar_shrunk = False
 
         while True:
 
             if self.__combat.turn_detect_start():
-
-                if not tmode_enabled:
-                    if self.__combat.enable_tactical_mode():
-                        tmode_enabled = True
 
                 if not tbar_shrunk:
                     if self.__combat.shrink_turn_bar():
