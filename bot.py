@@ -323,14 +323,14 @@ class Bot:
         if script == "astrub_forest":
             self.__data_map_killing = MapData.AstrubForest.killing
             self.__data_map_banking = MapData.AstrubForest.banking
-            # self.__data_objects_path = ImageData.AstrubForest.monster_img_path
-            # self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
+            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
             self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
             self.__combat.data_movement = CombatData.Movement.AstrubForest.af
             self.__bank.img_path = ImageData.AstrubForest.banker_images_path
             self.__bank.img_list = ImageData.AstrubForest.banker_images_list
-            self.__data_objects_path = ImageData.test_monster_images_path
-            self.__data_objects_list = ImageData.test_monster_images_list
+            # self.__data_objects_path = ImageData.test_monster_images_path
+            # self.__data_objects_list = ImageData.test_monster_images_list
             self.__script = "Astrub Forest"
             return True
 
@@ -487,11 +487,11 @@ class Bot:
                 screenshot = self.__window_capture.gamewindow_capture()
                 cc_icon = self.__detection.find(
                         screenshot,
-                        ImageData.s_i + "PREPARATION_state_verifier_1.jpg"
+                        ImageData.s_i + ImageData.preparation_sv_1
                     )
                 ready_button = self.__detection.find(
                         screenshot,
-                        ImageData.s_i + "PREPARATION_state_verifier_2.jpg"
+                        ImageData.s_i + ImageData.preparation_sv_2
                     )
                 
                 if time.time() - attack_time > wait_after_attacking:
@@ -533,8 +533,6 @@ class Bot:
                                 self.__preparation_combat_start_cell_coords
                             )
                 if self.__preparation_start_combat():
-                    # print("[INFO] Changing 'BotState' to: "
-                    #       f"'{BotState.IN_COMBAT}' ... ")
                     self.__state = BotState.IN_COMBAT
                     break
         else:
@@ -721,7 +719,7 @@ class Bot:
             ready_button_icon = self.__detection.get_click_coords(
                     self.__detection.find(
                             screenshot,
-                            ImageData.s_i + "PREPARATION_state_verifier_2.jpg",
+                            ImageData.s_i + ImageData.preparation_sv_2,
                             threshold=0.8
                         )
                     )
@@ -746,17 +744,17 @@ class Bot:
                 screenshot = self.__window_capture.gamewindow_capture()
                 cc_icon = self.__detection.find(
                         screenshot,
-                        ImageData.s_i + "IN_COMBAT_state_verifier_1.jpg", 
+                        ImageData.s_i + ImageData.in_combat_sv_1,
                         threshold=0.8
                     )
                 ap_icon = self.__detection.find(
                         screenshot, 
-                        ImageData.s_i + "IN_COMBAT_state_verifier_2.jpg", 
+                        ImageData.s_i + ImageData.in_combat_sv_2,
                         threshold=0.8
                     )
                 mp_icon = self.__detection.find(
                         screenshot,
-                        ImageData.s_i + "IN_COMBAT_state_verifier_3.jpg", 
+                        ImageData.s_i + ImageData.in_combat_sv_3,
                         threshold=0.8
                     )
                 
@@ -908,7 +906,7 @@ class Bot:
         close_button = self.__detection.get_click_coords(
                 self.__detection.find(
                         screenshot,
-                        ImageData.s_i + "END_OF_COMBAT_verifier_1.jpg",
+                        ImageData.s_i + ImageData.end_of_combat_v_1,
                         threshold=0.8
                     )
                 )

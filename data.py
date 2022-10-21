@@ -13,8 +13,16 @@ class ImageData:
     test_monster_images_list = ["test_1.jpg", "test_2.jpg", 
                                 "test_3.jpg", "test_4.jpg"]
 
-    # Status images path.
+    # Status images.
+    # Path to folder.
     s_i = "images\\status_images\\"
+    # Verifiers.
+    end_of_combat_v_1 = "END_OF_COMBAT_verifier_1.jpg"
+    in_combat_sv_1 = "IN_COMBAT_state_verifier_1.jpg"
+    in_combat_sv_2 = "IN_COMBAT_state_verifier_2.jpg"
+    in_combat_sv_3 = "IN_COMBAT_state_verifier_3.jpg"
+    preparation_sv_1 = "PREPARATION_state_verifier_1.jpg"
+    preparation_sv_2 = "PREPARATION_state_verifier_2.jpg"
 
     # Bank images.
     bank_images_path = "images\\bank_images\\"
