@@ -46,38 +46,6 @@ class Bot:
 
     """
 
-    # Constants.
-    # Time to wait after clicking on a monster. How long script will 
-    # keep chacking if the monster was successfully attacked.
-    __WAIT_AFTER_ATTACKING = 7
-    # Time to wait after clicking ready in 'BotState.PREPARATION'. How 
-    # long script will keep chacking if combat was started successfully.
-    __WAIT_COMBAT_START = 10
-    # Time to wait before clicking on yellow 'sun' to change maps.
-    # Must wait when moving in 'bottom' direction, because 'Dofus' GUI 
-    # blocks the sun otherwise.
-    __WAIT_SUN_CLICK = 0.5
-    # Time to wait AFTER clicking on yellow 'sun' to change maps. 
-    # Determines how long to wait for character to change maps after 
-    # clicking on yellow 'sun'.
-    __WAIT_CHANGE_MAP = 10
-    # Time to wait for map to load after a successful map change. 
-    # Determines how long script will wait after character moves to a 
-    # new map. The lower the number, the higher the chance that on a 
-    # slower machine 'SEARCHING' state will act too fast & try to search 
-    # for monsters on a black "LOADING MAP" screen. This wait time 
-    # allows the black loading screen to disappear.
-    __WAIT_MAP_LOADING = 0.5
-    # Time to wait after moving character to cell. If omitted,
-    # '__preparation_check_if_char_moved()' starts checking
-    # before character has time to move and gives false results.
-    __WAIT_AFTER_MOVE_CHAR = 0.5
-    # Giving time for black tooltip that shows map coordinates to
-    # appear. Otherwise on a slower machine the program might take the 
-    # screenshot too fast resulting in an image with no coordinates
-    # to detect.
-    __WAIT_BEFORE_DETECTING_MAP_COORDINATES = 0.25
-
     # Private class attributes.
     # Pyautogui mouse movement duration. Default is '0.1' as per docs.
     __move_duration = 0.15
@@ -231,6 +199,13 @@ class Bot:
             If detected map doesn't exist in database.
 
         """
+        # Giving time for black tooltip that shows map coordinates to
+        # appear. Otherwise on a slower machine the program might take a
+        # screenshot too fast resulting in an image with no coordinates
+        # to detect.
+        wait_before_detecting = 0.25
+
+        # Loop control variables.
         start_time = time.time()
         wait_time_before_exit = 10
 
@@ -240,7 +215,7 @@ class Bot:
             # over the red area on the minimap for the black map tooltip
             # to appear.
             pyautogui.moveTo(517, 680)
-            time.sleep(self.__WAIT_BEFORE_DETECTING_MAP_COORDINATES)
+            time.sleep(wait_before_detecting)
             screenshot = self.__window_capture.custom_area_capture(
                     capture_region=self.__window_capture.MAP_DETECTION_REGION,
                     conversion_code=cv.COLOR_RGB2GRAY,
@@ -348,14 +323,14 @@ class Bot:
         if script == "astrub_forest":
             self.__data_map_killing = MapData.AstrubForest.killing
             self.__data_map_banking = MapData.AstrubForest.banking
-            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
-            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            # self.__data_objects_path = ImageData.AstrubForest.monster_img_path
+            # self.__data_objects_list = ImageData.AstrubForest.monster_img_list
             self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
             self.__combat.data_movement = CombatData.Movement.AstrubForest.af
             self.__bank.img_path = ImageData.AstrubForest.banker_images_path
             self.__bank.img_list = ImageData.AstrubForest.banker_images_list
-            # self.__data_objects_path = ImageData.test_monster_images_path
-            # self.__data_objects_list = ImageData.test_monster_images_list
+            self.__data_objects_path = ImageData.test_monster_images_path
+            self.__data_objects_list = ImageData.test_monster_images_list
             self.__script = "Astrub Forest"
             return True
 
@@ -470,7 +445,7 @@ class Bot:
         
         - Gets detected monster coordinates.
         - Attacks monster.
-        - Waits `__WAIT_AFTER_ATTACKING` seconds for character to attack.
+        - Waits `wait_after_attacking` seconds for character to attack.
 
         Returns
         ----------
@@ -480,6 +455,9 @@ class Bot:
             If attack was unsuccessful.
 
         """
+        # Time to wait after clicking on a monster. How long script will 
+        # keep chacking if the monster was successfully attacked.
+        wait_after_attacking = 7
         # Flow control variables.
         attack_attempts_allowed = 0
         attack_attempts_total = 0
@@ -516,7 +494,7 @@ class Bot:
                         ImageData.s_i + "PREPARATION_state_verifier_2.jpg"
                     )
                 
-                if time.time() - attack_time > self.__WAIT_AFTER_ATTACKING:
+                if time.time() - attack_time > wait_after_attacking:
                     print(f"[INFO] Failed to attack monster at: {coords}!")
                     print("[INFO] Trying the next coordinates ... ")
                     attack_attempts_total += 1
@@ -524,15 +502,11 @@ class Bot:
                 elif len(cc_icon) > 0 and len(ready_button) > 0:
                     print("[INFO] Successfully attacked monster at: "
                           f"{coords}!")
-                    # print("[INFO] Changing 'BotState' to: "
-                    #       f"'{BotState.PREPARATION}' ... ")
                     return True
 
             if (attack_attempts_allowed == attack_attempts_total):
                 print("[INFO] Failed to start combat "
                       f"'{attack_attempts_total}' time(s)!")
-                # print("[INFO] Changing 'BotState' to: "
-                #       f"'{BotState.CONTROLLER}' ... ")
                 return False
 
     def __preparation(self):
@@ -541,6 +515,7 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
+        # Loop control variables.
         start_time = time.time()
         allowed_time = 20
 
@@ -682,12 +657,17 @@ class Bot:
             If character wasn't moved.
         
         """
+        # Time to wait after moving character to cell. If omitted,
+        # '__preparation_check_if_char_moved()' starts checking before 
+        # character has time to move and gives false results.
+        wait_after_move_char = 0.5
+
         for cell in cell_coordinates_list:
             print(f"[INFO] Moving character to cell: {cell} ... ")
             pyautogui.moveTo(cell[0], cell[1])
             pyautogui.click()
             self.__preparation_combat_start_cell_coords = cell
-            time.sleep(self.__WAIT_AFTER_MOVE_CHAR)
+            time.sleep(wait_after_move_char)
             if self.__preparation_check_if_char_moved(cell):
                 return True
         return False
@@ -729,6 +709,10 @@ class Bot:
 
     def __preparation_start_combat(self):
         """Click ready to start combat."""
+        # Time to wait after clicking ready. How long to keep chacking 
+        # if combat was started successfully.
+        wait_combat_start = 10
+        # 'Ready' button state.
         ready_button_clicked = False
 
         while True:
@@ -776,7 +760,7 @@ class Bot:
                         threshold=0.8
                     )
                 
-                if time.time() - click_time > self.__WAIT_COMBAT_START:
+                if time.time() - click_time > wait_combat_start:
                     print("[INFO] Failed to start combat!")
                     print("[INFO] Retrying ... ")
                     ready_button_clicked = False
@@ -835,7 +819,7 @@ class Bot:
                 break
 
     def __in_combat_move_character(self):
-
+        """Move character."""
         attempts = 0
         attempts_allowed = 3
 
@@ -991,11 +975,26 @@ class Bot:
 
     def __changing_map(self):
         """Changing map state logic."""
-        while True:
+        attempts_total = 0
+        attempts_allowed = 3
+
+        while attempts_total < attempts_allowed:
+
             if self.__changing_map_change_map():
                 self.__map_searched = False
                 self.__state = BotState.CONTROLLER
                 break
+            else:
+                print("[INFO] Dealing with pop-ups ... ")
+                if self.__popup.deal():
+                    attempts_total += 1
+                    continue
+
+        else:
+            print(f"[ERROR] Failed to change maps in {attempts_allowed} "
+                  "attempts!")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
     def __changing_map_get_move_coords(self):
         """
@@ -1040,50 +1039,45 @@ class Bot:
         - Gets coordinates to click on for map change. 
         - Clicks.
         - Checks if map was changed successfully.
-        - If map wasn't changed after `__WAIT_CHANGE_MAP` seconds, 
-        increments `change_attempts_total`, gets new click coordinates 
-        and tries to change maps again.
+        - If map wasn't changed after `wait_change_map` seconds, returns
+        `False`.
 
         Returns
         ----------
         True : bool
-            If map change was a successful.
-        NoReturn
-            Exit program if map change wasn't successful after 
-            `change_attempts_allowed` tries.
+            If map change was a success.
+        False : bool
+            If map change was unsuccessful.
 
         """
-        change_attempts_allowed = 3
-        change_attempts_total = 0
+        # How long to keep checking if map was changed.
+        wait_change_map = 10
+        # Time to wait before clicking on yellow 'sun' to change maps.
+        # Must wait when moving in 'bottom' direction, because 'Dofus' 
+        # GUI blocks the sun otherwise.
+        wait_bottom_click = 0.5
 
-        while change_attempts_total < change_attempts_allowed:
+        # Changing maps.
+        coords, choice = self.__changing_map_get_move_coords()
+        print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
+                f"'{choice}' ... ")
+        pyautogui.keyDown('e')
+        pyautogui.moveTo(coords[0], coords[1])
+        if choice == "bottom":
+            time.sleep(wait_bottom_click)
+        pyautogui.click()
+        pyautogui.keyUp('e')
 
-            # Changing maps.
-            coords, choice = self.__changing_map_get_move_coords()
-            print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
-                  f"'{choice}' ... ")
-            pyautogui.keyDown('e')
-            pyautogui.moveTo(coords[0], coords[1])
-            if choice == "bottom":
-                time.sleep(self.__WAIT_SUN_CLICK)
-            pyautogui.click()
-            pyautogui.keyUp('e')
-            change_attempts_total += 1
-
-            # Checking if map was changed.
-            start_time = time.time()
-            sc_mm = self.__changing_map_screenshot_minimap()
-
-            while time.time() - start_time < self.__WAIT_CHANGE_MAP:
-                if self.__changing_map_detect_if_map_changed(sc_mm):
-                    return True
-
+        # Checking if map was changed.
+        start_time = time.time()
+        sc_mm = self.__changing_map_screenshot_minimap()
+        
+        while time.time() - start_time < wait_change_map:
+            if self.__changing_map_detect_if_map_changed(sc_mm):
+                return True
         else:
-            print("[ERROR] Fatal error in "
-                  "'__changing_map_change_map()'!")
-            print("[ERROR] Too many failed attemps to change map!")
-            print("[ERROR] Exiting ... ")
-            os._exit(1)
+            print("[INFO] Failed to change maps!")
+            return False
 
     def __changing_map_screenshot_minimap(self):
         """
@@ -1136,6 +1130,14 @@ class Bot:
             If map was changed successfully.
 
         """
+        # Time to wait for map to load after a successful map change. 
+        # Determines how long script will wait after character moves to 
+        # a new map. The lower the number, the higher the chance that on 
+        # a slower machine 'SEARCHING' state will act too fast & try to 
+        # search for monsters on a black "LOADING MAP" screen. This wait 
+        # time allows the black loading screen to disappear.
+        wait_map_loading = 0.5
+
         sc_minimap_needle = self.__changing_map_screenshot_minimap()
         minimap_rects = self.__detection.find(sc_minimap,
                                               sc_minimap_needle,
@@ -1143,9 +1145,7 @@ class Bot:
 
         # If screenshots are different.
         if len(minimap_rects) <= 0:
-            # print(f"[INFO] Waiting {self.__WAIT_MAP_LOADING} "
-            #         "second(s) for map to load!")
-            time.sleep(self.__WAIT_MAP_LOADING)
+            time.sleep(wait_map_loading)
             print("[INFO] Map changed successfully!")
             return True
 
