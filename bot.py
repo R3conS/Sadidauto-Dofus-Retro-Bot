@@ -13,6 +13,7 @@ from combat import Combat
 from data import ImageData, MapData, CombatData
 from detection import Detection
 from game_window import GameWindow
+from pop_up import PopUp
 from threading_tools import ThreadingTools
 from window_capture import WindowCapture
 
@@ -102,6 +103,7 @@ class Bot:
     __window_capture = WindowCapture()
     __detection = Detection()
     __bank = Bank()
+    __popup = PopUp()
 
     # 'BotState' attributes.
     #-----------------------
