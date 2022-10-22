@@ -204,12 +204,14 @@ class Bot:
         # screenshot too fast resulting in an image with no coordinates
         # to detect.
         wait_before_detecting = 0.25
-
         # Loop control variables.
         start_time = time.time()
-        wait_time_before_exit = 10
+        wait_time_before_exit = 60
 
         while time.time() - start_time < wait_time_before_exit:
+
+            # Checking for offers/interfaces and closing them.
+            self.__popup.deal()
 
             # Get a screenshot of coordinates on minimap. Moving mouse
             # over the red area on the minimap for the black map tooltip
@@ -384,18 +386,12 @@ class Bot:
             if map_type == "fightable":
 
                 if self.__map_searched == False:
-                    # print("[INFO] Changing 'BotState' to: "
-                    #      f"'{BotState.SEARCHING}' ... ")
                     self.__state = BotState.SEARCHING
 
                 elif self.__map_searched == True:
-                    # print("[INFO] Changing 'BotState' to: "
-                    #      f"'{BotState.CHANGING_MAP}' ... ")
                     self.__state = BotState.CHANGING_MAP
 
             elif map_type == "traversable":
-                # print("[INFO] Changing 'BotState' to: "
-                #      f"'{BotState.CHANGING_MAP}' ... ")
                 self.__state = BotState.CHANGING_MAP
 
             else:
@@ -443,9 +439,12 @@ class Bot:
         """
         Attack monster.
         
-        - Gets detected monster coordinates.
-        - Attacks monster.
-        - Waits `wait_after_attacking` seconds for character to attack.
+        Logic
+        ----------
+        - Get detected monster coordinates.
+        - Attack monster.
+            - If monster attacked successfully - return `True`.
+            - If failed to attack monster - return `False`.
 
         Returns
         ----------
@@ -457,7 +456,7 @@ class Bot:
         """
         # Time to wait after clicking on a monster. How long script will 
         # keep chacking if the monster was successfully attacked.
-        wait_after_attacking = 7
+        wait_after_attacking = 5
         # Flow control variables.
         attack_attempts_allowed = 0
         attack_attempts_total = 0
@@ -471,6 +470,9 @@ class Bot:
 
         # Looping through detected monster coordinates.
         for coords in self.__obj_coords:
+
+            # Checking for offers/interfaces and closing them.
+            self.__popup.deal()
 
             x_coord, y_coord = coords
 
@@ -618,11 +620,13 @@ class Bot:
     def __preparation_get_empty_cells(self, cell_coordinates_list):
         """
         Get empty cell coordinates from cell coordinates list.
-        
-        Checks for red and blue pixels on every (x, y) coordinate in
-        `cell_coordinates_list`. Creates `empty_cells_list` from 
-        coordinates where red or blue pixels were found 
-        (means those cells are empty).
+
+        Logic
+        ----------
+        - Check for red and blue pixels on every (x, y) coordinate in
+        `cell_coordinates_list`.
+        - Append every coordinate where pixels were found to 
+        `empty_cells_list`
 
         Parameters
         ----------
@@ -637,7 +641,9 @@ class Bot:
         
         """
         empty_cells_list = []
+
         for cell_coordinates in cell_coordinates_list:
+
             red_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
                                                     cell_coordinates[1],
                                                     (255, 0, 0),
@@ -650,6 +656,7 @@ class Bot:
                                                 
             if red_pixel or blue_pixel:
                 empty_cells_list.append(cell_coordinates)
+
         return empty_cells_list
 
     def __preparation_get_start_cell_color(self, 
@@ -1029,7 +1036,6 @@ class Bot:
                 self.__state = BotState.CONTROLLER
                 break
             else:
-                print("[INFO] Dealing with pop-ups ... ")
                 if self.__popup.deal():
                     attempts_total += 1
                     continue
@@ -1080,11 +1086,13 @@ class Bot:
         """
         Change maps.
 
-        - Gets coordinates to click on for map change. 
-        - Clicks.
+        Logic
+        ----------
+        - Get coordinates on yellow sun to click on to change maps.
+        - Click.
         - Checks if map was changed successfully.
-        - If map wasn't changed after `wait_change_map` seconds, returns
-        `False`.
+            - If changed successfully - return `True`.
+            - If failed to change - return `False`.
 
         Returns
         ----------
@@ -1095,7 +1103,7 @@ class Bot:
 
         """
         # How long to keep checking if map was changed.
-        wait_change_map = 10
+        wait_change_map = 7
         # Time to wait before clicking on yellow 'sun' to change maps.
         # Must wait when moving in 'bottom' direction, because 'Dofus' 
         # GUI blocks the sun otherwise.
@@ -1159,9 +1167,13 @@ class Bot:
         """
         Check if map was changed successfully.
 
-        Compares `sc_minimap` against locally taken screenshot
-        of minimap `sc_minimap_needle`. If images are different means
-        map was changed successfully.
+        Logic
+        ----------
+        - Take screenshot of minimap.
+        - Compare `sc_minimap` against locally taken screenshot of 
+        minimap.
+            - If images are different, means map changed succesfully - 
+            return `True`.
 
         Parameters
         ----------
@@ -1194,25 +1206,80 @@ class Bot:
             return True
 
     def __banking(self):
-        """Banking logic."""
+        """
+        Banking logic.
+
+        Logic
+        ----------
+        - If on "4,-16" map.
+            - Close any pop-ups & interfaces.
+            - Detect if inside or outside Astrub bank.
+                - If not inside - move character inside.
+                - Elif inside and items have been deposited - move
+                character outside.
+                - Elif inside ant items have not been deposited - open
+                bank, deposit items and close bank.
+        - Else:
+            - Change 'BotState' to 'CHANGING_MAP'.
+
+        Program will exit if: 
+            - `attempts_total` < `attempts_allowed`.
+            - `timeout` seconds reached.
+
+        """
         while True:
 
             if self.__map_coordinates == "4,-16":
 
-                character_inside_bank = self.__bank.inside_or_outside()
+                attempts_total = 0
+                attempts_allowed = 5
+                items_deposited = False
 
-                if not character_inside_bank:
-                    if self.__bank.enter_bank():
-                        continue
+                while attempts_total < attempts_allowed:
 
-                elif character_inside_bank:
-                    if self.__bank.open_bank_vault():
-                        if self.__bank.deposit_items():
-                            if self.__bank.close_bank_vault():
-                                if self.__bank.exit_bank():
-                                    self.__fight_counter = 0
-                                    self.__state = BotState.CONTROLLER
-                                    break
+                    self.__popup.deal()
+                    character_inside_bank = self.__bank.inside_or_outside()
+
+                    if not character_inside_bank:
+                        if self.__bank.enter_bank():
+                            continue
+                        else:
+                            attempts_total += 1
+
+                    elif character_inside_bank and items_deposited:
+                        if self.__bank.exit_bank():
+                            self.__fight_counter = 0
+                            self.__state = BotState.CONTROLLER
+                            return
+                        else:
+                            attempts_total += 1
+                            continue
+                        
+                    elif character_inside_bank and not items_deposited:
+
+                        start_time = time.time()
+                        timeout = 60
+
+                        while time.time() - start_time < timeout:
+                            self.__popup.deal()
+                            if self.__bank.open_bank_vault():
+                                if self.__bank.deposit_items():
+                                    if self.__bank.close_bank_vault():
+                                        items_deposited = True
+                                        break
+
+                        else:
+                            print("[ERROR] Failed to complete actions inside "
+                                  f"bank in {timeout} seconds!")
+                            print("[ERROR] Timed out ... ")
+                            print("[ERROR] Exiting ... ")
+                            os._exit(1)
+
+                else:
+                    print("[ERROR] Failed to enter/exit bank in "
+                          f"{attempts_allowed} attempts!")
+                    print("[ERROR] Exiting ... ")
+                    os._exit(1)
 
             else:
                 self.__state = BotState.CHANGING_MAP
@@ -1317,11 +1384,11 @@ class Bot:
             # Calculating and displaying debug output FPS.
             output_image = cv.putText(img=output_image,
                                       text=f"Debug Window FPS: {fps}",
-                                      org=(750, 47),
+                                      org=(0, 70),
                                       fontFace=cv.FONT_HERSHEY_PLAIN,
-                                      fontScale=0.9,
+                                      fontScale=1,
                                       color=(0, 255, 255),
-                                      thickness=1)
+                                      thickness=2)
 
             # Press 'q' while the DEBUG window is focused to exit.
             # Force killing all threads (not clean).
