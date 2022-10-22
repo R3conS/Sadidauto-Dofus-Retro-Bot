@@ -242,7 +242,8 @@ class Combat:
 
         """
         start_time = time.time()
-        timeout_time = 10
+        timeout_time = 30
+        
         while time.time() - start_time < timeout_time:
 
             screenshot = self.__window_capture.custom_area_capture(
