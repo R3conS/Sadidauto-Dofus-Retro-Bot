@@ -40,7 +40,11 @@ class Bank:
         Close bank interface.
     deposit_items()
         Deposit all items from inventory into bank.
-    
+    recall_potion()
+        Check if 'Recall Potion' is available or not.
+    use_recall_potion()
+        Double click 'Recall Potion' in 'Items' bar.
+
     """
 
     # Private class attributes.
@@ -507,3 +511,32 @@ class Bank:
             elif tab_resources_empty and tab_equipment_empty:
                 print("[INFO] No more items to deposit!")
                 return True
+
+    def recall_potion(self):
+        """
+        Check if 'Recall Potion' is available or not.
+        
+        Make sure the potion is in first slot of second 'Item' row.
+
+        """
+        color = (120, 151, 154)
+        px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=5)
+        if px:
+            print("[INFO] 'Recall Potion' is available!")
+            return "available"
+        else:
+            print("[INFO] 'Recall Potion' is not available!")
+            return "unavailable"
+
+    def use_recall_potion(self):
+        """
+        Double click 'Recall Potion' in 'Items' bar.
+        
+        Make sure the potion is in first slot of second 'Items' row.
+
+        """
+        print("[INFO] Using 'Recall Potion' ... ")
+        x, y = (664, 725)
+        pyautogui.moveTo(x, y, duration=self.__move_duration)
+        pyautogui.click(clicks=2, interval=0.1)
+        time.sleep(0.25)

@@ -107,6 +107,10 @@ class Bot:
     # Counts total completed fights. Just for statistics.
     __total_fights = 0
 
+    # 'BotState.BANKING'.
+    # If 'Recall Potion' was used.
+    __recall_potion_used = False
+
 #----------------------------------------------------------------------#
 #-----------------------------CONSTRUCTOR------------------------------#
 #----------------------------------------------------------------------#
@@ -359,7 +363,7 @@ class Bot:
             # Incrementing by '1' instantly so bot doesn't check pods
             # everytime 'controller' is called.
             self.__fight_counter += 1
-
+            # Getting pods percentage.
             pods_percentage = self.__bank.get_pods_percentage()
 
             if pods_percentage >= self.__pod_limit:
@@ -443,8 +447,10 @@ class Bot:
         ----------
         - Get detected monster coordinates.
         - Attack monster.
-            - If monster attacked successfully - return `True`.
-            - If failed to attack monster - return `False`.
+            - If monster attacked successfully: 
+                - Return `True`.
+            - If failed to attack monster: 
+                - Return `False`.
 
         Returns
         ----------
@@ -1091,8 +1097,10 @@ class Bot:
         - Get coordinates on yellow sun to click on to change maps.
         - Click.
         - Checks if map was changed successfully.
-            - If changed successfully - return `True`.
-            - If failed to change - return `False`.
+            - If changed successfully: 
+                - Return `True`.
+            - If failed to change:
+                - Return `False`.
 
         Returns
         ----------
@@ -1172,8 +1180,8 @@ class Bot:
         - Take screenshot of minimap.
         - Compare `sc_minimap` against locally taken screenshot of 
         minimap.
-            - If images are different, means map changed succesfully - 
-            return `True`.
+        - If images are different, means map changed succesfully:
+            - Return `True`.
 
         Parameters
         ----------
@@ -1211,79 +1219,124 @@ class Bot:
 
         Logic
         ----------
-        - If on "4,-16" map.
-            - Close any pop-ups & interfaces.
-            - Detect if inside or outside Astrub bank.
-                - If not inside - move character inside.
-                - Elif inside and items have been deposited - move
-                character outside.
-                - Elif inside ant items have not been deposited - open
-                bank, deposit items and close bank.
+        - If 'Recall Potion' wasn't used:
+            - Use it.
+        - Elif character on "4,-16" map:
+            - Launch 'Astrub Bank' banking logic.
         - Else:
             - Change 'BotState' to 'CHANGING_MAP'.
-
-        Program will exit if: 
-            - `attempts_total` < `attempts_allowed`.
-            - `timeout` seconds reached.
 
         """
         while True:
 
-            if self.__map_coordinates == "4,-16":
+            if not self.__recall_potion_used:
+                if self.__bank.recall_potion() == "available":
+                    self.__banking_use_recall_potion()
+                    self.__recall_potion_used = True
 
-                attempts_total = 0
-                attempts_allowed = 5
-                items_deposited = False
-
-                while attempts_total < attempts_allowed:
-
-                    self.__popup.deal()
-                    character_inside_bank = self.__bank.inside_or_outside()
-
-                    if not character_inside_bank:
-                        if self.__bank.enter_bank():
-                            continue
-                        else:
-                            attempts_total += 1
-
-                    elif character_inside_bank and items_deposited:
-                        if self.__bank.exit_bank():
-                            self.__fight_counter = 0
-                            self.__state = BotState.CONTROLLER
-                            return
-                        else:
-                            attempts_total += 1
-                            continue
-                        
-                    elif character_inside_bank and not items_deposited:
-
-                        start_time = time.time()
-                        timeout = 60
-
-                        while time.time() - start_time < timeout:
-                            self.__popup.deal()
-                            if self.__bank.open_bank_vault():
-                                if self.__bank.deposit_items():
-                                    if self.__bank.close_bank_vault():
-                                        items_deposited = True
-                                        break
-
-                        else:
-                            print("[ERROR] Failed to complete actions inside "
-                                  f"bank in {timeout} seconds!")
-                            print("[ERROR] Timed out ... ")
-                            print("[ERROR] Exiting ... ")
-                            os._exit(1)
-
-                else:
-                    print("[ERROR] Failed to enter/exit bank in "
-                          f"{attempts_allowed} attempts!")
-                    print("[ERROR] Exiting ... ")
-                    os._exit(1)
+            elif self.__map_coordinates == "4,-16":
+                if self.__banking_astrub_bank():
+                    self.__recall_potion_used = False
+                    self.__state = BotState.CONTROLLER
+                    return
 
             else:
                 self.__state = BotState.CHANGING_MAP
-                break
+                return
+
+    def __banking_use_recall_potion(self):
+        """
+        Use 'Recall Potion'.
+        
+        Make sure that an appropriate Zaap is saved on character. 
+        For example, when using 'Astrub Forest' script, Astrub's Zaap 
+        should be saved.
+
+        """
+        use_time = time.time()
+        timeout = 15
+
+        while time.time() - use_time < timeout:
+
+            self.__bank.use_recall_potion()
+            self.__map_coordinates = self.__get_current_map_coordinates(
+                    self.__data_map
+                )
+
+            if self.__map_coordinates == "4,-19":
+                print("[INFO] Successfully used 'Recall Potion'!")
+                return True
+
+        else:
+            print("[INFO] Failed to use 'Recall Potion'!")
+            return False
+
+    def __banking_astrub_bank(self):
+        """
+        'Astrub Bank' banking logic.
+        
+        - Close any pop-ups & interfaces.
+        - Detect if inside or outside Astrub bank.
+            - If not inside:
+                - Move character inside.
+            - Elif inside and items have been deposited:
+                - Move character outside.
+            - Elif inside ant items have not been deposited:
+                - Open bank, deposit, close bank and return `True`.
+
+        Program will exit if: 
+        - `attempts_total` < `attempts_allowed`.
+        - `timeout` seconds reached.
+        
+        """
+        attempts_total = 0
+        attempts_allowed = 5
+        items_deposited = False
+
+        while attempts_total < attempts_allowed:
+
+            self.__popup.deal()
+            character_inside_bank = self.__bank.inside_or_outside()
+
+            if not character_inside_bank:
+                if self.__bank.enter_bank():
+                    continue
+                else:
+                    attempts_total += 1
+
+            elif character_inside_bank and items_deposited:
+                if self.__bank.exit_bank():
+                    self.__fight_counter = 0
+                    return True
+                else:
+                    attempts_total += 1
+                    continue
+                
+            elif character_inside_bank and not items_deposited:
+
+                start_time = time.time()
+                timeout = 60
+
+                while time.time() - start_time < timeout:
+                    self.__popup.deal()
+                    if self.__bank.open_bank_vault():
+                        if self.__bank.deposit_items():
+                            if self.__bank.close_bank_vault():
+                                items_deposited = True
+                                break
+
+                else:
+                    print("[ERROR] Failed to complete actions inside "
+                            f"bank in {timeout} seconds!")
+                    print("[ERROR] Timed out ... ")
+                    print("[ERROR] Exiting ... ")
+                    os._exit(1)
+
+        else:
+            print("[ERROR] Failed to enter/exit bank in "
+                    f"{attempts_allowed} attempts!")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#

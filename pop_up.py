@@ -235,7 +235,8 @@ class PopUp:
                 return True
 
         else:
-            print(f"[INFO] Failed to close pop-ups in {timeout} seconds!")
+            print(f"[INFO] Failed to close pop-ups/interfaces in {timeout} "
+                  "seconds!")
             return False
 
     def __close_right_click_menu(self):
@@ -252,10 +253,10 @@ class PopUp:
         - Close accidental mouse right click menu.
         - Detect offers.
             - If offer detected - try to add player to ignore.
-                - If failed to add - increment ``offer_close_attempts`.
+                - If failed to add - increment `ignore_attempts`.
             - Elif offer detected and failed to add player to ignore
-            `offer_close_attempts_allowed` times - try to close 
-            everything using `__close_popup_or_interface()`.
+            `ignore_attempts_allowed` times - try to close everything 
+            using `__close_popup_or_interface()`.
                 - If closed - return `True`.
                 - If failed to close - increment `attempts_total`.
             - Elif offer not detected.
@@ -279,8 +280,8 @@ class PopUp:
         """
         attempts_total = 0
         attempts_allowed = 3
-        offer_close_attempts = 0
-        offer_close_attempts_allowed = 3
+        ignore_attempts = 1
+        ignore_attempts_allowed = 3
 
         while attempts_total < attempts_allowed:
 
@@ -289,7 +290,7 @@ class PopUp:
             # Detecting offers.
             offers = self.__detect_offers()
 
-            if offers and offer_close_attempts < offer_close_attempts_allowed:
+            if offers and ignore_attempts <= ignore_attempts_allowed:
                 print("[INFO] Offer from another player detected!")
                 if self.__ignore_for_session():
                     if self.__detect_interfaces():
@@ -303,10 +304,10 @@ class PopUp:
                     else:
                         return True
                 else:
-                    offer_close_attempts += 1
+                    ignore_attempts += 1
                     continue
 
-            elif offers and offer_close_attempts >= 2:
+            elif offers and ignore_attempts >= ignore_attempts_allowed:
                 print("[INFO] Declining offer with `ESC` ... ")
                 if self.__close_popup_or_interface():
                     return True
@@ -327,7 +328,7 @@ class PopUp:
                     return True
 
         else:
-            print(f"[ERROR] Failed to deal with pop-ups in {attempts_allowed} "
-                  "attempts ... ")
+            print("[ERROR] Failed to deal with pop-ups/interfaces in "
+                  f"{attempts_allowed} attempts ... ")
             print("[ERROR] Exiting ... ")
             os._exit(1)
