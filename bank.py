@@ -9,6 +9,7 @@ import pyautogui
 
 from data import ImageData
 from detection import Detection
+from pop_up import PopUp
 from window_capture import WindowCapture
 
 
@@ -49,6 +50,7 @@ class Bank:
     # Objects
     __detection = Detection()
     __window_capture = WindowCapture()
+    __popup = PopUp()
 
     # Public class attributes.
     # Stores banker 'NPC' image data. Loaded in 'bot.py'.
@@ -57,7 +59,6 @@ class Bank:
 
     def __inventory(self):
         """Get status of inventory (opened/closed)."""
-        
         # Gray pixels inside inventory.
         px_1 = pyautogui.pixelMatchesColor(424, 273, (81, 74, 60))
         px_2 = pyautogui.pixelMatchesColor(591, 279, (81, 74, 60))
@@ -73,42 +74,40 @@ class Bank:
         print("[INFO] Opening inventory ... ")
         pyautogui.moveTo(x=692, y=620)
         pyautogui.click()
-        time.sleep(1)
+        # Giving time for inventory to open.
+        time.sleep(0.25)
 
         start_time = time.time()
-        wait_time = 5
+        wait_time = 3
 
         while time.time() - start_time < wait_time:
             if self.__inventory() == "opened":
                 print("[INFO] Inventory opened!")
                 return True
         else:
-            print(f"[ERROR] Failed to open inventory in {wait_time} "
+            print(f"[INFO] Failed to open inventory in {wait_time} "
                   "seconds ... ")
-            print(f"[ERROR] Timed out!")
-            print(f"[ERROR] Exiting ... ")
-            os._exit(1)
+            return False
 
     def __close_inventory(self):
         """Close inventory."""
         print("[INFO] Closing inventory ... ")
         pyautogui.moveTo(x=692, y=620, duration=self.__move_duration)
         pyautogui.click()
-        time.sleep(1)
+        # Giving time for inventory to close.
+        time.sleep(0.25)
 
         start_time = time.time()
-        wait_time = 5
+        wait_time = 3
 
         while time.time() - start_time < wait_time:
             if self.__inventory() == "closed":
                 print("[INFO] Inventory closed!")
                 return True
         else:
-            print(f"[ERROR] Failed to close inventory in {wait_time} "
+            print(f"[INFO] Failed to close inventory in {wait_time} "
                   "seconds ... ")
-            print(f"[ERROR] Timed out!")
-            print(f"[ERROR] Exiting ... ")
-            os._exit(1)
+            return False
 
     def __bank_vault(self):
         """Get status of bank vault (opened/closed)."""
@@ -133,7 +132,7 @@ class Bank:
         print("[INFO] Detecting banker ... ")
 
         start_time = time.time()
-        wait_time = 10
+        wait_time = 7
 
         while time.time() - start_time < wait_time:
 
@@ -149,7 +148,7 @@ class Bank:
                 return rectangles, coordinates
             
         else:
-            print(f"[INFO] Failed to detect banker in '{wait_time}' seconds!")
+            print(f"[INFO] Failed to detect banker in {wait_time} seconds!")
             return False
 
     def __banker_open_dialogue(self, banker_coordinates):
@@ -180,7 +179,7 @@ class Bank:
                 return True
         
         else:
-            print(f"[INFO] Failed to start dialogue in '{wait_time}' seconds!")
+            print(f"[INFO] Failed to start dialogue in {wait_time} seconds!")
             return False
 
     def __banker_open_personal_safe(self):
@@ -202,7 +201,7 @@ class Bank:
                 return True
         
         else:
-            print(f"[INFO] Failed to select option in '{wait_time}' seconds!")
+            print(f"[INFO] Failed to select option in {wait_time} seconds!")
             return False
 
     def __open_tab_equipment(self):
@@ -305,8 +304,16 @@ class Bank:
 
         It's not super precise, because calculation is based on how much
         the pods bar is filled with the orange color. It doesn't take
-        the actual pod numbers into account at all. Inventory must be
-        open, otherwise will almost always return 0.
+        the actual pod numbers into account at all. 
+        
+        Note
+        ----------
+        - Returns a false percentage if inventory is not open. 
+        - Returns a false percentage if pop-up or interface is blocking 
+        the pods bar.
+        - Impossible to get anything between 1-13%. 
+        - Minimum possible percentage if at least 1 pod is taken is 14%.
+        - For 0% the inventory must be completely empty.
 
         Returns
         ----------
@@ -337,17 +344,41 @@ class Bank:
     def get_pods_percentage(self):
         """Get inventory pods percentage."""
         print("[INFO] Checking pod percentage ... ")
+        start_time = time.time()
+        timeout = 60
 
-        if self.__inventory() == "closed":
-            self.__open_inventory()
+        while time.time() - start_time < timeout:
 
-        pods_percentage = self.__calculate_pods()
-        print(f"[INFO] Pods: ~ {pods_percentage} % ... ")
+            # Checking for offers/interfaces and closing them.
+            self.__popup.deal()
 
-        if self.__inventory() == "opened":
-            self.__close_inventory()
+            if self.__inventory() == "closed":
+                if not self.__open_inventory():
+                    continue
 
-        return pods_percentage
+            pods_percentage = self.__calculate_pods()
+            print(f"[INFO] Pods: ~ {pods_percentage} % ... ")
+
+            # If pods percentage is 0, means a pop-up was blocking pods 
+            # bar during calculation or inventory wasn't opened at all.
+            # Have to recalculate, otherwise character will go kill mobs 
+            # even if he's overloaded already.
+            if pods_percentage <= 0:
+                print("[INFO] Recalculating pods percentage ... ")
+                continue
+
+            if self.__inventory() == "opened":
+                if not self.__close_inventory():
+                    continue
+
+            return pods_percentage
+
+        else:
+            print(f"[ERROR] Failed to get pods percentage in {timeout} "
+                  "seconds ... ")
+            print("[ERROR] Timed out ... ")
+            print("[ERROR] Exiting ... ")
+            os._exit(1)
 
     def inside_or_outside(self):
         """
@@ -384,7 +415,7 @@ class Bank:
                 print("[INFO] Successfully entered!")
                 return True
         else:
-            print("[INFO] Failed to enter bank ... ")
+            print("[INFO] Failed to enter bank!")
             return False
 
     def exit_bank(self):
@@ -405,37 +436,25 @@ class Bank:
                 print("[INFO] Successfully exited!")
                 return True
         else:
-            print("[INFO] Failed to exit bank ... ")
+            print("[INFO] Failed to exit bank!")
             return False
 
     def open_bank_vault(self):
         """Open bank interface."""
         print("[INFO] Opening bank vault ... ")
 
-        attempts_total = 0
-        attempts_allowed = 3
+        banker = self.__banker_detect_npc()
 
-        while attempts_total < attempts_allowed:
+        if banker:
+            _, coords = banker
+            if self.__banker_open_dialogue(random.choice(coords)):
+                if self.__banker_open_personal_safe():
+                    if self.__bank_vault() == "opened":
+                        print("[INFO] Bank vault is open!")
+                        return True
 
-            banker = self.__banker_detect_npc()
-
-            if banker:
-                _, coords = banker
-
-                if self.__banker_open_dialogue(random.choice(coords)):
-                    if self.__banker_open_personal_safe():
-                        if self.__bank_vault() == "opened":
-                            print("[INFO] Bank vault is open!")
-                            return True
-
-            else:
-                attempts_total += 1
-
-        else:
-            print(f"[ERROR] Failed to open bank in '{attempts_total}' "
-                  "attempts!")
-            print(f"[ERROR] Exiting ... ")
-            os._exit(1)
+        print("[INFO] Failed to open bank vault!")
+        return False
 
     def close_bank_vault(self):
         """Close bank interface."""
