@@ -69,8 +69,19 @@ class PopUp:
             return False
 
     def __detect_interfaces(self):
-        """Detect interfaces."""
-        if self.__interface_main_menu():
+        """
+        Detect interfaces.
+        
+        Note
+        ----------
+        `__interface_information()` has a different return value because
+        the closing logic for this interface is different. Pressing
+        'ESC' doesn't work.
+        
+        """
+        if self.__interface_information():
+            return "information"
+        elif self.__interface_main_menu():
             return True
         elif self.__interface_banker_dialogue():
             return True
@@ -93,6 +104,19 @@ class PopUp:
         else:
             return False
 
+    def __interface_information(self):
+        """
+        Detect 'Information' interface.
+        
+        Usually appears after a level up.
+
+        """
+        dark_gray = (81, 74, 60)
+        px1 = pyautogui.pixelMatchesColor(463, 261, dark_gray)
+        px2 = pyautogui.pixelMatchesColor(577, 261, dark_gray)
+        if px1 and px2:
+            return True  
+
     def __interface_main_menu(self):
         """Detect 'Main Menu' interface."""
         dark_gray = (81, 74, 60)
@@ -109,7 +133,7 @@ class PopUp:
         px1 = pyautogui.pixelMatchesColor(25, 255, white)
         px2 = pyautogui.pixelMatchesColor(123, 255, white)
         if px1 and px2:
-            return True 
+            return True
 
     def __interface_characteristics(self):
         """Detect characteristics interface."""
@@ -291,9 +315,21 @@ class PopUp:
             offers = self.__detect_offers()
 
             if offers and ignore_attempts <= ignore_attempts_allowed:
+
                 print("[INFO] Offer from another player detected!")
+
                 if self.__ignore_for_session():
-                    if self.__detect_interfaces():
+
+                    interface = self.__detect_interfaces()
+
+                    if interface == "information":
+                        print("[INFO] Information interface detected ... ")
+                        print("[INFO] Closing ... ")
+                        pyautogui.moveTo(469, 376, duration=0.15)
+                        pyautogui.click()
+                        time.sleep(0.25)
+
+                    if interface:
                         print("[INFO] Interfaces detected ... ")
                         print("[INFO] Closing interfaces ... ")
                         if self.__close_popup_or_interface():
@@ -303,12 +339,15 @@ class PopUp:
                             continue
                     else:
                         return True
+
                 else:
                     ignore_attempts += 1
                     continue
 
             elif offers and ignore_attempts >= ignore_attempts_allowed:
+
                 print("[INFO] Declining offer with `ESC` ... ")
+
                 if self.__close_popup_or_interface():
                     return True
                 else:
@@ -316,7 +355,17 @@ class PopUp:
                     continue
 
             elif not offers:
-                if self.__detect_interfaces():
+
+                interface = self.__detect_interfaces()
+
+                if interface == "information":
+                        print("[INFO] Information interface detected ... ")
+                        print("[INFO] Closing ... ")
+                        pyautogui.moveTo(469, 376, duration=0.15)
+                        pyautogui.click()
+                        time.sleep(0.25)
+
+                if interface:
                     print("[INFO] Interfaces detected ... ")
                     print("[INFO] Closing interfaces ... ")
                     if self.__close_popup_or_interface():
