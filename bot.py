@@ -966,7 +966,7 @@ class Bot:
                 self.__detection.find(
                         screenshot,
                         ImageData.s_i + ImageData.end_of_combat_v_1,
-                        threshold=0.7
+                        threshold=0.75
                     )
                 )
 
@@ -989,7 +989,7 @@ class Bot:
         """
         while True:
 
-            # Detecting fight results window.
+            # Detecting 'Fight Results' window.
             close_button = self.__in_combat_detect_results_window()
 
             if len(close_button) <= 0:
@@ -1006,25 +1006,23 @@ class Bot:
                     # Checking for offers/interfaces and closing them.
                     self.__popup.deal()
 
-                    print("[INFO] Closing 'Fight Results' window ... ")
-                    # Separating mouse move and click actions, because
-                    # otherwise it sometimes right clicks too early.
-                    pyautogui.moveTo(x=close_button[0][0], 
-                                     y=close_button[0][1], 
-                                     duration=self.__move_duration)
-                    pyautogui.click()
-                    # Moving mouse off the 'Close' button in case it 
-                    # needs to be detected again.
-                    pyautogui.move(100, 0)
-
+                    # Closing 'Fight Results' window.
                     close_button = self.__in_combat_detect_results_window()
-
-                    if len(close_button) > 0:
-                        print("[INFO] Failed to close 'Fight Results' window!")
-                    elif len(close_button) <= 0:
+                    
+                    if len(close_button) <= 0:
                         print("[INFO] Successfully closed 'Fight Results' "
                               "window!")
                         return True
+                    else:
+                        print("[INFO] Closing 'Fight Results' window ... ")
+                        pyautogui.moveTo(x=close_button[0][0],
+                                         y=close_button[0][1],
+                                         duration=self.__move_duration)
+                        pyautogui.click()
+                        # Moving mouse off the 'Close' button in case it 
+                        # needs to be detected again.
+                        pyautogui.move(100, 0)
+
                 else:
                     print("[ERROR] Couldn't close 'Fight Results' window in "
                           f"{timeout_time} second(s)!")

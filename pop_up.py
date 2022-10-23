@@ -82,25 +82,25 @@ class PopUp:
         if self.__interface_information():
             return "information"
         elif self.__interface_main_menu():
-            return True
+            return "other"
         elif self.__interface_banker_dialogue():
-            return True
+            return "other"
         elif self.__interface_characteristics():
-            return True
+            return "other"
         elif self.__interface_spells():
-            return True
+            return "other"
         elif self.__interface_inventory():
-            return True
+            return "other"
         elif self.__interface_quests():
-            return True
+            return "other"
         elif self.__interface_map():
-            return True
+            return "other"
         elif self.__interface_friends():
-            return True
+            return "other"
         elif self.__interface_guild():
-            return True
+            return "other"
         elif self.__interface_mount():
-            return True
+            return "other"
         else:
             return False
 
@@ -112,10 +112,13 @@ class PopUp:
 
         """
         dark_gray = (81, 74, 60)
+        light_gray = (213, 207, 170)
+        orange = (255, 97, 0)
         px1 = pyautogui.pixelMatchesColor(463, 261, dark_gray)
-        px2 = pyautogui.pixelMatchesColor(577, 261, dark_gray)
-        if px1 and px2:
-            return True  
+        px2 = pyautogui.pixelMatchesColor(302, 377, light_gray)
+        px3 = pyautogui.pixelMatchesColor(503, 376, orange)
+        if px1 and px2 and px3:
+            return True
 
     def __interface_main_menu(self):
         """Detect 'Main Menu' interface."""
@@ -327,11 +330,11 @@ class PopUp:
                         print("[INFO] Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
-                        time.sleep(0.25)
+                        continue
 
-                    if interface:
+                    if interface == "other":
                         print("[INFO] Interfaces detected ... ")
-                        print("[INFO] Closing interfaces ... ")
+                        print("[INFO] Closing ... ")
                         if self.__close_popup_or_interface():
                             return True
                         else:
@@ -363,11 +366,11 @@ class PopUp:
                         print("[INFO] Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
-                        time.sleep(0.25)
+                        continue
 
-                if interface:
+                if interface == "other":
                     print("[INFO] Interfaces detected ... ")
-                    print("[INFO] Closing interfaces ... ")
+                    print("[INFO] Closing ... ")
                     if self.__close_popup_or_interface():
                         return True
                     else:
