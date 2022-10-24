@@ -520,7 +520,7 @@ class Bank:
 
         """
         color = (120, 151, 154)
-        px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=5)
+        px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=20)
         if px:
             print("[INFO] 'Recall Potion' is available!")
             return "available"

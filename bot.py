@@ -1230,7 +1230,6 @@ class Bot:
         while True:
 
             if not self.__recall_potion_used:
-                self.__popup.deal()
                 if self.__bank.recall_potion() == "available":
                     self.__banking_use_recall_potion()
                     self.__recall_potion_used = True
@@ -1255,10 +1254,11 @@ class Bot:
 
         """
         use_time = time.time()
-        timeout = 15
+        timeout = 30
 
         while time.time() - use_time < timeout:
 
+            self.__popup.deal()
             self.__bank.use_recall_potion()
             self.__map_coordinates = self.__get_current_map_coordinates(
                     self.__data_map
