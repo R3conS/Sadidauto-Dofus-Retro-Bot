@@ -116,10 +116,10 @@ class Bot:
 #----------------------------------------------------------------------#
 
     def __init__(self,
-                 character_name: str,
-                 official_version: bool,
                  script: str,
-                 debug_window: bool = False,
+                 character_name: str,
+                 official_version: bool = False,
+                 debug_window: bool = True,
                  detection_threshold: float = 0.6,
                  bot_state: str = BotState.INITIALIZING):
         """
@@ -127,16 +127,16 @@ class Bot:
 
         Parameters
         ----------
+        script : str
+            Bot script to load. Available: 'astrub_forest',
+            'astrub_forest_reversed'.
         character_name : str
             Character's nickname.
         official_version : bool
             Controls whether on official or private 'Dofus Retro' 
-            servers. Official = `True`.
-        script : str
-            Bot script to load. Available: 'astrub_forest',
-            'astrub_forest_reversed'.
+            servers. Official = `True`. Defaults to `False`.
         debug_window : bool, optional
-            Whether to open visual debug window. Defaults to: `False`.
+            Whether to open visual debug window. Defaults to: `True`.
         detection_threshold : bool, optional
             Controls threshold value for `detect_objects()` in
             `BotState.SEARCHING`. Defaults to 0.6.
@@ -1033,7 +1033,7 @@ class Bot:
     def __changing_map(self):
         """Changing map state logic."""
         attempts_total = 0
-        attempts_allowed = 3
+        attempts_allowed = 5
 
         while attempts_total < attempts_allowed:
 
@@ -1230,6 +1230,7 @@ class Bot:
         while True:
 
             if not self.__recall_potion_used:
+                self.__popup.deal()
                 if self.__bank.recall_potion() == "available":
                     self.__banking_use_recall_potion()
                     self.__recall_potion_used = True
