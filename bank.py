@@ -1,5 +1,8 @@
 """Provides banking functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import time
 import os
 import random
@@ -75,7 +78,7 @@ class Bank:
 
     def __open_inventory(self):
         """Open inventory."""
-        print("[INFO] Opening inventory ... ")
+        log.info("Opening inventory ... ")
         pyautogui.moveTo(x=692, y=620)
         pyautogui.click()
         # Giving time for inventory to open.
@@ -86,16 +89,16 @@ class Bank:
 
         while time.time() - start_time < wait_time:
             if self.__inventory() == "opened":
-                print("[INFO] Inventory opened!")
+                log.info("Inventory opened!")
                 return True
         else:
-            print(f"[INFO] Failed to open inventory in {wait_time} "
-                  "seconds ... ")
+            log.info(f"Failed to open inventory in {wait_time} "
+                     "seconds ... ")
             return False
 
     def __close_inventory(self):
         """Close inventory."""
-        print("[INFO] Closing inventory ... ")
+        log.info("Closing inventory ... ")
         pyautogui.moveTo(x=692, y=620, duration=self.__move_duration)
         pyautogui.click()
         # Giving time for inventory to close.
@@ -106,11 +109,11 @@ class Bank:
 
         while time.time() - start_time < wait_time:
             if self.__inventory() == "closed":
-                print("[INFO] Inventory closed!")
+                log.info("Inventory closed!")
                 return True
         else:
-            print(f"[INFO] Failed to close inventory in {wait_time} "
-                  "seconds ... ")
+            log.info(f"Failed to close inventory in {wait_time} "
+                     "seconds ... ")
             return False
 
     def __bank_vault(self):
@@ -133,7 +136,7 @@ class Bank:
 
     def __banker_detect_npc(self):
         """Detect banker NPC."""
-        print("[INFO] Detecting banker ... ")
+        log.info("Detecting banker ... ")
 
         start_time = time.time()
         wait_time = 7
@@ -148,11 +151,11 @@ class Bank:
                 )
 
             if len(coordinates) > 0:
-                print("[INFO] Banker detected!")
+                log.info("Banker detected!")
                 return rectangles, coordinates
             
         else:
-            print(f"[INFO] Failed to detect banker in {wait_time} seconds!")
+            log.info(f"Failed to detect banker in {wait_time} seconds!")
             return False
 
     def __banker_open_dialogue(self, banker_coordinates):
@@ -165,7 +168,7 @@ class Bank:
             Coordinates (x, y) of banker.
 
         """
-        print("[INFO] Talking with banker ... ")
+        log.info("Talking with banker ... ")
 
         x, y = banker_coordinates
         pyautogui.moveTo(x, y, duration=self.__move_duration)
@@ -179,16 +182,16 @@ class Bank:
             dialogue = pyautogui.pixelMatchesColor(333, 322, (255, 255, 206))
 
             if dialogue:
-                print("[INFO] Successfully started dialogue!")
+                log.info("Successfully started dialogue!")
                 return True
         
         else:
-            print(f"[INFO] Failed to start dialogue in {wait_time} seconds!")
+            log.info(f"Failed to start dialogue in {wait_time} seconds!")
             return False
 
     def __banker_open_personal_safe(self):
         """Select first option during dialogue with banker."""
-        print("[INFO] Selecting option 'Consult your personal safe' ... ")
+        log.info("Selecting option 'Consult your personal safe' ... ")
 
         pyautogui.moveTo(294, 365, duration=self.__move_duration)
         pyautogui.click()
@@ -201,16 +204,16 @@ class Bank:
             dialogue = pyautogui.pixelMatchesColor(333, 322, (255, 255, 206))
 
             if not dialogue:
-                print("[INFO] Successfully selected!")
+                log.info("Successfully selected!")
                 return True
         
         else:
-            print(f"[INFO] Failed to select option in {wait_time} seconds!")
+            log.info(f"Failed to select option in {wait_time} seconds!")
             return False
 
     def __open_tab_equipment(self):
         """Open char's equipment tab when bank interface is open."""
-        print("[INFO] Opening 'Equipment' tab ... ")
+        log.info("Opening 'Equipment' tab ... ")
 
         pyautogui.moveTo(817, 205, duration=self.__move_duration)
         pyautogui.click()
@@ -223,16 +226,16 @@ class Bank:
             gray_pixel = pyautogui.pixelMatchesColor(813, 199, (81, 74, 60))
 
             if gray_pixel:
-                print("[INFO] Successfully opened!")
+                log.info("Successfully opened!")
                 return True
         
         else:
-            print(f"[INFO] Failed to open tab in '{wait_time}' seconds!")
+            log.info(f"Failed to open tab in '{wait_time}' seconds!")
             return False
 
     def __open_tab_resources(self):
         """Open char's resources tab when bank interface is open."""
-        print("[INFO] Opening 'Resources' tab ... ")
+        log.info("Opening 'Resources' tab ... ")
 
         pyautogui.moveTo(870, 205, duration=self.__move_duration)
         pyautogui.click()
@@ -245,11 +248,11 @@ class Bank:
             gray_pixel = pyautogui.pixelMatchesColor(863, 199, (81, 74, 60))
 
             if gray_pixel:
-                print("[INFO] Successfully opened!")
+                log.info("Successfully opened!")
                 return True
         
         else:
-            print(f"[INFO] Failed to open tab in '{wait_time}' seconds!")
+            log.info(f"Failed to open tab in '{wait_time}' seconds!")
             return False
 
     def __deposit_item(self):
@@ -266,7 +269,7 @@ class Bank:
 
     def __deposit_items(self):
         """Deposit items in opened tab."""
-        print("[INFO] Depositing items ... ")
+        log.info("Depositing items ... ")
 
         start_time = time.time()
         wait_time = 300
@@ -276,11 +279,11 @@ class Bank:
             if not self.__slot_empty():
                 self.__deposit_item()
             else:
-                print("[INFO] Successfully deposited!")
+                log.info("Successfully deposited!")
                 return True
 
         else:
-            print(f"[INFO] Failed to deposit items in '{wait_time}' seconds!")
+            log.info(f"Failed to deposit items in '{wait_time}' seconds!")
             return False
 
     def __slot_empty(self):
@@ -347,7 +350,7 @@ class Bank:
 
     def get_pods_percentage(self):
         """Get inventory pods percentage."""
-        print("[INFO] Checking pod percentage ... ")
+        log.info("Checking pod percentage ... ")
         start_time = time.time()
         timeout = 60
 
@@ -361,14 +364,14 @@ class Bank:
                     continue
 
             pods_percentage = self.__calculate_pods()
-            print(f"[INFO] Pods: ~ {pods_percentage} % ... ")
+            log.info(f"Pods: ~ {pods_percentage} % ... ")
 
             # If pods percentage is 0, means a pop-up was blocking pods 
             # bar during calculation or inventory wasn't opened at all.
             # Have to recalculate, otherwise character will go kill mobs 
             # even if he's overloaded already.
             if pods_percentage <= 0:
-                print("[INFO] Recalculating pods percentage ... ")
+                log.info("Recalculating pods percentage ... ")
                 continue
 
             if self.__inventory() == "opened":
@@ -378,10 +381,10 @@ class Bank:
             return pods_percentage
 
         else:
-            print(f"[ERROR] Failed to get pods percentage in {timeout} "
-                  "seconds ... ")
-            print("[ERROR] Timed out ... ")
-            print("[ERROR] Exiting ... ")
+            log.critical(f"Failed to get pods percentage in {timeout} "
+                         "seconds ... ")
+            log.critical("Timed out ... ")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def inside_or_outside(self):
@@ -403,7 +406,7 @@ class Bank:
 
     def enter_bank(self):
         """Move character inside of bank."""
-        print("[INFO] Entering bank ... ")
+        log.info("Entering bank ... ")
 
         x, y = (767, 205)
         pyautogui.keyDown('e')
@@ -416,15 +419,15 @@ class Bank:
 
         while time.time() - start_time < wait_time:
             if self.inside_or_outside():
-                print("[INFO] Successfully entered!")
+                log.info("Successfully entered!")
                 return True
         else:
-            print("[INFO] Failed to enter bank!")
+            log.info("Failed to enter bank!")
             return False
 
     def exit_bank(self):
         """Move character outside of bank."""
-        print("[INFO] Exiting bank ... ")
+        log.info("Exiting bank ... ")
 
         x, y = (268, 494)
         pyautogui.keyDown('e')
@@ -437,15 +440,15 @@ class Bank:
 
         while time.time() - start_time < wait_time:
             if not self.inside_or_outside():
-                print("[INFO] Successfully exited!")
+                log.info("Successfully exited!")
                 return True
         else:
-            print("[INFO] Failed to exit bank!")
+            log.info("Failed to exit bank!")
             return False
 
     def open_bank_vault(self):
         """Open bank interface."""
-        print("[INFO] Opening bank vault ... ")
+        log.info("Opening bank vault ... ")
 
         banker = self.__banker_detect_npc()
 
@@ -454,15 +457,15 @@ class Bank:
             if self.__banker_open_dialogue(random.choice(coords)):
                 if self.__banker_open_personal_safe():
                     if self.__bank_vault() == "opened":
-                        print("[INFO] Bank vault is open!")
+                        log.info("Bank vault is open!")
                         return True
 
-        print("[INFO] Failed to open bank vault!")
+        log.info("Failed to open bank vault!")
         return False
 
     def close_bank_vault(self):
         """Close bank interface."""
-        print("[INFO] Closing bank vault ... ")
+        log.info("Closing bank vault ... ")
 
         x, y = (904, 173)
         pyautogui.moveTo(x, y, duration=self.__move_duration)
@@ -476,12 +479,12 @@ class Bank:
             close_icon = pyautogui.pixelMatchesColor(x, y, (255, 255, 255))
 
             if not close_icon:
-                print("[INFO] Successfully closed!")
+                log.info("Successfully closed!")
                 return True
 
         else:
-            print(f"[INFO] Failed to close bank vault in '{wait_time}' "
-                  "seconds!")
+            log.info(f"Failed to close bank vault in '{wait_time}' "
+                     "seconds!")
             return False
 
     def deposit_items(self):
@@ -509,7 +512,7 @@ class Bank:
                         continue
 
             elif tab_resources_empty and tab_equipment_empty:
-                print("[INFO] No more items to deposit!")
+                log.info("No more items to deposit!")
                 return True
 
     def recall_potion(self):
@@ -522,10 +525,10 @@ class Bank:
         color = (120, 151, 154)
         px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=20)
         if px:
-            print("[INFO] 'Recall Potion' is available!")
+            log.info("'Recall Potion' is available!")
             return "available"
         else:
-            print("[INFO] 'Recall Potion' is not available!")
+            log.info("'Recall Potion' is not available!")
             return "unavailable"
 
     def use_recall_potion(self):
@@ -535,7 +538,7 @@ class Bank:
         Make sure the potion is in first slot of second 'Items' row.
 
         """
-        print("[INFO] Using 'Recall Potion' ... ")
+        log.info("Using 'Recall Potion' ... ")
         x, y = (664, 725)
         pyautogui.moveTo(x, y, duration=self.__move_duration)
         pyautogui.click(clicks=2, interval=0.1)

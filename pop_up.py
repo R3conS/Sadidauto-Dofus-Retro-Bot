@@ -1,5 +1,8 @@
 """Provides pop-up and interface closing functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import os
 import time
 
@@ -22,7 +25,7 @@ class PopUp:
 
     def __ignore_for_session(self):
         """Select 'Ignore for this session' during popup."""
-        print("[INFO] Ignoring player ... ")
+        log.info("Ignoring player ... ")
 
         x, y = (466, 387)
         start_time = time.time()
@@ -36,11 +39,11 @@ class PopUp:
                 pyautogui.moveTo(x, y, duration=self.__move_duration)
                 pyautogui.click()
             else:
-                print("[INFO] Added player to ignore!")
+                log.info("Added player to ignore!")
                 return True
         
         else:
-            print(f"[INFO] Failed to add to ignore in {wait_time} seconds!")
+            log.info(f"Failed to add to ignore in {wait_time} seconds!")
             return False
 
     def __detect_offers(self):
@@ -258,11 +261,11 @@ class PopUp:
                 continue
             elif counter == len(pixels):
                 pyautogui.press("esc")
-                print("[INFO] Closed successfully!")
+                log.info("Closed successfully!")
                 return True
 
         else:
-            print(f"[INFO] Failed to close pop-ups/interfaces in {timeout} "
+            log.info(f"Failed to close pop-ups/interfaces in {timeout} "
                   "seconds!")
             return False
 
@@ -319,22 +322,22 @@ class PopUp:
 
             if offers and ignore_attempts <= ignore_attempts_allowed:
 
-                print("[INFO] Offer from another player detected!")
+                log.info("Offer from another player detected!")
 
                 if self.__ignore_for_session():
 
                     interface = self.__detect_interfaces()
 
                     if interface == "information":
-                        print("[INFO] Information interface detected ... ")
-                        print("[INFO] Closing ... ")
+                        log.info("Information interface detected ... ")
+                        log.info("Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
                         continue
 
                     if interface == "other":
-                        print("[INFO] Interfaces detected ... ")
-                        print("[INFO] Closing ... ")
+                        log.info("Interfaces detected ... ")
+                        log.info("Closing ... ")
                         if self.__close_popup_or_interface():
                             return True
                         else:
@@ -349,7 +352,7 @@ class PopUp:
 
             elif offers and ignore_attempts >= ignore_attempts_allowed:
 
-                print("[INFO] Declining offer with `ESC` ... ")
+                log.info("Declining offer with `ESC` ... ")
 
                 if self.__close_popup_or_interface():
                     return True
@@ -362,15 +365,15 @@ class PopUp:
                 interface = self.__detect_interfaces()
 
                 if interface == "information":
-                        print("[INFO] Information interface detected ... ")
-                        print("[INFO] Closing ... ")
+                        log.info("Information interface detected ... ")
+                        log.info("Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
                         continue
 
                 if interface == "other":
-                    print("[INFO] Interfaces detected ... ")
-                    print("[INFO] Closing ... ")
+                    log.info("Interfaces detected ... ")
+                    log.info("Closing ... ")
                     if self.__close_popup_or_interface():
                         return True
                     else:
@@ -380,7 +383,7 @@ class PopUp:
                     return True
 
         else:
-            print("[ERROR] Failed to deal with pop-ups/interfaces in "
-                  f"{attempts_allowed} attempts ... ")
-            print("[ERROR] Exiting ... ")
+            log.critical("Failed to deal with pop-ups/interfaces in "
+                         f"{attempts_allowed} attempts ... ")
+            log.critical("[ERROR] Exiting ... ")
             os._exit(1)

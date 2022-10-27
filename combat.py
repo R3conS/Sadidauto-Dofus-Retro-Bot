@@ -1,5 +1,8 @@
 """Provides combat functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import os
 import time
 
@@ -75,7 +78,7 @@ class Combat:
     # instant. Messes up spell casting if left on default.
     __move_duration = 0.15
 
-    # Objects
+    # Objects.
     __window_capture = WindowCapture()
     __detection = Detection()
 
@@ -125,7 +128,7 @@ class Combat:
         # 2) the 'capture_region' argument in 'custom_area_capture()' 
         # is wrong.
         if len(r_and_t) <= 0:
-            print("[INFO] Couldn't detect current 'AP' count!")
+            log.info("Couldn't detect current 'AP' count!")
             return None
 
         return r_and_t[0][1]
@@ -158,7 +161,7 @@ class Combat:
         # 2) the 'capture_region' argument in 'custom_area_capture()' 
         # is wrong.
         if len(r_and_t) <= 0:
-            print("[INFO] Couldn't detect current 'MP' count!")
+            log.info("Couldn't detect current 'MP' count!")
             return None
 
         return r_and_t[0][1]
@@ -194,7 +197,7 @@ class Combat:
 
                 if r_and_t:
                     if r_and_t[0][1] == self.character_name:
-                        print("[INFO] Turn started!")
+                        log.info("Turn started!")
                         return True
             else:
                 return False
@@ -256,7 +259,7 @@ class Combat:
                 )
 
             if len(rects) > 0:
-                print("[INFO] Passing turn ... ")
+                log.info("Passing turn ... ")
                 coords = self.__detection.get_click_coords(
                         rects,
                         self.__window_capture.TURN_END_REGION
@@ -270,14 +273,14 @@ class Combat:
                 time.sleep(self.__WAIT_AFTER_TURN_PASS)
                 
                 if self.turn_detect_end():
-                    print("[INFO] Turn passed successfully!")
+                    log.info("Turn passed successfully!")
                     return True
                 else:
-                    print("[INFO] Failed to pass turn!")
+                    log.info("Failed to pass turn!")
         else:
-            print(f"[ERROR] Couldn't pass turn for {timeout_time} second(s)!")
-            print(f"[ERROR] Timed out!")
-            print(f"[ERROR] Exiting ... ")
+            log.critical(f"Couldn't pass turn for {timeout_time} second(s)!")
+            log.critical("Timed out!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def get_available_spells(self):
@@ -517,7 +520,7 @@ class Combat:
             position = self.__get_click_coords(coords[0], coords[1])
             return position
         else:
-            print("[INFO] Couldn't get character position!")
+            log.info("Couldn't get character position!")
             return False
 
     def __get_pixel_coords(self, start_cell_color):
@@ -622,7 +625,7 @@ class Combat:
                 spell = spell.replace("_", " ")
                 spell = spell.title()
 
-        print(f"[INFO] Casting spell: '{spell}' ... ")
+        log.info(f"Casting spell: '{spell}' ... ")
         pyautogui.moveTo(spell_coordinates[0], 
                          spell_coordinates[1], 
                          duration=self.__move_duration)
@@ -649,7 +652,7 @@ class Combat:
             If models were not hidden during `wait_time` seconds.
 
         """
-        print("[INFO] Hiding models ... ")
+        log.info("Hiding models ... ")
 
         x, y = (865, 533)
         color = (0, 153, 0)
@@ -661,7 +664,7 @@ class Combat:
             button_clicked = pyautogui.pixelMatchesColor(x, y, color)
 
             if button_clicked:
-                print("[INFO] Models hidden successfully!")
+                log.info("Models hidden successfully!")
                 return True
             else:
                 pyautogui.moveTo(x, y, duration=self.__move_duration)
@@ -669,7 +672,7 @@ class Combat:
                 pyautogui.moveTo(574, 749)
 
         else:
-            print(f"[INFO] Failed to hide models in {wait_time} seconds!")
+            log.info(f"Failed to hide models in {wait_time} seconds!")
             return False
 
     def enable_tactical_mode(self):
@@ -694,16 +697,16 @@ class Combat:
             button_clicked = pyautogui.pixelMatchesColor(x, y, color)
 
             if button_clicked:
-                print("[INFO] 'Tactical Mode' enabled!")
+                log.info("'Tactical Mode' enabled!")
                 return True
             else:
-                print("[INFO] Enabling 'Tactical Mode' ... ")
+                log.info("Enabling 'Tactical Mode' ... ")
                 pyautogui.moveTo(x, y, duration=self.__move_duration)
                 pyautogui.click()
                 pyautogui.moveTo(574, 749)
 
         else:
-            print(f"[INFO] Failed to enable in {wait_time} seconds!")
+            log.info(f"Failed to enable in {wait_time} seconds!")
             return False
 
     def shrink_turn_bar(self):
@@ -724,7 +727,7 @@ class Combat:
             If turn bar was not shrunk.
 
         """
-        print("[INFO] Shrinking `Turn Bar` ... ")
+        log.info("Shrinking `Turn Bar` ... ")
         
         # All possible tile colors in 'Tactical Mode'.
         colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
@@ -743,9 +746,9 @@ class Combat:
             for color in colors:
                 pixel = pyautogui.pixelMatchesColor(x-40, y, color)
                 if pixel:
-                    print("[INFO] Successfully shrunk 'Turn Bar'!")
+                    log.info("Successfully shrunk 'Turn Bar'!")
                     return True
 
         else:
-            print("[INFO] Failed to shrink 'Turn Bar'!")
+            log.info("Failed to shrink 'Turn Bar'!")
             return False

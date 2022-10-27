@@ -1,5 +1,8 @@
 """Provides additional threading functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import threading
 
 
@@ -59,10 +62,10 @@ class ThreadingTools:
 
         """
         success = False
-        print(f"[INFO] Starting '{thread_instance}'!")
+        log.info(f"Starting '{thread_instance}'!")
         while True:
             if success:
-                print(f"[INFO] Started '{thread_instance}'!")
+                log.info(f"Started '{thread_instance}'!")
                 break
             elif self.check_thread_status(thread_instance) == "ALIVE":
                 success = True
@@ -84,10 +87,10 @@ class ThreadingTools:
 
         """
         success = False
-        print(f"[INFO] Stopping '{thread_instance}'!")
+        log.info(f"Stopping '{thread_instance}'!")
         while True:
             if success:
-                print(f"[INFO] Stopped '{thread_instance}'!")
+                log.info(f"Stopped '{thread_instance}'!")
                 break
             elif self.check_thread_status(thread_instance) == "ALIVE":
                 continue
