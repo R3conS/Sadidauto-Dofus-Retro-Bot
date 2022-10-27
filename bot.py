@@ -251,16 +251,14 @@ class Bot:
                 return map_coords
             else:
                 log.critical(f"Map ({map_coords}) doesn't exist in database!")
-                WindowCapture.on_exit_capture()
                 log.critical("Exiting ... ")
-                os._exit(1)
+                WindowCapture.on_exit_capture()
 
         else:
             log.critical("Fatal error in '__get_current_map_coordinates()'!")
             log.critical(f"Exceeded detection limit of {timeout} second(s)!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
     def __get_map_type(self, map_coordinates):
         """
@@ -327,7 +325,6 @@ class Bot:
         """
         if not isinstance(script, str):
             log.critical("Parameter 'script' must be a string!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -408,9 +405,8 @@ class Bot:
             else:
                 log.critical(f"Invalid map type '{map_type}' for map "
                              f"'{self.__map_coordinates}'!")
-                WindowCapture.on_exit_capture()
                 log.critical(f"Exiting ... ")
-                os._exit(1)
+                WindowCapture.on_exit_capture()
 
     def __searching(self):
         """Searching state logic."""
@@ -558,9 +554,8 @@ class Bot:
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
     def __preparation_enable_tactical_mode(self):
         """Enable tactical mode."""
@@ -915,9 +910,8 @@ class Bot:
 
         else:
             log.critical(f"Failed to move character in {attempts} attempts!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
     def __in_combat_cast_spells(self, first_turn):
         """
@@ -929,7 +923,10 @@ class Bot:
             Whether it's the first turn of combat or not.
         
         """
-        while True:
+        start_time = time.time()
+        timeout = 60
+
+        while time.time() - start_time < timeout:
 
             available_spells = self.__combat.get_available_spells()
 
@@ -955,6 +952,11 @@ class Bot:
 
                 self.__combat.cast_spell(spell, spell_coords, cast_coords)
                 break
+        
+        else:
+            log.critical(f"Failed to cast spells in {timeout} seconds!")
+            log.critical("Exiting ... ")
+            WindowCapture.on_exit_capture()
 
     def __in_combat_detect_results_window(self):
         """
@@ -1032,9 +1034,8 @@ class Bot:
                     log.critical("Couldn't close 'Fight Results' window in "
                                  f"{timeout_time} second(s)!")
                     log.critical("Timed out!")
-                    WindowCapture.on_exit_capture()
                     log.critical("Exiting ... ")
-                    os._exit(1)
+                    WindowCapture.on_exit_capture()
 
     def __changing_map(self):
         """Changing map state logic."""
@@ -1055,9 +1056,8 @@ class Bot:
         else:
             log.critical(f"Failed to change maps in {attempts_allowed} "
                          "attempts!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
     def __changing_map_get_move_coords(self):
         """
@@ -1336,16 +1336,14 @@ class Bot:
                     log.critical("Failed to complete actions inside "
                                  f"bank in {timeout} seconds!")
                     log.critical("Timed out!")
-                    WindowCapture.on_exit_capture()
                     log.critical("Exiting ... ")
-                    os._exit(1)
+                    WindowCapture.on_exit_capture()
 
         else:
             log.critical("Failed to enter/exit bank in "
                          f"{attempts_allowed} attempts!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
@@ -1392,9 +1390,8 @@ class Bot:
         except:
 
             log.exception("An exception occured!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            #WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#
@@ -1431,9 +1428,6 @@ class Bot:
     def __VisualDebugWindow_Thread_stop(self):
         """Stop VisualDebugOutput thread."""
         self.__VisualDebugWindow_Thread_stopped = True
-        self.__threading_tools.wait_thread_stop(
-                self.__VisualDebugWindow_Thread_thread
-            )
         
     def __VisualDebugWindow_Thread_run(self):
         """Execute this code while thread is alive."""

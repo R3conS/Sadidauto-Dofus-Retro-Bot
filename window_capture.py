@@ -204,10 +204,10 @@ class WindowCapture:
     @staticmethod
     def on_exit_capture():
         """
-        Take a screenshot and close 'Dofus.exe'.
+        Take a screenshot, close 'Dofus.exe' and exit program.
         
-        Method is used right before exiting program due to critical
-        error.
+        Method is used after a critical error was encountered and
+        program can't continue to run.
 
         """
         # Creating folder for image storage if it's missing.
@@ -227,8 +227,11 @@ class WindowCapture:
         image_name = now.strftime("[%Y-%m-%d] Captured - %Hh %Mm %Ss") + ".jpg"
 
         # Capturing screen.
-        log.info("Taking a screenshot ... ")
+        log.info("Taking a screenshot for debug ... ")
         pyautogui.screenshot(os.path.join(images_folder_path, image_name))
+        log.info(f"Saved: '{os.path.join(images_folder_path, image_name)}'!")
 
         # Closing 'Dofus.exe'.
         GameWindow.close()
+
+        os._exit(1)

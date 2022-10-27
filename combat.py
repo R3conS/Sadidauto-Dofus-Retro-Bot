@@ -280,9 +280,8 @@ class Combat:
         else:
             log.critical(f"Couldn't pass turn for {timeout_time} second(s)!")
             log.critical("Timed out!")
-            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
 
     def get_available_spells(self):
         """
