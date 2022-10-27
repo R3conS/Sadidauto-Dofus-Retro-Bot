@@ -382,10 +382,10 @@ class Bank:
 
         else:
             log.critical(f"Failed to get percentage in {timeout} seconds!")
-            log.critical("Timed out ... ")
-            WindowCapture.on_exit_capture()
+            log.critical("Timed out!")
             log.critical("Exiting ... ")
-            os._exit(1)
+            WindowCapture.on_exit_capture()
+
 
     def inside_or_outside(self):
         """

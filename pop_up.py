@@ -387,6 +387,5 @@ class PopUp:
         else:
             log.critical("Failed to deal with pop-ups/interfaces in "
                          f"{attempts_allowed} attempts!")
+            log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
-            log.critical("[ERROR] Exiting ... ")
-            os._exit(1)
