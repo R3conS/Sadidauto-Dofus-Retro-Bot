@@ -1,10 +1,17 @@
 """Provides screen capturing functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
+import datetime
+import os
 from typing import Tuple
 
 import cv2 as cv
 import numpy as np
 import pyautogui
+
+from game_window import GameWindow
 
 
 class WindowCapture:
@@ -193,3 +200,35 @@ class WindowCapture:
                                interpolation=interpolation_flag)
 
         return screenshot
+
+    @staticmethod
+    def on_exit_capture():
+        """
+        Take a screenshot and close 'Dofus.exe'.
+        
+        Method is used right before exiting program due to critical
+        error.
+
+        """
+        # Creating folder for image storage if it's missing.
+        current_work_dir = os.getcwd()
+        master_log_folder_name = Logger.master_log_folder
+        images_folder = "on_exit_images"
+        images_folder_path = os.path.join(current_work_dir, 
+                                          master_log_folder_name,
+                                          images_folder)
+        master_log_folder = os.listdir(os.path.join(current_work_dir,
+                                                    master_log_folder_name))
+        if images_folder not in master_log_folder:
+            os.mkdir(images_folder_path)
+
+        # Generating image file name.
+        now = datetime.datetime.now()
+        image_name = now.strftime("[%Y-%m-%d] Captured - %Hh %Mm %Ss") + ".jpg"
+
+        # Capturing screen.
+        log.info("Taking a screenshot ... ")
+        pyautogui.screenshot(os.path.join(images_folder_path, image_name))
+
+        # Closing 'Dofus.exe'.
+        GameWindow.close()

@@ -251,12 +251,14 @@ class Bot:
                 return map_coords
             else:
                 log.critical(f"Map ({map_coords}) doesn't exist in database!")
+                WindowCapture.on_exit_capture()
                 log.critical("Exiting ... ")
                 os._exit(1)
 
         else:
             log.critical("Fatal error in '__get_current_map_coordinates()'!")
             log.critical(f"Exceeded detection limit of {timeout} second(s)!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -324,7 +326,8 @@ class Bot:
         
         """
         if not isinstance(script, str):
-            log.critical("Parameter 'script' must be a string ... ")
+            log.critical("Parameter 'script' must be a string!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -357,7 +360,7 @@ class Bot:
             return True
 
         else:
-            log.critical(f"Couldn't find script '{script}' in database ... ")
+            log.critical(f"Couldn't find script '{script}' in database!")
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -405,6 +408,7 @@ class Bot:
             else:
                 log.critical(f"Invalid map type '{map_type}' for map "
                              f"'{self.__map_coordinates}'!")
+                WindowCapture.on_exit_capture()
                 log.critical(f"Exiting ... ")
                 os._exit(1)
 
@@ -554,6 +558,7 @@ class Bot:
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -910,6 +915,7 @@ class Bot:
 
         else:
             log.critical(f"Failed to move character in {attempts} attempts!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -1026,6 +1032,7 @@ class Bot:
                     log.critical("Couldn't close 'Fight Results' window in "
                                  f"{timeout_time} second(s)!")
                     log.critical("Timed out!")
+                    WindowCapture.on_exit_capture()
                     log.critical("Exiting ... ")
                     os._exit(1)
 
@@ -1048,6 +1055,7 @@ class Bot:
         else:
             log.critical(f"Failed to change maps in {attempts_allowed} "
                          "attempts!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -1327,13 +1335,15 @@ class Bot:
                 else:
                     log.critical("Failed to complete actions inside "
                                  f"bank in {timeout} seconds!")
-                    log.critical("Timed out ... ")
+                    log.critical("Timed out!")
+                    WindowCapture.on_exit_capture()
                     log.critical("Exiting ... ")
                     os._exit(1)
 
         else:
             log.critical("Failed to enter/exit bank in "
                          f"{attempts_allowed} attempts!")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 
@@ -1343,39 +1353,48 @@ class Bot:
 
     def __Bot_Thread_run(self):
         """Execute this code while bot thread is alive."""
-        while not self.__Bot_Thread_stopped:
+        try:
 
-            # The bot always starts up in this (INITIALIZING) state. 
-            if self.__state == BotState.INITIALIZING:
-                self.__initializing()
+            while not self.__Bot_Thread_stopped:
 
-            # Determines what state to switch to when out of combat.
-            elif self.__state == BotState.CONTROLLER:
-                self.__controller()
+                # The bot always starts up in this (INITIALIZING) state. 
+                if self.__state == BotState.INITIALIZING:
+                    self.__initializing()
 
-            # Handles monster detection.
-            elif self.__state == BotState.SEARCHING:
-                self.__searching()
+                # Determines what state to switch to when out of combat.
+                elif self.__state == BotState.CONTROLLER:
+                    self.__controller()
 
-            # Handles attacking found monsters.
-            elif self.__state == BotState.ATTACKING:
-                self.__attacking()
+                # Handles monster detection.
+                elif self.__state == BotState.SEARCHING:
+                    self.__searching()
 
-            # Handles combat preparation actions.
-            elif self.__state == BotState.PREPARATION:
-                self.__preparation()
+                # Handles attacking found monsters.
+                elif self.__state == BotState.ATTACKING:
+                    self.__attacking()
 
-            # Handles combat actions.
-            elif self.__state == BotState.IN_COMBAT:
-                self.__in_combat()
-                        
-            # Handles map changing actions.
-            elif self.__state == BotState.CHANGING_MAP:
-                self.__changing_map()
+                # Handles combat preparation actions.
+                elif self.__state == BotState.PREPARATION:
+                    self.__preparation()
 
-            # Handles banking.
-            elif self.__state == BotState.BANKING:
-                self.__banking()
+                # Handles combat actions.
+                elif self.__state == BotState.IN_COMBAT:
+                    self.__in_combat()
+                            
+                # Handles map changing actions.
+                elif self.__state == BotState.CHANGING_MAP:
+                    self.__changing_map()
+
+                # Handles banking.
+                elif self.__state == BotState.BANKING:
+                    self.__banking()
+
+        except:
+
+            log.exception("An exception occured!")
+            WindowCapture.on_exit_capture()
+            log.critical("Exiting ... ")
+            os._exit(1)
 
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#

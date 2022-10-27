@@ -13,7 +13,8 @@ class Parser:
 
     """
 
-    def __str_to_bool(self, argument):
+    @classmethod
+    def __str_to_bool(cls, argument):
         """Convert 'str' argument values to 'bool'."""
         if isinstance(argument, bool):
             return argument
@@ -24,7 +25,8 @@ class Parser:
         else:
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
-    def parse_command_line(self):
+    @classmethod
+    def parse_command_line(cls):
         """Parse command-line arguments."""
         parser = argparse.ArgumentParser(description="Select 'Bot' options.")
 
@@ -43,13 +45,13 @@ class Parser:
                             help="Official or private 'Dofus Retro' server. "
                                  "Default = 'False'.",
                             default=False,
-                            type=lambda x: self.__str_to_bool(x))  
+                            type=lambda x: cls.__str_to_bool(x))
 
         parser.add_argument("-dw", "--debug_window",
                             help="Launch visual debug window or not. "
                                  "Default = 'True'.",
                             default=True,
-                            type=lambda x: self.__str_to_bool(x))
+                            type=lambda x: cls.__str_to_bool(x))
 
         args = parser.parse_args()
 
