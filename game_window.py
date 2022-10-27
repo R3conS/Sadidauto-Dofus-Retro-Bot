@@ -4,6 +4,7 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
 
 import pygetwindow as gw
+import pyautogui
 
 
 class GameWindow:
@@ -64,7 +65,7 @@ class GameWindow:
                      "character name and make sure you are logged in.")
             return False
 
-    def resize_and_move(self) -> None:
+    def resize_and_move(self):
         """Resize and move 'Dofus.exe' window."""
         dfw = gw.getWindowsWithTitle(self.character_name + " - Dofus Retro")[0]
         dfw.restore()
@@ -78,3 +79,10 @@ class GameWindow:
             dfw.resizeTo(950, 785)
 
         dfw.moveTo(-8, 0)
+
+    @staticmethod
+    def close():
+        """Close 'Dofus.exe' window."""
+        pyautogui.moveTo(910, 15, duration=0.15)
+        pyautogui.click()
+        log.info("Closing 'Dofus.exe' ... ")

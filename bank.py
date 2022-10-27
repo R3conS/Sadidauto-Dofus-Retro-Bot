@@ -381,9 +381,9 @@ class Bank:
             return pods_percentage
 
         else:
-            log.critical(f"Failed to get pods percentage in {timeout} "
-                         "seconds ... ")
+            log.critical(f"Failed to get percentage in {timeout} seconds!")
             log.critical("Timed out ... ")
+            WindowCapture.on_exit_capture()
             log.critical("Exiting ... ")
             os._exit(1)
 

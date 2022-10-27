@@ -73,30 +73,27 @@ class Logger:
 
         # Creating the logger and configuring options.
         logger = logging.getLogger(logger_name)
+        logger.setLevel(log_level)
+        logger.propagate = False
 
-        if not logger.hasHandlers():
+        formatter_file = logging.Formatter(
+                "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+            )
+        formatter_stream = logging.Formatter(
+                "%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
+                "%H:%M:%S"
+            )
+        
+        file_handler = logging.FileHandler(
+                os.path.join(folder_path, log_file_name)
+            )
+        file_handler.setFormatter(formatter_file)
+        logger.addHandler(file_handler)
 
-            logger.setLevel(log_level)
-            logger.propagate = False
-
-            formatter_file = logging.Formatter(
-                    "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
-                )
-            formatter_stream = logging.Formatter(
-                    "%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-                    "%H:%M:%S"
-                )
-            
-            file_handler = logging.FileHandler(
-                    os.path.join(folder_path, log_file_name)
-                )
-            file_handler.setFormatter(formatter_file)
-            logger.addHandler(file_handler)
-
-            if stream_handler:
-                s_handler = logging.StreamHandler()
-                s_handler.setFormatter(formatter_stream)
-                logger.addHandler(s_handler)
+        if stream_handler:
+            s_handler = logging.StreamHandler()
+            s_handler.setFormatter(formatter_stream)
+            logger.addHandler(s_handler)
 
         return logger
 
