@@ -41,13 +41,13 @@ class Parser:
 
         parser.add_argument("-ov", "--official_version", 
                             help="Official or private 'Dofus Retro' server. "
-                                "Default = 'False'.",
+                                 "Default = 'False'.",
                             default=False,
                             type=lambda x: self.__str_to_bool(x))  
 
         parser.add_argument("-dw", "--debug_window",
                             help="Launch visual debug window or not. "
-                                "Default = 'True'.",
+                                 "Default = 'True'.",
                             default=True,
                             type=lambda x: self.__str_to_bool(x))
 

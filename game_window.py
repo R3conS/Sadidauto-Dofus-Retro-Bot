@@ -1,5 +1,8 @@
 """Provides Dofus's game window manipulating functionality."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import pygetwindow as gw
 
 
@@ -54,11 +57,11 @@ class GameWindow:
         """
         gmw = gw.getWindowsWithTitle(self.character_name + " - Dofus Retro")
         if gmw:
-            print("[INFO] Game window successfully detected!")
+            log.info("Game window successfully detected!")
             return True
         else:
-            print("[INFO] Couldn't find the game window. Please enter " 
-                  + "character name and make sure you are logged in.")
+            log.info("Couldn't find the game window. Please enter a valid"
+                     "character name and make sure you are logged in.")
             return False
 
     def resize_and_move(self) -> None:

@@ -55,7 +55,7 @@ class WindowCapture:
         conversion_code: int, optional
             OpenCV color conversion code. Defaults to: 
             `cv.COLOR_RGB2BGR`.
-        convert : bool
+        convert : bool, optional
             Whether to convert image to `np.ndarray` or not. Defaults to 
             `True`.
 
@@ -87,10 +87,10 @@ class WindowCapture:
         midpoint : int
             Midpoint of length and width value of screenshot area.
             Screenshot area in pixels: (`midpoint`*2) * (`midpoint*2`).
-        pos : Tuple[int, int]
+        pos : Tuple[int, int], optional
             Center (x, y) coordinates of screenshot area. Defaults to
             current coordinates of mouse cursor.
-        convert : bool
+        convert : bool, optional
             Whether to convert image to `np.ndarray` or not. Defaults to 
             `True`.
 

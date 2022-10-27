@@ -1,5 +1,8 @@
 """Main bot logic."""
 
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+
 import threading
 import time
 import os
@@ -132,7 +135,7 @@ class Bot:
             'astrub_forest_reversed'.
         character_name : str
             Character's nickname.
-        official_version : bool
+        official_version : bool, optional
             Controls whether on official or private 'Dofus Retro' 
             servers. Official = `True`. Defaults to `False`.
         debug_window : bool, optional
@@ -145,12 +148,15 @@ class Bot:
 
         """
         self.__script = script
+        self.__character_name = character_name.capitalize()
+        self.__official_version = official_version
         self.__debug_window = debug_window
         self.__detection_threshold = detection_threshold
-        self.__state = bot_state
-        self.__game_window = GameWindow(character_name, official_version)
-        self.__combat = Combat(character_name)
-        
+        self.__state = bot_state 
+        self.__game_window = GameWindow(self.__character_name,
+                                        self.__official_version)
+        self.__combat = Combat(self.__character_name)
+
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
 #----------------------------------------------------------------------#
@@ -210,9 +216,9 @@ class Bot:
         wait_before_detecting = 0.25
         # Loop control variables.
         start_time = time.time()
-        wait_time_before_exit = 60
+        timeout = 60
 
-        while time.time() - start_time < wait_time_before_exit:
+        while time.time() - start_time < timeout:
 
             # Checking for offers/interfaces and closing them.
             self.__popup.deal()
@@ -244,16 +250,14 @@ class Bot:
             if self.__check_if_map_in_database(map_coords, map_database):
                 return map_coords
             else:
-                print(f"[ERROR] Map ({map_coords}) doesn't exist in database!")
-                print("[ERROR] Exiting ... ")
+                log.critical(f"Map ({map_coords}) doesn't exist in database!")
+                log.critical("Exiting ... ")
                 os._exit(1)
 
         else:
-            print("[ERROR] Fatal error in "
-                  "'__get_current_map_coordinates()'!")
-            print("[ERROR] Exceeded detection time limit of "
-                  f"{wait_time_before_exit} second(s)!")
-            print("[ERROR] Exiting ... ")
+            log.critical("Fatal error in '__get_current_map_coordinates()'!")
+            log.critical(f"Exceeded detection limit of {timeout} second(s)!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def __get_map_type(self, map_coordinates):
@@ -295,10 +299,10 @@ class Bot:
 
         # Loading bot script data.
         if self.__initializing_load_bot_script_data(self.__script):
-            print(f"[INFO] Successfully loaded '{self.__script}' script!")
+            log.info(f"Successfully loaded '{self.__script}' script!")
 
         # Passing control to 'CONTROLLER' state.
-        print(f"[INFO] Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
+        log.info(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
         self.__state = BotState.CONTROLLER
 
     def __initializing_load_bot_script_data(self, script):
@@ -320,8 +324,8 @@ class Bot:
         
         """
         if not isinstance(script, str):
-            print("[ERROR] Parameter 'script' must be a string ... ")
-            print("[ERROR] Exiting ... ")
+            log.critical("Parameter 'script' must be a string ... ")
+            log.critical("Exiting ... ")
             os._exit(1)
 
         script = script.lower()
@@ -353,8 +357,8 @@ class Bot:
             return True
 
         else:
-            print(f"[ERROR] Couldn't find script '{script}' in database ... ")
-            print("[ERROR] Exiting ... ")
+            log.critical(f"Couldn't find script '{script}' in database ... ")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def __controller(self):
@@ -367,10 +371,10 @@ class Bot:
             pods_percentage = self.__bank.get_pods_percentage()
 
             if pods_percentage >= self.__pod_limit:
-                print("[INFO] Overloaded! Going to bank ... ")
+                log.info("Overloaded! Going to bank ... ")
                 self.__character_overloaded = True
             else:
-                print("[INFO] Not overloaded! Hunting ... ")
+                log.info("Not overloaded! Hunting ... ")
                 self.__character_overloaded = False
 
         if self.__character_overloaded:
@@ -399,14 +403,14 @@ class Bot:
                 self.__state = BotState.CHANGING_MAP
 
             else:
-                print(f"[ERROR] Invalid map type '{map_type}' for map "
-                      f"'{self.__map_coordinates}'!")
-                print(f"[ERROR] Exiting ... ")
+                log.critical(f"Invalid map type '{map_type}' for map "
+                             f"'{self.__map_coordinates}'!")
+                log.critical(f"Exiting ... ")
                 os._exit(1)
 
     def __searching(self):
         """Searching state logic."""
-        print(f"[INFO] Searching for monsters ... ")
+        log.info(f"Searching for monsters ... ")
 
         screenshot = self.__window_capture.gamewindow_capture()
         self.__obj_rects, self.__obj_coords = self.__detection.detect_objects(
@@ -418,17 +422,15 @@ class Bot:
 
         # If monsters were detected.
         if len(self.__obj_coords) > 0:
-            print(f"[INFO] Monsters found at: {self.__obj_coords}!")
-            # print("[INFO] Changing 'BotState' to: "
-            #       f"'{BotState.ATTACKING}' ... ")
+            log.info(f"Monsters found at: {self.__obj_coords}!")
+            log.debug(f"Changing 'BotState' to: '{BotState.ATTACKING}' ... ")
             self.__state = BotState.ATTACKING
             self.__map_searched = False
                 
         # If monsters were NOT detected.
         elif len(self.__obj_coords) <= 0:
-            print("[INFO] Couldn't find any monsters!")
-            # print("[INFO] Changing 'BotState' to: "
-            #       f"'{BotState.CONTROLLER}' ... ")
+            log.info("Couldn't find any monsters!")
+            log.debug(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
             self.__state = BotState.CONTROLLER
             self.__map_searched = True
 
@@ -455,7 +457,7 @@ class Bot:
         Returns
         ----------
         True : bool
-            If attack was successful.
+            If attack was succeattack_attempts_allowedssful.
         False : bool
             If attack was unsuccessful.
 
@@ -464,15 +466,15 @@ class Bot:
         # keep chacking if the monster was successfully attacked.
         wait_after_attacking = 5
         # Flow control variables.
-        attack_attempts_allowed = 0
-        attack_attempts_total = 0
+        attempts_allowed = 0
+        attempts_total = 0
 
         # Allowing character to fail an attack no more than 
-        # 'self.attack_attempts_allowed' times.
+        # 'self.__attack_attempts_allowed' times.
         if len(self.__obj_coords) > self.__attack_attempts_allowed:
-            attack_attempts_allowed = self.__attack_attempts_allowed
+            attempts_allowed = self.__attack_attempts_allowed
         else:
-            attack_attempts_allowed = len(self.__obj_coords)
+            attempts_allowed = len(self.__obj_coords)
 
         # Looping through detected monster coordinates.
         for coords in self.__obj_coords:
@@ -480,12 +482,11 @@ class Bot:
             # Checking for offers/interfaces and closing them.
             self.__popup.deal()
 
-            x_coord, y_coord = coords
-
             # Separating moving mouse and clicking into two actions,
             # because otherwise it sometimes right clicks too early,
             # causing the character to fail an attack.
-            print(f"[INFO] Attacking monster at: {coords} ... ")
+            log.info(f"Attacking monster at: {coords} ... ")
+            x_coord, y_coord = coords
             pyautogui.moveTo(x_coord, y_coord, duration=self.__move_duration)
             pyautogui.click(button="right")
 
@@ -503,18 +504,16 @@ class Bot:
                     )
                 
                 if time.time() - attack_time > wait_after_attacking:
-                    print(f"[INFO] Failed to attack monster at: {coords}!")
-                    print("[INFO] Trying the next coordinates ... ")
-                    attack_attempts_total += 1
+                    log.info(f"Failed to attack monster at: {coords}!")
+                    log.info("Trying the next coordinates ... ")
+                    attempts_total += 1
                     break
                 elif len(cc_icon) > 0 and len(ready_button) > 0:
-                    print("[INFO] Successfully attacked monster at: "
-                          f"{coords}!")
+                    log.info(f"Successfully attacked monster at: {coords}!")
                     return True
 
-            if (attack_attempts_allowed == attack_attempts_total):
-                print("[INFO] Failed to start combat "
-                      f"'{attack_attempts_total}' time(s)!")
+            if (attempts_allowed == attempts_total):
+                log.info(f"Failed to start combat {attempts_total} time(s)!")
                 return False
 
     def __preparation(self):
@@ -553,9 +552,9 @@ class Bot:
                         break
 
         else:
-            print(f"[ERROR] Failed to select starting cell in '{allowed_time}'"
-                  " seconds!")
-            print("[ERROR] Exiting ... ")
+            log.critical(f"Failed to select starting cell in '{allowed_time}' "
+                         "seconds!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def __preparation_enable_tactical_mode(self):
@@ -577,27 +576,27 @@ class Bot:
             if group:
                 tactical_mode = pyautogui.pixelMatchesColor(790, 526, c_green)
                 if not tactical_mode:
-                    print("[INFO] Enabling 'Tactical Mode' ... ")
+                    log.info("Enabling 'Tactical Mode' ... ")
                     pyautogui.moveTo(790, 526, duration=self.__move_duration)
                     pyautogui.click()
                     time.sleep(wait_time_click)
                 else:
-                    print("[INFO] 'Tactical Mode' enabled!")
+                    log.info("'Tactical Mode' enabled!")
                     return True
 
             else:
                 tactical_mode = pyautogui.pixelMatchesColor(817, 524, c_green)
                 if not tactical_mode:
-                    print("[INFO] Enabling 'Tactical Mode' ... ")
+                    log.info("Enabling 'Tactical Mode' ... ")
                     pyautogui.moveTo(817, 524, duration=self.__move_duration)
                     pyautogui.click()
                     time.sleep(wait_time_click)
                 else:
-                    print("[INFO] 'Tactical Mode' enabled!")
+                    log.info("'Tactical Mode' enabled!")
                     return True
 
         else:
-            print(f"[INFO] Failed to enable in {wait_time} seconds!")
+            log.info(f"Failed to enable in {wait_time} seconds!")
             return False
 
     def __preparation_get_cells_from_database(self, map_coords, database):
@@ -725,7 +724,7 @@ class Bot:
         wait_after_move_char = 0.5
 
         for cell in cell_coordinates_list:
-            print(f"[INFO] Moving character to cell: {cell} ... ")
+            log.info(f"Moving character to cell: {cell} ... ")
             pyautogui.moveTo(cell[0], cell[1])
             pyautogui.click()
             self.__preparation_combat_start_cell_coords = cell
@@ -763,10 +762,10 @@ class Bot:
                                                  tolerance=5)
 
         if not red_pixel and not blue_pixel:
-            print("[INFO] Character moved successfully!")
+            log.info("Character moved successfully!")
             return True
         else:
-            print("[INFO] Failed to move character!")
+            log.info("Failed to move character!")
             return False
 
     def __preparation_start_combat(self):
@@ -791,7 +790,7 @@ class Bot:
             # If 'READY' button was found.
             if len(ready_button_icon) > 0 and not ready_button_clicked:
 
-                print("[INFO] Clicking 'READY' ... ")
+                log.info("Clicking 'READY' ... ")
                 pyautogui.moveTo(x=ready_button_icon[0][0],
                                  y=ready_button_icon[0][1],
                                  duration=self.__move_duration)
@@ -823,21 +822,21 @@ class Bot:
                     )
                 
                 if time.time() - click_time > wait_combat_start:
-                    print("[INFO] Failed to start combat!")
-                    print("[INFO] Retrying ... ")
+                    log.info("Failed to start combat!")
+                    log.info("Retrying ... ")
                     ready_button_clicked = False
                     continue
 
                 if len(cc_icon) > 0 and len(ap_icon) > 0 and len(mp_icon) > 0:
-                    print("[INFO] Successfully started combat!")
+                    log.info("Successfully started combat!")
                     return True
 
     def __in_combat(self):
         """Combat state logic."""
         first_turn = True
+        tbar_shrunk = False        
         character_moved = False
         models_hidden = False
-        tbar_shrunk = False
 
         while True:
 
@@ -858,21 +857,21 @@ class Bot:
                 if character_moved and first_turn:
                     if self.__in_combat_cast_spells(first_turn=True):
                         if self.__combat.turn_pass():
-                            print("[INFO] Waiting for turn ... ")
+                            log.info("Waiting for turn ... ")
                             first_turn = False
                             continue
 
                 elif character_moved and not first_turn:
                     if self.__in_combat_cast_spells(first_turn=False):
                         if self.__combat.turn_pass():
-                            print("[INFO] Waiting for turn ... ")
+                            log.info("Waiting for turn ... ")
                             continue
 
             elif self.__in_combat_detect_end_of_fight():
                 self.__fight_counter += 1
                 self.__total_fights += 1
                 self.__state = BotState.CONTROLLER
-                print(f"[INFO] Total fights: {self.__total_fights} ... ")
+                log.info(f"Total fights: {self.__total_fights} ... ")
                 break
 
     def __in_combat_move_character(self):
@@ -889,14 +888,14 @@ class Bot:
                 )
 
             if self.__combat.get_if_char_on_correct_cell(move_coords):
-                print("[INFO] Character is standing on correct cell!")
+                log.info("Character is standing on correct cell!")
                 # Moving mouse cursor off character so that spell bar
                 # is visible and ready for detection.
                 pyautogui.moveTo(x=609, y=752)
                 return True
 
             else:
-                print("[INFO] Moving character ... ")
+                log.info("Moving character ... ")
                 self.__combat.move_character(move_coords)
 
                 start_time = time.time()
@@ -910,8 +909,8 @@ class Bot:
                     attempts += 1
 
         else:
-            print(f"[ERROR] Failed to move character in '{attempts}' attempts!")
-            print("[ERROR] Exiting ... ")
+            log.critical(f"Failed to move character in {attempts} attempts!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def __in_combat_cast_spells(self, first_turn):
@@ -929,7 +928,7 @@ class Bot:
             available_spells = self.__combat.get_available_spells()
 
             if len(available_spells) <= 0:
-                print("[INFO] No spells available!")
+                log.info("No spells available!")
                 return True
 
             for spell in available_spells:
@@ -997,7 +996,7 @@ class Bot:
 
             elif len(close_button) > 0:
 
-                print("[INFO] Combat has ended!")
+                log.info("Combat has ended!")
                 start_time = time.time()
                 timeout_time = 60
 
@@ -1010,11 +1009,11 @@ class Bot:
                     close_button = self.__in_combat_detect_results_window()
                     
                     if len(close_button) <= 0:
-                        print("[INFO] Successfully closed 'Fight Results' "
-                              "window!")
+                        log.info("Successfully closed 'Fight Results' "
+                                 "window!")
                         return True
                     else:
-                        print("[INFO] Closing 'Fight Results' window ... ")
+                        log.info("Closing 'Fight Results' window ... ")
                         pyautogui.moveTo(x=close_button[0][0],
                                          y=close_button[0][1],
                                          duration=self.__move_duration)
@@ -1024,10 +1023,10 @@ class Bot:
                         pyautogui.move(100, 0)
 
                 else:
-                    print("[ERROR] Couldn't close 'Fight Results' window in "
-                          f"{timeout_time} second(s)!")
-                    print(f"[ERROR] Timed out!")
-                    print(f"[ERROR] Exiting ... ")
+                    log.critical("Couldn't close 'Fight Results' window in "
+                                 f"{timeout_time} second(s)!")
+                    log.critical("Timed out!")
+                    log.critical("Exiting ... ")
                     os._exit(1)
 
     def __changing_map(self):
@@ -1047,9 +1046,9 @@ class Bot:
                     continue
 
         else:
-            print(f"[ERROR] Failed to change maps in {attempts_allowed} "
-                  "attempts!")
-            print("[ERROR] Exiting ... ")
+            log.critical(f"Failed to change maps in {attempts_allowed} "
+                         "attempts!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
     def __changing_map_get_move_coords(self):
@@ -1119,8 +1118,7 @@ class Bot:
 
         # Changing maps.
         coords, choice = self.__changing_map_get_move_coords()
-        print(f"[INFO] Clicking on: {(coords[0], coords[1])} to move "
-                f"'{choice}' ... ")
+        log.info(f"Clicking on: {coords[0], coords[1]} to move {choice} ... ")
         pyautogui.keyDown('e')
         pyautogui.moveTo(coords[0], coords[1])
         if choice == "bottom":
@@ -1136,7 +1134,7 @@ class Bot:
             if self.__changing_map_detect_if_map_changed(sc_mm):
                 return True
         else:
-            print("[INFO] Failed to change maps!")
+            log.info("Failed to change maps!")
             return False
 
     def __changing_map_screenshot_minimap(self):
@@ -1210,7 +1208,7 @@ class Bot:
         # If screenshots are different.
         if len(minimap_rects) <= 0:
             time.sleep(wait_map_loading)
-            print("[INFO] Map changed successfully!")
+            log.info("Map changed successfully!")
             return True
 
     def __banking(self):
@@ -1265,11 +1263,11 @@ class Bot:
                 )
 
             if self.__map_coordinates == "4,-19":
-                print("[INFO] Successfully used 'Recall Potion'!")
+                log.info("Successfully used 'Recall Potion'!")
                 return True
 
         else:
-            print("[INFO] Failed to use 'Recall Potion'!")
+            log.info("Failed to use 'Recall Potion'!")
             return False
 
     def __banking_astrub_bank(self):
@@ -1327,16 +1325,16 @@ class Bot:
                                 break
 
                 else:
-                    print("[ERROR] Failed to complete actions inside "
-                            f"bank in {timeout} seconds!")
-                    print("[ERROR] Timed out ... ")
-                    print("[ERROR] Exiting ... ")
+                    log.critical("Failed to complete actions inside "
+                                 f"bank in {timeout} seconds!")
+                    log.critical("Timed out ... ")
+                    log.critical("Exiting ... ")
                     os._exit(1)
 
         else:
-            print("[ERROR] Failed to enter/exit bank in "
-                    f"{attempts_allowed} attempts!")
-            print("[ERROR] Exiting ... ")
+            log.critical("Failed to enter/exit bank in "
+                         f"{attempts_allowed} attempts!")
+            log.critical("Exiting ... ")
             os._exit(1)
 
 #----------------------------------------------------------------------#
@@ -1449,7 +1447,6 @@ class Bot:
             cv.imshow("Visual Debug Window", output_image)
             if cv.waitKey(1) == ord("q"):
                 cv.destroyAllWindows()
-                print("Done")
                 os._exit(1)
 
             counter += 1
