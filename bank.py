@@ -76,46 +76,6 @@ class Bank:
         else:
             return "closed"
 
-    def __open_inventory(self):
-        """Open inventory."""
-        log.info("Opening inventory ... ")
-        pyautogui.moveTo(x=692, y=620)
-        pyautogui.click()
-        # Giving time for inventory to open.
-        time.sleep(0.25)
-
-        start_time = time.time()
-        wait_time = 3
-
-        while time.time() - start_time < wait_time:
-            if self.__inventory() == "opened":
-                log.info("Inventory opened!")
-                return True
-        else:
-            log.info(f"Failed to open inventory in {wait_time} "
-                     "seconds ... ")
-            return False
-
-    def __close_inventory(self):
-        """Close inventory."""
-        log.info("Closing inventory ... ")
-        pyautogui.moveTo(x=692, y=620, duration=self.__move_duration)
-        pyautogui.click()
-        # Giving time for inventory to close.
-        time.sleep(0.25)
-
-        start_time = time.time()
-        wait_time = 3
-
-        while time.time() - start_time < wait_time:
-            if self.__inventory() == "closed":
-                log.info("Inventory closed!")
-                return True
-        else:
-            log.info(f"Failed to close inventory in {wait_time} "
-                     "seconds ... ")
-            return False
-
     def __bank_vault(self):
         """Get status of bank vault (opened/closed)."""
         wait_time = 3
@@ -139,7 +99,7 @@ class Bank:
         log.info("Detecting banker ... ")
 
         start_time = time.time()
-        wait_time = 7
+        wait_time = 10
 
         while time.time() - start_time < wait_time:
 
@@ -155,7 +115,7 @@ class Bank:
                 return rectangles, coordinates
             
         else:
-            log.info(f"Failed to detect banker in {wait_time} seconds!")
+            log.error(f"Failed to detect banker in {wait_time} seconds!")
             return False
 
     def __banker_open_dialogue(self, banker_coordinates):
@@ -186,7 +146,7 @@ class Bank:
                 return True
         
         else:
-            log.info(f"Failed to start dialogue in {wait_time} seconds!")
+            log.error(f"Failed to start dialogue in {wait_time} seconds!")
             return False
 
     def __banker_open_personal_safe(self):
@@ -208,7 +168,7 @@ class Bank:
                 return True
         
         else:
-            log.info(f"Failed to select option in {wait_time} seconds!")
+            log.error(f"Failed to select option in {wait_time} seconds!")
             return False
 
     def __open_tab_equipment(self):
@@ -230,7 +190,7 @@ class Bank:
                 return True
         
         else:
-            log.info(f"Failed to open tab in '{wait_time}' seconds!")
+            log.error(f"Failed to open tab in '{wait_time}' seconds!")
             return False
 
     def __open_tab_resources(self):
@@ -252,7 +212,7 @@ class Bank:
                 return True
         
         else:
-            log.info(f"Failed to open tab in '{wait_time}' seconds!")
+            log.error(f"Failed to open tab in '{wait_time}' seconds!")
             return False
 
     def __deposit_item(self):
@@ -283,7 +243,7 @@ class Bank:
                 return True
 
         else:
-            log.info(f"Failed to deposit items in '{wait_time}' seconds!")
+            log.error(f"Failed to deposit items in '{wait_time}' seconds!")
             return False
 
     def __slot_empty(self):
@@ -360,7 +320,7 @@ class Bank:
             self.__popup.deal()
 
             if self.__inventory() == "closed":
-                if not self.__open_inventory():
+                if not self.__popup.interface("inventory", "open"):
                     continue
 
             pods_percentage = self.__calculate_pods()
@@ -375,7 +335,7 @@ class Bank:
                 continue
 
             if self.__inventory() == "opened":
-                if not self.__close_inventory():
+                if not self.__popup.interface("inventory", "close"):
                     continue
 
             return pods_percentage
@@ -385,7 +345,6 @@ class Bank:
             log.critical("Timed out!")
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
-
 
     def inside_or_outside(self):
         """
@@ -422,7 +381,7 @@ class Bank:
                 log.info("Successfully entered!")
                 return True
         else:
-            log.info("Failed to enter bank!")
+            log.error("Failed to enter bank!")
             return False
 
     def exit_bank(self):
@@ -443,7 +402,7 @@ class Bank:
                 log.info("Successfully exited!")
                 return True
         else:
-            log.info("Failed to exit bank!")
+            log.error("Failed to exit bank!")
             return False
 
     def open_bank_vault(self):
@@ -460,7 +419,7 @@ class Bank:
                         log.info("Bank vault is open!")
                         return True
 
-        log.info("Failed to open bank vault!")
+        log.error("Failed to open bank vault!")
         return False
 
     def close_bank_vault(self):
@@ -483,8 +442,8 @@ class Bank:
                 return True
 
         else:
-            log.info(f"Failed to close bank vault in '{wait_time}' "
-                     "seconds!")
+            log.error(f"Failed to close bank vault in '{wait_time}' "
+                      "seconds!")
             return False
 
     def deposit_items(self):

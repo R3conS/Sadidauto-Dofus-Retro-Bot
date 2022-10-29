@@ -43,6 +43,8 @@ class WindowCapture:
     TURN_END_REGION = (525, 595, 120, 155)
     # Region to screenshot for spell detection.
     SPELL_BAR_REGION = (645, 660, 265, 80)
+    # Region to screenshot for character name verification.
+    CHARACTER_NAME_REGION = (685, 93, 205, 26)
 
     def gamewindow_capture(
             self,

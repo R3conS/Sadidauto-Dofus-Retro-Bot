@@ -18,11 +18,11 @@ class ImageData:
     s_i = "images\\status_images\\"
     # Verifiers.
     end_of_combat_v_1 = "END_OF_COMBAT_verifier_1.jpg"
-    in_combat_sv_1 = "IN_COMBAT_state_verifier_1.jpg"
-    in_combat_sv_2 = "IN_COMBAT_state_verifier_2.jpg"
-    in_combat_sv_3 = "IN_COMBAT_state_verifier_3.jpg"
-    preparation_sv_1 = "PREPARATION_state_verifier_1.jpg"
-    preparation_sv_2 = "PREPARATION_state_verifier_2.jpg"
+    fighting_sv_1 = "FIGHTING_state_verifier_1.jpg"
+    fighting_sv_2 = "FIGHTING_state_verifier_2.jpg"
+    fighting_sv_3 = "FIGHTING_state_verifier_3.jpg"
+    preparing_sv_1 = "PREPARING_state_verifier_1.jpg"
+    preparing_sv_2 = "PREPARING_state_verifier_2.jpg"
 
     # Bank images.
     bank_images_path = "images\\bank_images\\"
@@ -100,7 +100,7 @@ class MapData:
         """'Astrub Forest' script map data."""
 
         # Map data for hunting mobs.
-        killing = [
+        hunting = [
             # 'Astrub Bank' map.
             {"4,-16" : {"top"   : (467, 87),  "map_type": "traversable"}},
             {"4,-17" : {"top"   : (434, 71),  "map_type": "traversable"}},
@@ -156,7 +156,7 @@ class MapData:
         ]
 
         # Map data for hunting mobs (different pathing).
-        killing_reversed = [
+        hunting_reversed = [
             # 'Astrub Bank' map.
             {"4,-16" : {"left"  : (33, 341),  "map_type": "traversable"}},
             {"3,-16" : {"left"  : (32, 274),  "map_type": "traversable"}},
