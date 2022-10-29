@@ -278,7 +278,7 @@ class Combat:
                     log.info("Turn passed successfully!")
                     return True
                 else:
-                    log.info("Failed to pass turn!")
+                    log.error("Failed to pass turn!")
         else:
             log.critical(f"Couldn't pass turn for {timeout_time} second(s)!")
             log.critical("Timed out!")
@@ -638,7 +638,7 @@ class Combat:
         pyautogui.click()
         # Moving mouse off of character so that his information
         # doesn't block spell bar. If omitted, may mess up spell
-        # detection in 'Bot.__in_combat_cast_spells()'.
+        # detection in 'Bot.__fighting_cast_spells()'.
         pyautogui.moveTo(574, 749)
         time.sleep(self.__WAIT_BETWEEN_SPELL_CASTS)
 
@@ -674,7 +674,7 @@ class Combat:
                 pyautogui.moveTo(574, 749)
 
         else:
-            log.info(f"Failed to hide models in {wait_time} seconds!")
+            log.error(f"Failed to hide models in {wait_time} seconds!")
             return False
 
     def enable_tactical_mode(self):
@@ -708,7 +708,7 @@ class Combat:
                 pyautogui.moveTo(574, 749)
 
         else:
-            log.info(f"Failed to enable in {wait_time} seconds!")
+            log.error(f"Failed to enable in {wait_time} seconds!")
             return False
 
     def shrink_turn_bar(self):
@@ -748,5 +748,5 @@ class Combat:
                     return True
 
         else:
-            log.info("Failed to shrink 'Turn Bar'!")
+            log.error("Failed to shrink 'Turn Bar'!")
             return False

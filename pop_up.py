@@ -45,7 +45,7 @@ class PopUp:
                 return True
         
         else:
-            log.info(f"Failed to add to ignore in {wait_time} seconds!")
+            log.error(f"Failed to add to ignore in {wait_time} seconds!")
             return False
 
     def __detect_offers(self):
@@ -74,38 +74,29 @@ class PopUp:
             return False
 
     def __detect_interfaces(self):
-        """
-        Detect interfaces.
-        
-        Note
-        ----------
-        `__interface_information()` has a different return value because
-        the closing logic for this interface is different. Pressing
-        'ESC' doesn't work.
-        
-        """
+        """Detect interfaces."""
         if self.__interface_information():
-            return "information"
+            return "info"
         elif self.__interface_main_menu():
-            return "other"
+            return "main_menu"
         elif self.__interface_banker_dialogue():
             return "other"
         elif self.__interface_characteristics():
-            return "other"
+            return "characteristics"
         elif self.__interface_spells():
-            return "other"
+            return "spells"
         elif self.__interface_inventory():
-            return "other"
+            return "inventory"
         elif self.__interface_quests():
-            return "other"
+            return "quests"
         elif self.__interface_map():
-            return "other"
+            return "map"
         elif self.__interface_friends():
-            return "other"
+            return "friends"
         elif self.__interface_guild():
-            return "other"
+            return "guild"
         elif self.__interface_mount():
-            return "other"
+            return "mount"
         else:
             return False
 
@@ -161,10 +152,13 @@ class PopUp:
 
     def __interface_inventory(self):
         """Detect inventory interface."""
+        bland_brown = (150, 138, 111)
+        bland_yellow = (213, 207, 170)
         dark_gray = (81, 74, 60)
-        px1 = pyautogui.pixelMatchesColor(424, 273, dark_gray)
-        px2 = pyautogui.pixelMatchesColor(591, 279, dark_gray)
-        if px1 and px2:
+        px1 = pyautogui.pixelMatchesColor(276, 311, bland_brown)
+        px2 = pyautogui.pixelMatchesColor(905, 116, bland_yellow)
+        px3 = pyautogui.pixelMatchesColor(327, 255, dark_gray)
+        if px1 and px2 and px3:
             return True
 
     def __interface_quests(self):
@@ -189,7 +183,7 @@ class PopUp:
         dark_gray = (81, 74, 60)
         bland_yellow = (190, 185, 152)
         px1 = pyautogui.pixelMatchesColor(583, 118, dark_gray)
-        px2 = pyautogui.pixelMatchesColor(880, 580, bland_yellow)
+        px2 = pyautogui.pixelMatchesColor(894, 572, bland_yellow)
         if px1 and px2:
             return True
 
@@ -267,8 +261,8 @@ class PopUp:
                 return True
 
         else:
-            log.info(f"Failed to close pop-ups/interfaces in {timeout} "
-                  "seconds!")
+            log.error(f"Failed to close pop-ups/interfaces in {timeout} "
+                      "seconds!")
             return False
 
     def __close_right_click_menu(self):
@@ -330,14 +324,14 @@ class PopUp:
 
                     interface = self.__detect_interfaces()
 
-                    if interface == "information":
+                    if interface == "info":
                         log.info("Information interface detected ... ")
                         log.info("Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
                         continue
 
-                    if interface == "other":
+                    if isinstance(interface, str) and interface != "info":
                         log.info("Interfaces detected ... ")
                         log.info("Closing ... ")
                         if self.__close_popup_or_interface():
@@ -366,14 +360,14 @@ class PopUp:
 
                 interface = self.__detect_interfaces()
 
-                if interface == "information":
+                if interface == "info":
                         log.info("Information interface detected ... ")
                         log.info("Closing ... ")
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
                         continue
 
-                if interface == "other":
+                if isinstance(interface, str) and interface != "info":
                     log.info("Interfaces detected ... ")
                     log.info("Closing ... ")
                     if self.__close_popup_or_interface():
@@ -389,3 +383,72 @@ class PopUp:
                          f"{attempts_allowed} attempts!")
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
+
+    def interface(self, interface, action):
+        """
+        Open or close specified interface.
+        
+        Parameters
+        ----------
+        interface : str
+            Interface to perform `action` on.
+        action : str
+            Action to perform (open/close).
+        
+        Returns
+        ----------
+        True : bool
+            If `action` performed successfully.
+        False : bool
+            If failed to perform `action`.
+            
+        """
+        interfaces = {
+                "characteristics": (613, 622),
+                "spells": (651, 622),
+                "inventory": (690, 622),
+                "quests": (726, 622),
+                "map": (763, 622),
+                "friends": (800, 622),
+                "guild": (837, 622),
+                "mount": (874, 622),
+                "alignment": (908, 622),
+            }
+
+        if interface not in interfaces.keys():
+            log.error(f"Interface '{interface}' doesn't exist!")
+            return False
+        elif action not in ["open", "close"]:
+            log.error(f"Action '{action}' is invalid!")
+            return False
+
+        if action == "open":
+            log.info(f"Opening {interface} interface ... ")
+        else:
+            log.info(f"Closing {interface} interface ... ") 
+
+        x, y = interfaces[interface]
+        pyautogui.moveTo(x, y, duration=0.15)
+        pyautogui.click()
+        time.sleep(0.35)
+
+        start_time = time.time()
+        timeout = 5
+
+        while time.time() - start_time < timeout:
+            if action == "open":
+                if self.__detect_interfaces() == interface:
+                    log.info(f"Successfully opened {interface} interface!")
+                    return True
+            else:
+                if not self.__detect_interfaces():
+                    log.info(f"Successfully closed {interface} interface!")
+                    return True
+        else:
+            if action == "open":
+                log.error(f"Failed to open {interface} interface in {timeout}"
+                          " seconds!")
+            else:
+                log.error(f"Failed to close {interface} interface in {timeout}"
+                          " seconds!")  
+            return False
