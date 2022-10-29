@@ -38,21 +38,21 @@ class ImageData:
             "Boar_BL_2.jpg", "Boar_BR_2.jpg", "Boar_TL_2.jpg", "Boar_TR_2.jpg",
             "Boar_BL_3.jpg", "Boar_BR_3.jpg", "Boar_TL_3.jpg", "Boar_TR_3.jpg",
             "Boar_BL_4.jpg", "Boar_BR_4.jpg", "Boar_TL_4.jpg", "Boar_TR_4.jpg",
-
-            "Mosk_BL_1.jpg", "Mosk_BR_1.jpg", "Mosk_TL_1.jpg", "Mosk_TR_1.jpg",
-            "Mosk_BL_2.jpg", "Mosk_BR_2.jpg", "Mosk_TL_2.jpg", "Mosk_TR_2.jpg",
-            "Mosk_BL_3.jpg", "Mosk_BR_3.jpg", "Mosk_TL_3.jpg", "Mosk_TR_3.jpg",
-            "Mosk_BL_4.jpg", "Mosk_BR_4.jpg", "Mosk_TL_4.jpg", "Mosk_TR_4.jpg", 
+            
+            "Pres_BL_1.jpg", "Pres_BR_1.jpg", "Pres_TL_1.jpg", "Pres_TR_1.jpg",
+            "Pres_BL_2.jpg", "Pres_BR_2.jpg", "Pres_TL_2.jpg", "Pres_TR_2.jpg",
+            "Pres_BL_3.jpg", "Pres_BR_3.jpg", "Pres_TL_3.jpg", "Pres_TR_3.jpg",
+            "Pres_BL_4.jpg", "Pres_BR_4.jpg", "Pres_TL_4.jpg", "Pres_TR_4.jpg",
 
             "Mush_BL_1.jpg", "Mush_BR_1.jpg", "Mush_TL_1.jpg", "Mush_TR_1.jpg",
             "Mush_BL_2.jpg", "Mush_BR_2.jpg", "Mush_TL_2.jpg", "Mush_TR_2.jpg",
             "Mush_BL_3.jpg", "Mush_BR_3.jpg", "Mush_TL_3.jpg", "Mush_TR_3.jpg",
             "Mush_BL_4.jpg", "Mush_BR_4.jpg", "Mush_TL_4.jpg", "Mush_TR_4.jpg",
 
-            "Pres_BL_1.jpg", "Pres_BR_1.jpg", "Pres_TL_1.jpg", "Pres_TR_1.jpg",
-            "Pres_BL_2.jpg", "Pres_BR_2.jpg", "Pres_TL_2.jpg", "Pres_TR_2.jpg",
-            "Pres_BL_3.jpg", "Pres_BR_3.jpg", "Pres_TL_3.jpg", "Pres_TR_3.jpg",
-            "Pres_BL_4.jpg", "Pres_BR_4.jpg", "Pres_TL_4.jpg", "Pres_TR_4.jpg",
+            "Mosk_BL_1.jpg", "Mosk_BR_1.jpg", "Mosk_TL_1.jpg", "Mosk_TR_1.jpg",
+            "Mosk_BL_2.jpg", "Mosk_BR_2.jpg", "Mosk_TL_2.jpg", "Mosk_TR_2.jpg",
+            "Mosk_BL_3.jpg", "Mosk_BR_3.jpg", "Mosk_TL_3.jpg", "Mosk_TR_3.jpg",
+            "Mosk_BL_4.jpg", "Mosk_BR_4.jpg", "Mosk_TL_4.jpg", "Mosk_TR_4.jpg",
 
             "Wolf_BL_1.jpg", "Wolf_BR_1.jpg", "Wolf_TL_1.jpg", "Wolf_TR_1.jpg",
             "Wolf_BL_2.jpg", "Wolf_BR_2.jpg", "Wolf_TL_2.jpg", "Wolf_TR_2.jpg",
