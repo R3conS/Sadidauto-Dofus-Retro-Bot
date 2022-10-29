@@ -26,8 +26,7 @@ class BotState:
 
     INITIALIZING = "INITIALIZING"
     CONTROLLER = "CONTROLLER"
-    SEARCHING = "SEARCHING"
-    ATTACKING = "ATTACKING"
+    HUNTING = "HUNTING"
     PREPARATION = "PREPARATION"
     IN_COMBAT = "IN_COMBAT"
     CHANGING_MAP = "CHANGING_MAP"
@@ -93,13 +92,9 @@ class Bot:
     # Is character overloaded with pods or not.
     __character_overloaded = False
 
-    # 'BotState.SEARCHING'.
+    # 'BotState.HUNTING'.
     __obj_rects = []
     __obj_coords = []
-
-    # 'BotState.ATTACKING'.
-    # Failed attack attempts allowed before searching for monsters.
-    __attack_attempts_allowed = 3
 
     # 'BotState.PREPARATION'.
     # Info of cell the combat was started on.
@@ -142,13 +137,13 @@ class Bot:
             Whether to open visual debug window. Defaults to: `True`.
         detection_threshold : bool, optional
             Controls threshold value for `detect_objects()` in
-            `BotState.SEARCHING`. Defaults to 0.6.
+            `BotState.HUNTING`. Defaults to 0.6.
         bot_state : str, optional
             Current state of bot. Defaults to: `BotState.INITIALIZING`.
 
         """
         self.__script = script
-        self.__character_name = character_name.capitalize()
+        self.__character_name = character_name
         self.__official_version = official_version
         self.__debug_window = debug_window
         self.__detection_threshold = detection_threshold
@@ -232,7 +227,7 @@ class Bot:
                     capture_region=self.__window_capture.MAP_DETECTION_REGION,
                     conversion_code=cv.COLOR_RGB2GRAY,
                     interpolation_flag=cv.INTER_LINEAR,
-                    scale_width=215,
+                    scale_width=160,
                     scale_height=200
                 )
             # Moving mouse off the red area on the minimap in case a new 
@@ -374,7 +369,7 @@ class Bot:
                 log.info("Overloaded! Going to bank ... ")
                 self.__character_overloaded = True
             else:
-                log.info("Not overloaded! Hunting ... ")
+                log.info("Not overloaded!")
                 self.__character_overloaded = False
 
         if self.__character_overloaded:
@@ -394,7 +389,7 @@ class Bot:
             if map_type == "fightable":
 
                 if self.__map_searched == False:
-                    self.__state = BotState.SEARCHING
+                    self.__state = BotState.HUNTING
 
                 elif self.__map_searched == True:
                     self.__state = BotState.CHANGING_MAP
@@ -408,90 +403,143 @@ class Bot:
                 log.critical(f"Exiting ... ")
                 WindowCapture.on_exit_capture()
 
-    def __searching(self):
-        """Searching state logic."""
-        log.info(f"Searching for monsters ... ")
+    def __hunting(self):
+        """Hunting state logic."""
+        log.info(f"Hunting on map ({self.__map_coordinates}) ... ")
 
-        screenshot = self.__window_capture.gamewindow_capture()
-        self.__obj_rects, self.__obj_coords = self.__detection.detect_objects(
+        data, data_path = self.__hunting_chunkate_data(
                 self.__data_objects_list,
-                self.__data_objects_path,
-                screenshot,
-                threshold=self.__detection_threshold
+                self.__data_objects_path
             )
 
-        # If monsters were detected.
-        if len(self.__obj_coords) > 0:
-            log.info(f"Monsters found at: {self.__obj_coords}!")
-            log.debug(f"Changing 'BotState' to: '{BotState.ATTACKING}' ... ")
-            self.__state = BotState.ATTACKING
-            self.__map_searched = False
-                
-        # If monsters were NOT detected.
-        elif len(self.__obj_coords) <= 0:
-            log.info("Couldn't find any monsters!")
-            log.debug(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
-            self.__state = BotState.CONTROLLER
-            self.__map_searched = True
+        for chunk_number, data_chunk in data.items():
 
-    def __attacking(self):
-        """Attacking state logic."""
-        if self.__attacking_attack_monster():
-            self.__state = BotState.PREPARATION
-        else:
-            self.__state = BotState.CONTROLLER
+            self.__obj_rects, self.__obj_coords = self.__hunting_search(
+                    data_chunk,
+                    data_path
+                )
 
-    def __attacking_attack_monster(self):
+            if len(self.__obj_coords) > 0:
+
+                if self.__hunting_attack(self.__obj_coords):
+                    self.__state = BotState.PREPARATION
+                    break
+
+            if chunk_number + 1 == len(data.keys()):
+                log.info(f"Map ({self.__map_coordinates}) is clear!")
+                self.__map_searched = True
+                self.__state = BotState.CONTROLLER
+
+    def __hunting_chunkate_data(self, image_data, image_data_path):
         """
-        Attack monster.
+        Split monster image list into equally sized chunks.
         
-        Logic
+        Parameters
         ----------
-        - Get detected monster coordinates.
-        - Attack monster.
-            - If monster attacked successfully: 
-                - Return `True`.
-            - If failed to attack monster: 
-                - Return `False`.
+        image_data : list[str]
+            `list` of monster images as `str`.
+        image_data_path : str
+            Path to folder where images are stored.
 
         Returns
         ----------
-        True : bool
-            If attack was succeattack_attempts_allowedssful.
-        False : bool
-            If attack was unsuccessful.
+        chunkated_data : dict[int: list[str]]
+            `image_data` split into equal `chunk_size` chunks. Last
+            chunk won't have `chunk_size` images if `image_data` %
+            `chunk_size` != 0.
+        image_data_path : str
+            Path to folder where images are stored.
 
         """
-        # Time to wait after clicking on a monster. How long script will 
-        # keep chacking if the monster was successfully attacked.
-        wait_after_attacking = 5
-        # Flow control variables.
-        attempts_allowed = 0
+        total_images = len(image_data)
+        chunk_size = 16
+
+        chunkated_data = []
+        for i in range(0, total_images, chunk_size):
+            chunk = image_data[i:i+chunk_size]
+            chunkated_data.append(chunk)
+
+        chunkated_data = {k: v for k, v in enumerate(chunkated_data)}
+
+        return chunkated_data, image_data_path
+
+    def __hunting_search(self, data_chunk, data_path):
+        """
+        Search for monsters.
+        
+        Parameters
+        ----------
+        data_chunk : list[str]
+            `list` of monster images as `str`.
+        data_path : str
+            Path to folder where images are stored.
+
+        Returns
+        ----------
+        obj_rects : list[list[int]]
+            2D `list` containing [[topLeft_x, topLeft_y, width, height]] 
+            of bounding box.
+        obj_coords : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates.
+        obj_rects : tuple
+            Empty `tuple` if no matches found.
+        obj_coords : list
+            Empty `list` if no matches found.
+
+        """
+        # Moving mouse of the screen so it doesn't hightlight mobs
+        # by accident causing them to be undetectable.
+        pyautogui.moveTo(929, 51)
+
+        screenshot = self.__window_capture.gamewindow_capture()
+        obj_rects, obj_coords = self.__detection.detect_objects(
+                data_chunk,
+                data_path,
+                screenshot,
+                threshold=0.6
+            )
+
+        if len(obj_coords) > 0:
+            log.info(f"Monsters found at: {obj_coords}!")
+            return obj_rects, obj_coords
+
+        return obj_rects, obj_coords
+
+    def __hunting_attack(self, monster_coords):
+        """
+        Attack monsters.
+
+        Parameters
+        ----------
+        monster_coords : list[Tuple[int, int]]
+            Monster coordinates.
+        
+        Returns
+        ----------
+        True : bool
+            If monster was attacked successfully.
+        False : bool
+            If failed to attack monster `attempts_allowed` times.
+        
+        """
+        wait_after_attacking = 6
+        attempts_allowed = 3
         attempts_total = 0
 
-        # Allowing character to fail an attack no more than 
-        # 'self.__attack_attempts_allowed' times.
-        if len(self.__obj_coords) > self.__attack_attempts_allowed:
-            attempts_allowed = self.__attack_attempts_allowed
-        else:
-            attempts_allowed = len(self.__obj_coords)
+        if len(monster_coords) < attempts_allowed:
+            attempts_allowed = len(monster_coords)
 
-        # Looping through detected monster coordinates.
-        for coords in self.__obj_coords:
+        for i in range(0, attempts_allowed):
 
-            # Checking for offers/interfaces and closing them.
             self.__popup.deal()
 
-            # Separating moving mouse and clicking into two actions,
-            # because otherwise it sometimes right clicks too early,
-            # causing the character to fail an attack.
-            log.info(f"Attacking monster at: {coords} ... ")
-            x_coord, y_coord = coords
-            pyautogui.moveTo(x_coord, y_coord, duration=self.__move_duration)
+            x, y = monster_coords[i]
+            log.info(f"Attacking monster at: {x, y} ... ")
+            pyautogui.moveTo(x, y, duration=0.15)
             pyautogui.click(button="right")
-
+            
             attack_time = time.time()
-            while True:
+            while time.time() - attack_time < wait_after_attacking:
 
                 screenshot = self.__window_capture.gamewindow_capture()
                 cc_icon = self.__detection.find(
@@ -503,18 +551,15 @@ class Bot:
                         ImageData.s_i + ImageData.preparation_sv_2
                     )
                 
-                if time.time() - attack_time > wait_after_attacking:
-                    log.info(f"Failed to attack monster at: {coords}!")
-                    log.info("Trying the next coordinates ... ")
-                    attempts_total += 1
-                    break
-                elif len(cc_icon) > 0 and len(ready_button) > 0:
-                    log.info(f"Successfully attacked monster at: {coords}!")
+                if len(cc_icon) > 0 and len(ready_button) > 0:
+                    log.info(f"Successfully attacked monster at: {x, y}!")
                     return True
 
-            if (attempts_allowed == attempts_total):
-                log.info(f"Failed to start combat {attempts_total} time(s)!")
-                return False
+            else:
+                log.info(f"Failed to attack monster at: {x, y}!")
+                attempts_total += 1
+                if (attempts_allowed == attempts_total):
+                    return False
 
     def __preparation(self):
         """Preparation state logic."""
@@ -1010,9 +1055,6 @@ class Bot:
 
                 while time.time() - start_time < timeout_time:
 
-                    # Checking for offers/interfaces and closing them.
-                    self.__popup.deal()
-
                     # Closing 'Fight Results' window.
                     close_button = self.__in_combat_detect_results_window()
                     
@@ -1029,6 +1071,9 @@ class Bot:
                         # Moving mouse off the 'Close' button in case it 
                         # needs to be detected again.
                         pyautogui.move(100, 0)
+
+                        # Checking for offers/interfaces and closing them.
+                        self.__popup.deal()
 
                 else:
                     log.critical("Couldn't close 'Fight Results' window in "
@@ -1364,12 +1409,8 @@ class Bot:
                     self.__controller()
 
                 # Handles monster detection.
-                elif self.__state == BotState.SEARCHING:
-                    self.__searching()
-
-                # Handles attacking found monsters.
-                elif self.__state == BotState.ATTACKING:
-                    self.__attacking()
+                elif self.__state == BotState.HUNTING:
+                    self.__hunting()
 
                 # Handles combat preparation actions.
                 elif self.__state == BotState.PREPARATION:
@@ -1391,7 +1432,7 @@ class Bot:
 
             log.exception("An exception occured!")
             log.critical("Exiting ... ")
-            #WindowCapture.on_exit_capture()
+            WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#

@@ -180,20 +180,22 @@ class Combat:
         """
         while True:
        
-            orange_px = pyautogui.pixelMatchesColor(407, 106, (250, 103, 0),
-                                                    tolerance=3)
-            white_px = pyautogui.pixelMatchesColor(407, 116, (247, 250, 244),
-                                                   tolerance=3)
-            gray_px = pyautogui.pixelMatchesColor(110, 100, (232, 228, 198),
-                                                  tolerance=3)
+            px_1 = pyautogui.pixelMatchesColor(406, 106, (251, 103, 0),
+                                               tolerance=5)
+            px_2 = pyautogui.pixelMatchesColor(353, 109, (213, 208, 169),
+                                               tolerance=3)
+            px_3 = pyautogui.pixelMatchesColor(110, 100, (232, 228, 198),
+                                               tolerance=3)
 
-            if orange_px and white_px and not gray_px:
+            if px_1 and px_2 and not px_3:
 
                 screenshot = self.__window_capture.custom_area_capture(
                         self.__window_capture.TURN_START_REGION
                     )
 
-                r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+                r_and_t, _, _ = self.__detection.detect_text_from_image(
+                        screenshot
+                    )
 
                 if r_and_t:
                     if r_and_t[0][1] == self.character_name:
@@ -498,14 +500,14 @@ class Combat:
         else:
             return False
 
-    def get_char_position(self, start_cell_color):
+    def get_char_position(self, start_cell_color="red"):
         """
         Get (x, y) position of character on screen.
 
         Parameters
         ----------
-        start_cell_color : str  
-            Color of starting cell.
+        start_cell_color : str, optional 
+            Color of starting cell. Defaults to "red".
 
         Returns
         ----------
@@ -729,11 +731,7 @@ class Combat:
         """
         log.info("Shrinking `Turn Bar` ... ")
         
-        # All possible tile colors in 'Tactical Mode'.
-        colors = [(142, 134, 94), (152, 170, 94), (161, 180, 100),
-                  (118, 122, 127), (131, 135, 141), (51, 51, 51),
-                  (0, 0, 0)]
-
+        colors = [(255, 255, 255)]
         x, y = (925, 567)
         start_time = time.time()
         wait_time = 5
@@ -744,8 +742,8 @@ class Combat:
             pyautogui.click()
 
             for color in colors:
-                pixel = pyautogui.pixelMatchesColor(x-40, y, color)
-                if pixel:
+                pixel = pyautogui.pixelMatchesColor(869, 548, color)
+                if not pixel:
                     log.info("Successfully shrunk 'Turn Bar'!")
                     return True
 
