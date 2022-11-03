@@ -56,9 +56,8 @@ class Bot:
     # Stores loaded map data based on 'self.__script'.
     __data_map_hunting = None
     __data_map_banking = None
-    # Stores monster image data and path to the folder with the images.
-    __data_objects_list = None
-    __data_objects_path = None
+    # Stores monster image data.
+    __data_monsters = None
 
     # Threading attributes.
     # 'Bot_Thread' threading attributes.
@@ -331,22 +330,28 @@ class Bot:
         if script == "astrub_forest":
             self.__data_map_hunting = MapData.AstrubForest.hunting
             self.__data_map_banking = MapData.AstrubForest.banking
-            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
-            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            self.__data_monsters = self.__detection.generate_image_data(
+                    ImageData.AstrubForest.monster_img_list,
+                    ImageData.AstrubForest.monster_img_path
+                )
+            # self.__data_monsters = self.__detection.generate_image_data(
+            #         ImageData.test_monster_images_list,
+            #         ImageData.test_monster_images_path
+            #     )
             self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
             self.__combat.data_movement = CombatData.Movement.AstrubForest.af
             self.__bank.img_path = ImageData.AstrubForest.banker_images_path
             self.__bank.img_list = ImageData.AstrubForest.banker_images_list
-            # self.__data_objects_path = ImageData.test_monster_images_path
-            # self.__data_objects_list = ImageData.test_monster_images_list
             self.__script = "Astrub Forest"
             return True
 
         elif script == "astrub_forest_reversed":
             self.__data_map_hunting = MapData.AstrubForest.hunting_reversed
             self.__data_map_banking = MapData.AstrubForest.banking
-            self.__data_objects_path = ImageData.AstrubForest.monster_img_path
-            self.__data_objects_list = ImageData.AstrubForest.monster_img_list
+            self.__data_monsters = self.__detection.generate_image_data(
+                    ImageData.AstrubForest.monster_img_list,
+                    ImageData.AstrubForest.monster_img_path
+                )
             self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
             self.__combat.data_movement = CombatData.Movement.AstrubForest.af
             self.__bank.img_path = ImageData.AstrubForest.banker_images_path
@@ -395,6 +400,7 @@ class Bot:
 
                 if character_name == detected_name:
                     log.info("Character's name set correctly!")
+                    self.__popup.interface("characteristics", "close")
                     return True
                 else:
                     log.critical("Invalid character name!")
@@ -409,7 +415,6 @@ class Bot:
                          f"{attempts_allowed} times!")
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
-        
 
     def __controller(self):
         """Set bot state according to situation."""
@@ -462,16 +467,16 @@ class Bot:
         """'HUNTING' state logic."""
         log.info(f"Hunting on map ({self.__map_coordinates}) ... ")
 
-        data, data_path = self.__hunting_chunkate_data(
-                self.__data_objects_list,
-                self.__data_objects_path
+        chunks = self.__hunting_chunkate_data(
+                image_list=list(self.__data_monsters.keys()),
+                chunk_size=6
             )
 
-        for chunk_number, data_chunk in data.items():
+        for chunk_number, chunk in chunks.items():
 
             self.__obj_rects, self.__obj_coords = self.__hunting_search(
-                    data_chunk,
-                    data_path
+                    image_data=self.__data_monsters,
+                    image_list=chunk
                 )
 
             if len(self.__obj_coords) > 0:
@@ -480,54 +485,53 @@ class Bot:
                     self.__state = BotState.PREPARING
                     break
 
-            if chunk_number + 1 == len(data.keys()):
+            if chunk_number + 1 == len(chunks.keys()):
                 log.info(f"Map ({self.__map_coordinates}) is clear!")
                 self.__map_searched = True
                 self.__state = BotState.CONTROLLER
 
-    def __hunting_chunkate_data(self, image_data, image_data_path):
+    def __hunting_chunkate_data(self, image_list, chunk_size):
         """
         Split monster image list into equally sized chunks.
         
         Parameters
         ----------
-        image_data : list[str]
-            `list` of monster images as `str`.
-        image_data_path : str
-            Path to folder where images are stored.
+        image_list : list[str]
+            `list` of `str` containing names of image files.
+        chunk_size : int
+            Amount of images to put in a chunk.
 
         Returns
         ----------
         chunkated_data : dict[int: list[str]]
-            `image_data` split into equal `chunk_size` chunks. Last
-            chunk won't have `chunk_size` images if `image_data` %
+            `image_list` split into equal `chunk_size` chunks. Last
+            chunk won't have `chunk_size` images if len(`image_list`) %
             `chunk_size` != 0.
-        image_data_path : str
-            Path to folder where images are stored.
 
         """
-        total_images = len(image_data)
-        chunk_size = 16
+        total_images = len(image_list)
 
         chunkated_data = []
         for i in range(0, total_images, chunk_size):
-            chunk = image_data[i:i+chunk_size]
+            chunk = image_list[i:i+chunk_size]
             chunkated_data.append(chunk)
 
         chunkated_data = {k: v for k, v in enumerate(chunkated_data)}
 
-        return chunkated_data, image_data_path
+        return chunkated_data
 
-    def __hunting_search(self, data_chunk, data_path):
+    def __hunting_search(self, image_data, image_list):
         """
         Search for monsters.
         
         Parameters
         ----------
-        data_chunk : list[str]
-            `list` of monster images as `str`.
-        data_path : str
-            Path to folder where images are stored.
+        image_data : dict[str: Tuple[np.ndarray, np.ndarray]]
+            Dictionary containing image information. Can be generated by
+            `generate_image_data()` method.
+        image_list : list[str]
+            `list` of images to search for. These images are used as
+            keys to access data in `image_data`.
 
         Returns
         ----------
@@ -547,11 +551,10 @@ class Bot:
         pyautogui.moveTo(929, 51)
 
         screenshot = self.__window_capture.gamewindow_capture()
-        obj_rects, obj_coords = self.__detection.detect_objects(
-                data_chunk,
-                data_path,
+        obj_rects, obj_coords = self.__detection.detect_objects_with_masks(
+                image_data,
+                image_list,
                 screenshot,
-                threshold=0.6
             )
 
         if len(obj_coords) > 0:
