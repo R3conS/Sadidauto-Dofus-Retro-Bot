@@ -140,6 +140,19 @@ class MapData:
             {"1,-23" : {"right" : (926, 410), "map_type": "fightable",
                         "cell"  : [(394, 360),(427, 376),(661, 291),(627, 274)]}},
             {"2,-23" : {"right" : (901, 308), "map_type": "traversable"}},
+            # Used only when map was changed accidentally during attack.
+            {"-1,-22" : {"top"   : (500, 56),  "map_type": "traversable"}},
+            {"-2,-23" : {"top"   : (500, 55),  "map_type": "traversable"}},
+            {"-3,-24" : {"right" : (930, 308), "map_type": "traversable"}},
+            {"-3,-26" : {"right" : (930, 308), "map_type": "traversable"}},
+            {"-2,-27" : {"bottom": (433, 593), "map_type": "traversable"}},
+            {"0,-26"  : {"right" : (928, 411), "map_type": "traversable"}},
+            {"0,-28"  : {"right" : (927, 240), "map_type": "traversable"}},
+            {"2,-29"  : {"bottom": (493, 588), "map_type": "traversable"}},
+            {"3,-28"  : {"left"  : (5, 342),   "map_type": "traversable"}},
+            {"3,-27"  : {"bottom": (700, 592), "map_type": "traversable"}},
+            {"4,-26"  : {"left"  : (4, 377),   "map_type": "traversable"}},
+            {"4,-25"  : {"left"  : (8, 408),   "map_type": "traversable"}},
         ]
 
         # Map data for hunting mobs (different pathing).
@@ -199,6 +212,19 @@ class MapData:
             {"0,-23" : {"left"  : (32, 308),  "map_type": "traversable"}},
             {"-1,-23": {"left"  : (7, 307),   "map_type": "fightable",
                         "cell"  : [(761, 445),(794, 428),(526, 326),(594, 359)]}},
+            # Used only when map was changed accidentally during attack.
+            {"-1,-22" : {"top"   : (500, 56),  "map_type": "traversable"}},
+            {"-1,-24" : {"left"  : (33, 342),  "map_type": "traversable"}},
+            {"-3,-24" : {"right" : (930, 308), "map_type": "traversable"}},
+            {"-3,-26" : {"right" : (930, 308), "map_type": "traversable"}},
+            {"-2,-27" : {"bottom": (433, 593), "map_type": "traversable"}},
+            {"0,-26"  : {"right" : (928, 411), "map_type": "traversable"}},
+            {"0,-28"  : {"right" : (927, 240), "map_type": "traversable"}},
+            {"2,-29"  : {"bottom": (493, 588), "map_type": "traversable"}},
+            {"3,-28"  : {"left"  : (5, 342),   "map_type": "traversable"}},
+            {"3,-27"  : {"bottom": (700, 592), "map_type": "traversable"}},
+            {"4,-26"  : {"left"  : (4, 377),   "map_type": "traversable"}},
+            {"4,-25"  : {"left"  : (8, 408),   "map_type": "traversable"}},
         ]
 
         # Map data for banking.
