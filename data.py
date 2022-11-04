@@ -43,8 +43,6 @@ class ImageData:
 
             "Mush_BL_1.png", "Mush_BR_1.png", "Mush_TL_1.png", "Mush_TR_1.png",
             "Mush_BL_2.png", "Mush_BR_2.png", "Mush_TL_2.png", "Mush_TR_2.png",
-            "Mush_BL_3.png", "Mush_BR_3.png", "Mush_TL_3.png", "Mush_TR_3.png",
-            "Mush_BL_4.png", "Mush_BR_4.png",
 
             "Wolf_BL_1.png", "Wolf_BR_1.png", "Wolf_TL_1.png", "Wolf_TR_1.png",
         ]

@@ -481,10 +481,16 @@ class Bot:
 
             if len(self.__obj_coords) > 0:
 
-                if self.__hunting_attack(self.__obj_coords):
+                attack = self.__hunting_attack(self.__obj_coords)
+
+                if attack == "success":
                     self.__state = BotState.PREPARING
                     break
 
+                elif attack == "map_change":
+                    self.__state = BotState.CONTROLLER
+                    break
+                
             if chunk_number + 1 == len(chunks.keys()):
                 log.info(f"Map ({self.__map_coordinates}) is clear!")
                 self.__map_searched = True
@@ -580,7 +586,7 @@ class Bot:
             If failed to attack monster `attempts_allowed` times.
         
         """
-        wait_after_attacking = 6
+        wait_after_attacking = 7
         attempts_allowed = 3
         attempts_total = 0
 
@@ -590,6 +596,7 @@ class Bot:
         for i in range(0, attempts_allowed):
 
             self.__popup.deal()
+            scs_before_attack = self.__moving_screenshot_minimap()
 
             x, y = monster_coords[i]
             log.info(f"Attacking monster at: {x, y} ... ")
@@ -611,13 +618,28 @@ class Bot:
                 
                 if len(cc_icon) > 0 and len(ready_button) > 0:
                     log.info(f"Successfully attacked monster at: {x, y}!")
-                    return True
+                    return "success"
 
             else:
-                log.error(f"Failed to attack monster at: {x, y}!")
+
+                log.info(f"Failed to attack monster at: {x, y}!")
                 attempts_total += 1
+
+                if self.__hunting_accidental_map_change(scs_before_attack):
+                    return "map_change"
+
                 if (attempts_allowed == attempts_total):
-                    return False
+                    return "fail"
+
+    def __hunting_accidental_map_change(self, sc_before_attack):
+        """Check if map was changed accidentally during an attack."""
+        sc_after_attack = self.__moving_screenshot_minimap()
+        rects = self.__detection.find(sc_before_attack, 
+                                      sc_after_attack,
+                                      threshold=0.98)
+        if len(rects) <= 0:
+            log.info("Map was changed accidentally during an attack!")
+            return True
 
     def __preparing(self):
         """'PREPARING' state logic."""
@@ -943,7 +965,7 @@ class Bot:
         start_time = time.time()
         timeout = 300
 
-        while True:
+        while time.time() - start_time < timeout:
 
             if self.__combat.turn_detect_start():
 
@@ -978,6 +1000,13 @@ class Bot:
                 self.__state = BotState.CONTROLLER
                 log.info(f"Total fights: {self.__total_fights} ... ")
                 break
+
+        else:
+            log.critical(f"Failed to complete fight actions in {timeout} "
+                         "seconds!")
+            log.critical("Timed out!")
+            log.critical("Exiting ... ")
+            WindowCapture.on_exit_capture()
 
     def __fighting_move_character(self):
         """Move character."""
