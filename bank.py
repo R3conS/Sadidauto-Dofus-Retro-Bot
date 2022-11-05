@@ -367,7 +367,9 @@ class Bank:
         """Move character inside of bank."""
         log.info("Entering bank ... ")
 
-        x, y = (767, 205)
+        coords = [(767, 205), (792, 203), (765, 193), (761, 215), (748, 201)]
+        x, y = random.choice(coords)
+
         pyautogui.keyDown('e')
         pyautogui.moveTo(x, y, duration=self.__move_duration)
         pyautogui.click()

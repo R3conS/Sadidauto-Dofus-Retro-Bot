@@ -85,7 +85,7 @@ class Bot:
     # Store maximum allowed pod percentage, bot banks when reached.
     # If character has at least 1 pod taken, the calculated % will be 
     # '14'.
-    __pod_limit = 85
+    __pod_limit = 90
     # Counts total fights. Used to determine if it's time to check pods.
     __fight_counter = 0
     # Is character overloaded with pods or not.
@@ -1372,6 +1372,8 @@ class Bot:
             if not self.__recall_potion_used:
                 if self.__bank.recall_potion() == "available":
                     self.__banking_use_recall_potion()
+                    self.__recall_potion_used = True
+                else:
                     self.__recall_potion_used = True
 
             elif self.__map_coordinates == "4,-16":
