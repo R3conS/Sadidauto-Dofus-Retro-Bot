@@ -239,6 +239,7 @@ class Bot:
             try:
                 coords = r_and_t[0][1]
                 coords = coords.replace(".", ",")
+                coords = coords.replace(" ", "")
                 # Inserting ',' if it wasn't detected before second '-'.
                 if "-" in coords:
                     index = coords.rfind("-")
