@@ -196,7 +196,7 @@ class Bot:
         
         Returns
         ----------
-        map_coords : str
+        coords : str
             Map coordinates as a `str`.
         False : bool
             If map wasn't detected.
@@ -227,7 +227,7 @@ class Bot:
                     capture_region=self.__window_capture.MAP_DETECTION_REGION,
                     conversion_code=cv.COLOR_RGB2GRAY,
                     interpolation_flag=cv.INTER_LINEAR,
-                    scale_width=160,
+                    scale_width=150,
                     scale_height=200
                 )
             # Moving mouse off the red area on the minimap in case a new 
@@ -237,15 +237,21 @@ class Bot:
             # Get map coordinates as a string.
             r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
             try:
-                map_coords = r_and_t[0][1]
-                map_coords = map_coords.replace(".", ",")
+                coords = r_and_t[0][1]
+                coords = coords.replace(".", ",")
+                # Inserting ',' if it wasn't detected before second '-'.
+                if "-" in coords:
+                    index = coords.rfind("-")
+                    if index != 0:
+                        if coords[index-1].isdigit():
+                            coords = coords[:index] + "," + coords[index:]
             except IndexError:
                 continue
 
-            if self.__check_if_map_in_database(map_coords, map_database):
-                return map_coords
+            if self.__check_if_map_in_database(coords, map_database):
+                return coords
             else:
-                log.critical(f"Map ({map_coords}) doesn't exist in database!")
+                log.critical(f"Map ({coords}) doesn't exist in database!")
                 log.critical("Exiting ... ")
                 WindowCapture.on_exit_capture()
 
