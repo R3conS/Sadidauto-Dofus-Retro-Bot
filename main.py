@@ -1,5 +1,5 @@
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import os
 
@@ -16,22 +16,19 @@ def exit_with_hotkey():
         log.info("Exiting ... ")
         os._exit(1)
 
-    with keyboard.GlobalHotKeys({"<ctrl>+<alt>+q": exit}) as h:
+    with keyboard.GlobalHotKeys({"<ctrl>+<alt>+w": exit}) as h:
         h.join()
 
 
 def main():
 
-    try:
-        args = Parser.parse_command_line()
-        bot = Bot(script=args.script,
-                  character_name=args.character_name,
-                  official_version=args.official_version,
-                  debug_window=args.debug_window)
-        bot.Bot_Thread_start()
-        exit_with_hotkey()
-    except:
-        log.exception("An exception occured!")
+    args = Parser.parse_command_line()
+    bot = Bot(script=args.script,
+                character_name=args.character_name,
+                official_version=args.official_version,
+                debug_window=args.debug_window)
+    bot.Bot_Thread_start()
+    exit_with_hotkey()
 
 
 if __name__ == '__main__':

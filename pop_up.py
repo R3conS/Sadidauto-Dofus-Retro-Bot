@@ -1,7 +1,7 @@
 """Provides pop-up and interface closing functionality."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import os
 import time
@@ -19,6 +19,8 @@ class PopUp:
     ----------
     deal()
         Deal with any pop-ups or interfaces.
+    interface()
+        Open or close specified interface.
     
     """
 

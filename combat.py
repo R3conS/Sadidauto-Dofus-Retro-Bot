@@ -1,7 +1,7 @@
 """Provides combat functionality."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import os
 import time
@@ -503,6 +503,12 @@ class Combat:
     def get_char_position(self, start_cell_color="red"):
         """
         Get (x, y) position of character on screen.
+
+        Note
+        ----------
+        `start_cell_color` should always be 'red', unless developing or
+        testing on PvP combat. Only during PvP `start_cell_color` can
+        be 'blue'. During normal PvM it's always 'red'.
 
         Parameters
         ----------
