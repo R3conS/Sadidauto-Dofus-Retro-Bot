@@ -354,7 +354,7 @@ class Detection:
                                   image_data,
                                   image_list,
                                   haystack_image,
-                                  threshold=0.9832,
+                                  threshold=0.9837,
                                   match_method=cv.TM_CCORR_NORMED):
         """
         Detect multiple different 'needle' images on a 'haystack' image.

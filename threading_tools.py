@@ -1,7 +1,7 @@
 """Provides additional threading functionality."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import threading
 

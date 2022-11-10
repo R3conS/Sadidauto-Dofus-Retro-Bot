@@ -1,7 +1,7 @@
 """Provides Dofus's game window manipulating functionality."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import pygetwindow as gw
 import pyautogui

@@ -1,7 +1,7 @@
 """Main bot logic."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.INFO, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import threading
 import time
@@ -100,6 +100,7 @@ class Bot:
     # Info of cell the combat was started on.
     __preparing_cell_coords = None
     __preparing_cell_color = None
+    __tactical_mode = False
 
     # 'BotState.FIGHTING'.
     # Counts total completed fights. Just for statistics.
@@ -185,7 +186,7 @@ class Bot:
 
         return True
 
-    def __get_current_map_coordinates(self, map_database):
+    def __get_coordinates(self, map_database):
         """
         Get current map's coordinates.
 
@@ -227,7 +228,7 @@ class Bot:
                     capture_region=self.__window_capture.MAP_DETECTION_REGION,
                     conversion_code=cv.COLOR_RGB2GRAY,
                     interpolation_flag=cv.INTER_LINEAR,
-                    scale_width=150,
+                    scale_width=160,
                     scale_height=200
                 )
             # Moving mouse off the red area on the minimap in case a new 
@@ -257,7 +258,7 @@ class Bot:
                 WindowCapture.on_exit_capture()
 
         else:
-            log.critical("Fatal error in '__get_current_map_coordinates()'!")
+            log.critical("Fatal error in '__get_coordinates()'!")
             log.critical(f"Exceeded detection limit of {timeout} second(s)!")
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
@@ -303,7 +304,12 @@ class Bot:
         if self.__initializing_load_bot_script_data(self.__script):
             log.info(f"Successfully loaded '{self.__script}' script!")
 
-        self.__initializing_verify_character_name(self.__character_name)
+        if self.__official_version:
+            if self.__initializing_verify_group():
+                log.info("Group verified successfully!")
+
+        if self.__initializing_verify_character_name(self.__character_name):
+            log.info("Character's name set correctly!")
 
         # Passing control to 'CONTROLLER' state.
         log.info(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
@@ -406,7 +412,6 @@ class Bot:
                 detected_name = r_and_t[0][1]
 
                 if character_name == detected_name:
-                    log.info("Character's name set correctly!")
                     self.__popup.interface("characteristics", "close")
                     return True
                 else:
@@ -423,8 +428,90 @@ class Bot:
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
 
+    def __initializing_verify_group(self):
+        """Check if character is in group and close group tab."""
+        log.info("Verifying group ... ")
+
+        start_time = time.time()
+        timeout = 15
+
+        while time.time() - start_time < timeout:
+
+            if self.__initializing_in_group():
+                log.info("Character is in group!")
+                if self.__initializing_group_tab_check() == "opened":
+                    if self.__initializing_group_tab_hide():
+                        return True
+                else:
+                    return True
+
+        else:
+            log.critical(f"Failed to verify group in {timeout} seconds!")
+            log.critical(f"Exiting ... ")
+            WindowCapture.on_exit_capture()
+
+    def __initializing_in_group(self):
+        """Check if character is in group."""
+        coords = [(908, 120), (913, 115), (902, 117)]
+        colors = [(0, 153, 0)]
+        pixels = []
+
+        for coord in coords:
+            px = pyautogui.pixelMatchesColor(coord[0], coord[1], colors[0])
+            pixels.append(px)
+
+        if all(pixels):
+            return True
+        else:
+            return False  
+
+    def __initializing_group_tab_check(self):
+        """Check if group tab is opened or closed."""
+        coords = [(908, 142), (910, 138), (915, 142)]
+        colors = [(197, 73, 6), (102, 45, 23), (103, 32, 5)]
+        pixels = []
+
+        for i in range(len(colors)):
+            px = pyautogui.pixelMatchesColor(coords[i][0], coords[i][1], colors[i])
+            pixels.append(px)
+
+        if all(pixels):
+            return "opened"
+        else:
+            return "closed"
+
+    def __initializing_group_tab_hide(self):
+        """Hide group tab if it's open."""
+        start_time = time.time()
+        timeout = 30
+
+        while time.time() - start_time < timeout:
+
+            self.__popup.deal()
+
+            if self.__initializing_group_tab_check() == "opened":
+                log.info("Hiding group tab ... ")
+                pyautogui.moveTo(927, 117, duration=0.15)
+                pyautogui.click()
+                time.sleep(0.5)
+            else:
+                log.info("Group tab hidden successfully!")
+                return True
+
+        else:
+            log.critical(f"Failed to hide group tab in {timeout} seconds!")
+            log.critical(f"Exiting ... ")
+            WindowCapture.on_exit_capture()
+
     def __controller(self):
         """Set bot state according to situation."""
+
+        if self.__official_version:
+            if not self.__initializing_in_group():
+                log.critical("Character is not in group!")
+                log.critical("Exiting ... ")
+                WindowCapture.on_exit_capture()
+
         if self.__fight_counter % 6 == 0:
             # Incrementing by '1' instantly so bot doesn't check pods
             # everytime 'controller' is called.
@@ -441,16 +528,12 @@ class Bot:
 
         if self.__character_overloaded:
             self.__data_map = self.__data_map_banking
-            self.__map_coordinates = self.__get_current_map_coordinates(
-                    self.__data_map
-                )
+            self.__map_coordinates = self.__get_coordinates(self.__data_map)
             self.__state = BotState.BANKING
 
         elif not self.__character_overloaded:
             self.__data_map = self.__data_map_hunting
-            self.__map_coordinates = self.__get_current_map_coordinates(
-                    self.__data_map
-                )
+            self.__map_coordinates = self.__get_coordinates(self.__data_map)
             map_type = self.__get_map_type(self.__map_coordinates)
 
             if map_type == "fightable":
@@ -476,7 +559,7 @@ class Bot:
 
         chunks = self.__hunting_chunkate_data(
                 image_list=list(self.__data_monsters.keys()),
-                chunk_size=6
+                chunk_size=4
             )
 
         for chunk_number, chunk in chunks.items():
@@ -593,8 +676,8 @@ class Bot:
             If failed to attack monster `attempts_allowed` times.
         
         """
-        wait_after_attacking = 7
-        attempts_allowed = 3
+        wait_after_attacking = 6
+        attempts_allowed = 1
         attempts_total = 0
 
         if len(monster_coords) < attempts_allowed:
@@ -654,24 +737,34 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
-        # 'Tactical Mode' status.
-        tactical_mode = False
         # Loop control variables.
         start_time = time.time()
-        allowed_time = 20
+        allowed_time = 30
+        # Giving time for monsters to load before starting to check for 
+        # empty cells. If ommited, may return false empty cell values
+        # on first iteration of loop.
+        time.sleep(0.5)
 
         while time.time() - start_time < allowed_time:
 
-            if not tactical_mode:
+            if not self.__tactical_mode:
                 if self.__preparing_enable_tactical_mode():
-                    tactical_mode = True
+                    self.__tactical_mode = True
 
-            if tactical_mode:
+            if self.__tactical_mode:
+
                 cells = self.__preparing_get_cells_from_database(
                         self.__map_coordinates,
                         self.__data_map
                     )
                 e_cells = self.__preparing_get_empty_cells(cells)
+
+                if len(e_cells) <= 0:
+                    self.__map_coordinates = self.__get_coordinates(
+                            self.__data_map
+                        )
+                    continue
+
                 if self.__preparing_move_char_to_cell(e_cells):
                     self.__preparing_cell_color = \
                             self.__preparing_get_start_cell_color(
@@ -682,6 +775,11 @@ class Bot:
                     if self.__preparing_start_combat():
                         self.__state = BotState.FIGHTING
                         break
+                else:
+                    self.__map_coordinates = self.__get_coordinates(
+                            self.__data_map
+                        )
+                    continue
 
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
@@ -778,21 +876,13 @@ class Bot:
         
         """
         empty_cells_list = []
+        colors = [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]
 
-        for cell_coordinates in cell_coordinates_list:
-
-            red_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
-                                                    cell_coordinates[1],
-                                                    (255, 0, 0),
-                                                    tolerance=10)
-
-            blue_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
-                                                     cell_coordinates[1],
-                                                     (0, 0, 255),
-                                                     tolerance=10)
-                                                
-            if red_pixel or blue_pixel:
-                empty_cells_list.append(cell_coordinates)
+        for coords in cell_coordinates_list:
+            for color in colors:
+                px = pyautogui.pixelMatchesColor(coords[0], coords[1], color)
+                if px:
+                    empty_cells_list.append(coords)
 
         return empty_cells_list
 
@@ -869,8 +959,8 @@ class Bot:
         """
         Check if character moved to cell.
 
-        Checks for red and blue pixels on `cell_coordinates`. If
-        neither are found it means character is standing there.
+        Checks for red and blue colored pixels on `cell_coordinates`. If
+        none were found it means character is standing there.
         
         Parameters
         ----------
@@ -884,16 +974,16 @@ class Bot:
             If character wasn't moved.
         
         """
-        red_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
-                                                cell_coordinates[1],
-                                                (255, 0, 0),
-                                                tolerance=5)
-        blue_pixel = pyautogui.pixelMatchesColor(cell_coordinates[0],
-                                                 cell_coordinates[1],
-                                                 (0, 0, 255),
-                                                 tolerance=5)
+        pixels = []
+        colors = [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]
+        
+        for color in colors:
+            px = pyautogui.pixelMatchesColor(cell_coordinates[0],
+                                             cell_coordinates[1],
+                                             color)
+            pixels.append(px)
 
-        if not red_pixel and not blue_pixel:
+        if not any(pixels):
             log.info("Character moved successfully!")
             return True
         else:
@@ -1087,13 +1177,14 @@ class Bot:
                             self.__preparing_cell_coords
                         )
                 else:
-                    cast_coords = self.__combat.get_char_position(
-                            self.__preparing_cell_color
-                        )
+                    cast_coords = self.__combat.get_char_position()
 
-                self.__combat.cast_spell(spell, spell_coords, cast_coords)
-                break
-        
+                try:
+                    self.__combat.cast_spell(spell, spell_coords, cast_coords)
+                    break
+                except TypeError:
+                    break
+
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")
             log.critical("Exiting ... ")
@@ -1190,9 +1281,12 @@ class Bot:
                 self.__state = BotState.CONTROLLER
                 break
             else:
-                if self.__popup.deal():
-                    attempts_total += 1
-                    continue
+                self.__popup.deal()
+                attempts_total += 1
+                self.__map_coordinates = self.__get_coordinates(
+                            self.__data_map
+                        )
+                continue
 
         else:
             log.critical(f"Failed to change maps in {attempts_allowed} "
@@ -1259,7 +1353,7 @@ class Bot:
 
         """
         # How long to keep checking if map was changed.
-        wait_change_map = 7
+        wait_change_map = 9
         # Time to wait before clicking on yellow 'sun' to change maps.
         # Must wait when moving in 'bottom' direction, because 'Dofus' 
         # GUI blocks the sun otherwise.
@@ -1409,7 +1503,7 @@ class Bot:
 
             self.__popup.deal()
             self.__bank.use_recall_potion()
-            self.__map_coordinates = self.__get_current_map_coordinates(
+            self.__map_coordinates = self.__get_coordinates(
                     self.__data_map
                 )
 

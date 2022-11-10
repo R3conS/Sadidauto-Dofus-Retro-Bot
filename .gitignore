@@ -5,10 +5,12 @@ venv/*
 __pycache__/*
 *.pyc
 mouse_position.py
+mouse_click_tools.py
+mouse_gotopos.py
 test.py
 *test_monster_images
 *test_images
 uninstall.txt
-mouse_click_tools.py
 route_images
 logs
+oFlex-Git.lnk
