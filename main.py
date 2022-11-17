@@ -12,7 +12,7 @@ from cmd_line_parser import Parser
 def exit_with_hotkey():
 
     def exit():
-        log.info("Exit hotkey '<ctrl>+<alt>+q' pressed!")
+        log.info("Exit hotkey '<ctrl>+<alt>+w' pressed!")
         log.info("Exiting ... ")
         os._exit(1)
 

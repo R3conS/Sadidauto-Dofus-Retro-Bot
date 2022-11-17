@@ -27,6 +27,10 @@ class ImageData:
     bank_images_path = "images\\bank_images\\"
     empty_bank_slot = bank_images_path + "empty_bank_slot.jpg"
 
+    # Interface images.
+    interface_images_path = "images\\interface_images\\"
+    dofus_logo = interface_images_path + "dofus_logo.jpg"
+
     class AstrubForest:
         """Holds 'Astrub Forest' script image data."""
         

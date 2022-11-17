@@ -101,6 +101,7 @@ class Bot:
     __preparing_cell_coords = None
     __preparing_cell_color = None
     __tactical_mode = False
+    __cell_selection_failed = False
 
     # 'BotState.FIGHTING'.
     # Counts total completed fights. Just for statistics.
@@ -225,7 +226,7 @@ class Bot:
             pyautogui.moveTo(517, 680)
             time.sleep(wait_before_detecting)
             screenshot = self.__window_capture.custom_area_capture(
-                    capture_region=self.__window_capture.MAP_DETECTION_REGION,
+                    capture_region=(525, 650, 45, 30),
                     conversion_code=cv.COLOR_RGB2GRAY,
                     interpolation_flag=cv.INTER_LINEAR,
                     scale_width=160,
@@ -406,7 +407,7 @@ class Bot:
             if self.__popup.interface("characteristics", "open"):
 
                 sc = self.__window_capture.custom_area_capture(
-                        self.__window_capture.CHARACTER_NAME_REGION
+                        (685, 93, 205, 26)
                     )
                 r_and_t, _, _ = self.__detection.detect_text_from_image(sc)
                 detected_name = r_and_t[0][1]
@@ -453,14 +454,15 @@ class Bot:
     def __initializing_in_group(self):
         """Check if character is in group."""
         coords = [(908, 120), (913, 115), (902, 117)]
-        colors = [(0, 153, 0)]
+        colors = [(0, 153, 0), (0, 138, 0)]
         pixels = []
 
         for coord in coords:
-            px = pyautogui.pixelMatchesColor(coord[0], coord[1], colors[0])
-            pixels.append(px)
+            for color in colors:
+                px = pyautogui.pixelMatchesColor(coord[0], coord[1], color)
+                pixels.append(px)
 
-        if all(pixels):
+        if pixels.count(True) == len(coords):
             return True
         else:
             return False  
@@ -507,6 +509,7 @@ class Bot:
         """Set bot state according to situation."""
 
         if self.__official_version:
+            self.__popup.close_right_click_menu()
             if not self.__initializing_in_group():
                 log.critical("Character is not in group!")
                 log.critical("Exiting ... ")
@@ -644,7 +647,7 @@ class Bot:
         """
         # Moving mouse of the screen so it doesn't hightlight mobs
         # by accident causing them to be undetectable.
-        pyautogui.moveTo(929, 51)
+        self.__popup.close_right_click_menu()
 
         screenshot = self.__window_capture.gamewindow_capture()
         obj_rects, obj_coords = self.__detection.detect_objects_with_masks(
@@ -737,6 +740,9 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
+        # Failed attempts to select starting cell.
+        failed_attempts = 0
+        attempts_allowed = 2
         # Loop control variables.
         start_time = time.time()
         allowed_time = 30
@@ -766,20 +772,33 @@ class Bot:
                     continue
 
                 if self.__preparing_move_char_to_cell(e_cells):
+
                     self.__preparing_cell_color = \
                             self.__preparing_get_start_cell_color(
                                     self.__map_coordinates,
                                     self.__data_map,
                                     self.__preparing_cell_coords
                                 )
+
                     if self.__preparing_start_combat():
                         self.__state = BotState.FIGHTING
                         break
+
                 else:
-                    self.__map_coordinates = self.__get_coordinates(
-                            self.__data_map
-                        )
-                    continue
+
+                    if failed_attempts < attempts_allowed:
+                        self.__map_coordinates = self.__get_coordinates(
+                                self.__data_map
+                            )
+                        failed_attempts += 1
+                        continue
+
+                    else:
+                        if self.__preparing_start_combat():
+                            log.debug("Cell selection failed!")
+                            self.__cell_selection_failed = True                           
+                            self.__state = BotState.FIGHTING
+                            break
 
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
@@ -886,10 +905,10 @@ class Bot:
 
         return empty_cells_list
 
-    def __preparing_get_start_cell_color(self, 
-                                           map_coords, 
-                                           database,
-                                           start_cell_coords):
+    def __preparing_get_start_cell_color(self,
+                                         map_coords,
+                                         database,
+                                         start_cell_coords):
         """
         Get combat start cell color.
 
@@ -949,9 +968,9 @@ class Bot:
             log.info(f"Moving character to cell: {cell} ... ")
             pyautogui.moveTo(cell[0], cell[1])
             pyautogui.click()
-            self.__preparing_cell_coords = cell
             time.sleep(wait_after_move_char)
             if self.__preparing_check_if_char_moved(cell):
+                self.__preparing_cell_coords = cell
                 return True
         return False
 
@@ -1056,7 +1075,7 @@ class Bot:
     def __fighting(self):
         """'FIGHTING' state logic."""
         first_turn = True
-        tbar_shrunk = False        
+        tbar_shrunk = False
         character_moved = False
         models_hidden = False
         start_time = time.time()
@@ -1112,6 +1131,17 @@ class Bot:
 
         while attempts < attempts_allowed:
 
+            if self.__cell_selection_failed:
+                log.debug("Getting cell coords and color in 'fighting' ... ")
+                # Giving time for 'Illustration to signal your turn' 
+                # to disappear.
+                time.sleep(3)
+                self.__preparing_cell_coords, self.__preparing_cell_color = \
+                    self.__fighting_get_cell_coords_and_color(
+                            self.__map_coordinates
+                        )
+                self.__cell_selection_failed = False
+
             move_coords = self.__combat.get_movement_coordinates(
                     self.__map_coordinates,
                     self.__preparing_cell_color,
@@ -1144,6 +1174,59 @@ class Bot:
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
 
+    def __fighting_get_cell_coords_and_color(self, map_coords):
+        """
+        Get starting cell color and coords.
+
+        Only used when usual logic of starting cell selection fails
+        in 'PREPARING' state.
+
+        Parameters
+        ----------
+        map_coords : str
+            Current map's coordinates.
+
+        Returns
+        ----------
+        char_coords : Tuple[int, int]
+            `tuple` containing (x, y) coordinates of character.
+        color : str
+            Color of starting cell.
+
+        """
+        # Getting all possible starting cells on current map.
+        # self.__data_map_hunting = MapData.AstrubForest.hunting
+        for _, value in enumerate(self.__data_map_hunting):
+            for i_key, i_value in value.items():
+                if map_coords == i_key:
+                    cell_coordinates_list = i_value["cell"]
+
+        # Getting character's coordinates.
+        char_coords = self.__combat.get_char_position()
+
+        # Calculating distances between char. coords and cells.
+        distances = {}
+        for coord in cell_coordinates_list:
+            distance = ((coord[0] - char_coords[0]) ** 2 
+                      + (coord[1] - char_coords[0]) ** 2)\
+                      ** 0.5
+            distances.update({coord: distance})
+
+        # Setting the closest cell as current char. coordinates.
+        for key, value in distances.items():
+            if value == min(distances.values()):
+                char_coords = key
+                break
+
+        # Getting the color of starting cell.
+        color = self.__preparing_get_start_cell_color(
+                map_coords,
+                self.__data_map_hunting,
+                char_coords
+            )
+
+        return char_coords, color
+
     def __fighting_cast_spells(self, first_turn):
         """
         Cast spells.
@@ -1154,8 +1237,15 @@ class Bot:
             Whether it's the first turn of combat or not.
         
         """
+        # Prevents getting cast coordinates on every attempt to cast
+        # spell. If omitted, 'get_char_position()' might return false
+        # results on 'Ascalion' server, because sometimes after casting 
+        # a spell the orange 'cast range' area stays around the 
+        # character (Ascalion's bug) and it messes up detection.
+        get_char_pos = True
+        # Loop control variables.
         start_time = time.time()
-        timeout = 30
+        timeout = 20
 
         while time.time() - start_time < timeout:
 
@@ -1166,8 +1256,13 @@ class Bot:
                 return True
 
             for spell in available_spells:
-
+  
                 spell_coords = self.__combat.get_spell_coordinates(spell)
+                
+                if spell_coords is None:
+                    log.debug(f"Spell coords: {spell_coords}")
+                    log.debug("Breaking out of 'for' loop!")
+                    break
 
                 if first_turn:
                     cast_coords = self.__combat.get_spell_cast_coordinates(
@@ -1176,14 +1271,12 @@ class Bot:
                             self.__preparing_cell_color,
                             self.__preparing_cell_coords
                         )
-                else:
+                elif not first_turn and get_char_pos:
                     cast_coords = self.__combat.get_char_position()
+                    get_char_pos = False
 
-                try:
-                    self.__combat.cast_spell(spell, spell_coords, cast_coords)
-                    break
-                except TypeError:
-                    break
+                self.__combat.cast_spell(spell, spell_coords, cast_coords)
+                break
 
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")
@@ -1283,6 +1376,15 @@ class Bot:
             else:
                 self.__popup.deal()
                 attempts_total += 1
+
+                if self.__map_coordinates == "1,-25":
+                    if self.__moving_detect_lumberjack_ws_interior():
+                        pyautogui.keyDown('e')
+                        pyautogui.moveTo(667, 507)
+                        pyautogui.click()
+                        pyautogui.keyUp('e')
+                        time.sleep(3)
+                    
                 self.__map_coordinates = self.__get_coordinates(
                             self.__data_map
                         )
@@ -1293,6 +1395,22 @@ class Bot:
                          "attempts!")
             log.critical("Exiting ... ")
             WindowCapture.on_exit_capture()
+
+    def __moving_detect_lumberjack_ws_interior(self):
+        """Detect if character is inside lumberjack's workshop."""
+        color = (0, 0, 0)
+        coordinates = [(49, 559), (48, 137), (782, 89), (820, 380), (731, 554)]
+
+        pixels = []
+        for coord in coordinates:
+            px = pyautogui.pixelMatchesColor(coord[0], coord[1], color)
+            pixels.append(px)
+
+        if all(pixels):
+            log.info("Character is inside 'Lumberjack's Workshop'!")
+            return True
+        else:
+            return False
 
     def __moving_get_move_coords(self):
         """
@@ -1360,6 +1478,7 @@ class Bot:
         wait_bottom_click = 0.5
 
         # Changing maps.
+        self.__popup.close_right_click_menu()
         coords, choice = self.__moving_get_move_coords()
         log.info(f"Clicking on: {coords[0], coords[1]} to move {choice} ... ")
         pyautogui.keyDown('e')
@@ -1397,10 +1516,10 @@ class Bot:
         # map tooltip to appear.
         pyautogui.moveTo(517, 680)
         # Waiting makes overall performance better because of less
-        # screenshots.
-        time.sleep(0.25)
+        # screenshots. Also gives time for map tooltip to appear.
+        time.sleep(0.5)
         screenshot = self.__window_capture.custom_area_capture(
-                capture_region=self.__window_capture.MAP_DETECTION_REGION,
+                capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
                 interpolation_flag=cv.INTER_LINEAR,
                 scale_width=100,
@@ -1441,8 +1560,7 @@ class Bot:
         # a slower machine 'SEARCHING' state will act too fast & try to 
         # search for monsters on a black "LOADING MAP" screen. This wait 
         # time allows the black loading screen to disappear.
-        wait_map_loading = 0.5
-
+        wait_map_loading = 1
         sc_minimap_needle = self.__moving_screenshot_minimap()
         minimap_rects = self.__detection.find(sc_minimap,
                                               sc_minimap_needle,
