@@ -3,8 +3,13 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
-import pygetwindow as gw
+import time
+
 import pyautogui
+import pygetwindow as gw
+
+import pop_up
+import window_capture
 
 
 class GameWindow:
@@ -25,6 +30,10 @@ class GameWindow:
         Detect 'Dofus.exe' window.
     resize_and_move()
         Resize and move 'Dofus.exe' window.
+    close()
+        Close 'Dofus.exe' window.
+    logout()
+        Logout from 'Dofus'.
 
     """
 
@@ -83,6 +92,43 @@ class GameWindow:
     @staticmethod
     def close():
         """Close 'Dofus.exe' window."""
+        log.info("Closing 'Dofus.exe' ... ")
         pyautogui.moveTo(910, 15, duration=0.15)
         pyautogui.click()
-        log.info("Closing 'Dofus.exe' ... ")
+
+    @classmethod
+    def logout(cls):
+        """Logout from 'Dofus'."""
+        log.info("Logging out ... ")
+
+        start_time = time.time()
+        timeout = 15
+
+        while time.time() - start_time < timeout:
+
+            # Dealing with any open interfaces/offers.
+            pop_up.PopUp.deal()
+
+            # Opening 'Main Menu'.
+            pyautogui.press("esc")
+            time.sleep(0.5)
+
+            if pop_up.PopUp.detect_interfaces() == "main_menu":
+
+                pyautogui.moveTo(468, 318, duration=0.15)
+                pyautogui.click()
+                time.sleep(0.5)
+
+                if pop_up.PopUp.detect_interfaces() == "caution":
+
+                    pyautogui.moveTo(381, 371, duration=0.15)
+                    pyautogui.click()
+                    time.sleep(2.5)
+
+                    if pop_up.PopUp.detect_interfaces() == "login_screen":
+                        log.info("Logged out successfully!")
+                        break
+
+        else:
+            log.error(f"Failed to log out!")
+            cls.close()

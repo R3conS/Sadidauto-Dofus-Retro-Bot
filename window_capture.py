@@ -20,72 +20,19 @@ class WindowCapture:
     
     Methods
     ----------
-    gamewindow_capture()
-        Screenshot whole game window, including Windows top bar.
     area_around_mouse_capture()
         Screenshot area around mouse cursor.
     custom_area_capture()
         Screenshot specified area.
+    gamewindow_capture()
+        Screenshot whole game window, including Windows top bar.
+    on_exit_capture()
+        Take a screenshot, logout and exit program.
 
     """
 
-    # Constants.
-    # Region of whole game window. Includes windows top bar.
-    GAMEWINDOW_REGION = (0, 0, 933, 755)
-    # Region to screenshot for map detection.
-    MAP_DETECTION_REGION = (525, 650, 45, 30)
-    # Region to screenshot for AP/MP detection.
-    AP_DETECTION_REGION = (465, 610, 20, 25)
-    MP_DETECTION_REGION = (570, 615, 15, 25)
-    # Region to screnshot for start of turn detection.
-    TURN_START_REGION = (170, 95, 200, 30)
-    # Region to screnshot for end of turn and passing turn detection.
-    TURN_END_REGION = (525, 595, 120, 155)
-    # Region to screenshot for spell detection.
-    SPELL_BAR_REGION = (645, 660, 265, 80)
-    # Region to screenshot for character name verification.
-    CHARACTER_NAME_REGION = (685, 93, 205, 26)
-
-    def gamewindow_capture(
-            self,
-            capture_region: Tuple[int, int, int, int] = GAMEWINDOW_REGION,
-            conversion_code: int = cv.COLOR_RGB2BGR,
-            convert: bool = True
-        ):
-        """
-        Screenshot whole game window, including Windows top bar.
-
-        Parameters
-        ----------
-        capture_region : tuple, optional
-            Region of the screen to screenshot in
-            (topLeft_x, topLeft_y, width, height) format. Defaults to:
-            (0, 0, 933, 755).
-        conversion_code: int, optional
-            OpenCV color conversion code. Defaults to: 
-            `cv.COLOR_RGB2BGR`.
-        convert : bool, optional
-            Whether to convert image to `np.ndarray` or not. Defaults to 
-            `True`.
-
-        Returns
-        ----------
-        screenshot : np.ndarray
-            If `convert` is `True`, return `screenshot` as `np.ndarray`.
-        screenshot : PIL.Image
-            If `convert` is `False`, return `screenshot` as `PIL.Image`.
-
-        """
-        screenshot = pyautogui.screenshot(region=capture_region)
-        if not convert:
-            return screenshot
-        else:
-            screenshot = np.array(screenshot)
-            screenshot = cv.cvtColor(screenshot, conversion_code)
-            return screenshot
-
-    def area_around_mouse_capture(self,
-                                  midpoint: int,
+    @staticmethod
+    def area_around_mouse_capture(midpoint: int,
                                   pos: Tuple[int, int] = pyautogui.position(),
                                   convert: bool = True):
         """
@@ -145,8 +92,8 @@ class WindowCapture:
             screenshot = cv.cvtColor(screenshot, cv.COLOR_RGB2BGR)
             return screenshot
 
-    def custom_area_capture(self, 
-                            capture_region: Tuple[int, int, int, int],
+    @staticmethod
+    def custom_area_capture(capture_region: Tuple[int, int, int, int],
                             conversion_code: int = cv.COLOR_RGB2BGR,
                             interpolation_flag: int = cv.INTER_LINEAR,
                             scale_width: int = 100,
@@ -204,9 +151,47 @@ class WindowCapture:
         return screenshot
 
     @staticmethod
+    def gamewindow_capture(
+            capture_region: Tuple[int, int, int, int] = (0, 0, 933, 755),
+            conversion_code: int = cv.COLOR_RGB2BGR,
+            convert: bool = True
+        ):
+        """
+        Screenshot whole game window, including Windows top bar.
+
+        Parameters
+        ----------
+        capture_region : tuple, optional
+            Region of the screen to screenshot in
+            (topLeft_x, topLeft_y, width, height) format. Defaults to:
+            (0, 0, 933, 755).
+        conversion_code: int, optional
+            OpenCV color conversion code. Defaults to: 
+            `cv.COLOR_RGB2BGR`.
+        convert : bool, optional
+            Whether to convert image to `np.ndarray` or not. Defaults to 
+            `True`.
+
+        Returns
+        ----------
+        screenshot : np.ndarray
+            If `convert` is `True`, return `screenshot` as `np.ndarray`.
+        screenshot : PIL.Image
+            If `convert` is `False`, return `screenshot` as `PIL.Image`.
+
+        """
+        screenshot = pyautogui.screenshot(region=capture_region)
+        if not convert:
+            return screenshot
+        else:
+            screenshot = np.array(screenshot)
+            screenshot = cv.cvtColor(screenshot, conversion_code)
+            return screenshot
+
+    @staticmethod
     def on_exit_capture(exit_dofus=True):
         """
-        Take a screenshot, close 'Dofus.exe' and exit program.
+        Take a screenshot, logout and exit program.
         
         Method is used after a critical error was encountered and
         program can't continue to run.
@@ -234,6 +219,5 @@ class WindowCapture:
         log.info(f"Saved: '{os.path.join(images_folder_path, image_name)}'!")
 
         if exit_dofus:
-            # Closing 'Dofus.exe'.
-            GameWindow.close()
+            GameWindow.logout()
             os._exit(1)

@@ -21,19 +21,19 @@ class Detection:
         Draw rectangle(s) on an image.
     draw_markers()
         Draw marker(s) on an image.
+    generate_image_data()
+        Construct a dictionary for use in detect_objects_with_masks().
+    detect_text_from_image()
+        Detect text from image.
     detect_objects()
         Detect 'needle' images on a 'haystack' image.
     detect_objects_with_masks()
         Detect 'needle' images on a 'haystack' image. Uses masks.
-    detect_text_from_image()
-        Detect text from image.
-    generate_image_data()
-        Construct a dictionary for use in detect_objects_with_masks().
     
     """
 
-    def find(self, 
-             haystack_img: np.ndarray | str,
+    @staticmethod
+    def find(haystack_img: np.ndarray | str,
              needle_img: np.ndarray | str,
              threshold: float = 0.9,
              match_method: int = cv.TM_CCOEFF_NORMED,
@@ -125,8 +125,8 @@ class Detection:
         
         return rectangles
 
-    def get_click_coords(self, 
-                         rectangles: list[list[int]],
+    @staticmethod
+    def get_click_coords(rectangles: list[list[int]],
                          region: Tuple[int, int, int, int] = (0, 0, 0, 0)) \
                          -> list[Tuple[int, int]]:
         """
@@ -159,8 +159,8 @@ class Detection:
 
         return coords
 
-    def draw_rectangles(self, 
-                        haystack_img: np.ndarray | str, 
+    @staticmethod
+    def draw_rectangles(haystack_img: np.ndarray | str, 
                         rectangles: list[list[int]],
                         line_color: Tuple[int, int, int] = (0, 255, 0),
                         line_thickness: int = 2) \
@@ -214,8 +214,8 @@ class Detection:
 
         return haystack_img
 
-    def draw_markers(self, 
-                     haystack_img: np.ndarray | str, 
+    @staticmethod
+    def draw_markers(haystack_img: np.ndarray | str, 
                      coords: list[Tuple[int, int]],
                      marker_color: Tuple[int, int, int] = (0, 255, 0),
                      marker_type: int = cv.MARKER_CROSS) \
@@ -263,167 +263,71 @@ class Detection:
 
         return haystack_img
 
-    def detect_objects(self, 
-                       objects_to_detect_list: list[str],
-                       objects_to_detect_path: str, 
-                       haystack_image: np.ndarray | str, 
-                       threshold: float = 0.6,
-                       match_method: int = cv.TM_CCOEFF_NORMED) \
-                       -> Tuple[list[list[int]], list[Tuple[int, int]]]:
+    @staticmethod
+    def generate_image_data(image_list, image_path):
         """
-        Detect multiple different 'needle' images on a 'haystack' image.
+        Construct a dictionary.
 
-        Best used when there are two or more different images to be 
-        detected. Otherwise use the `find()` method.
+        This method allows for easy creation of a dictionary that is
+        used in `detect_objects_with_masks()` method as `image_data` 
+        argument.
+
+        Make sure that images in `image_list` are 32 bit depth and
+        have transparency (transparent background for example).
 
         Parameters
         ----------
-        objects_to_detect_list : list[str]
-            `list` containing `str` names of images to detect.
-        objects_to_detect_path : str
-            `str` path to location of images.
-        haystack_image : np.ndarray or str
-            Image to search on.
-        threshold : float, optional
-            Accuracy with which images will be searched for 
-            (0.0 to 1.0). Defaults to 0.6.
-        match_method : int, optional
-            Comparison method used by `cv.matchTemplate()`. Defaults to 
-            `cv.TM_CCOEFF_NORMED`.
+        image_list : list[str]
+            `list` of `str` containing names of image files.
+        image_path : str
+            Path to folder where images are stored.
 
         Returns
         ----------
-        object_rectangles_converted : list[list[int]]
-            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
-            of bounding box.
-        object_center_xy_coordinates : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates.
-        object_rectangles_converted : tuple
-            Empty `tuple` if no matches found.
-        object_center_xy_coordinates : list
-            Empty `list` if no matches found.
+        data : dict[str: Tuple[np.ndarray, np.ndarray]]
+            Dictionary containing image information. Name of image
+            as key and a `tuple`, that holds respective image's data
+            without alpha channel at position 0 and image's mask
+            data at position 1, as value.
 
-        Raises
+        Note
         ----------
-        (-215:Assertion failed) in function 'cv::matchTemplate'
-            If any `str` within `objects_to_detect_list` is incorrect.
-        (-215:Assertion failed) in function 'cv::matchTemplate'
-            If `objects_to_detect_path` is incorrect.
+        Implementation inspired by this answer. Specifically channel
+        extraction:
+        https://stackoverflow.com/questions/63091761/how-to-improve
+        -accuracy-of-opencv-matching-results-in-python
 
         """
         # Making sure the path string ends with a '\'.
-        if not objects_to_detect_path.endswith("\\"):
-            objects_to_detect_path += "\\"
+        if not image_path.endswith("\\"):
+            image_path += "\\"
 
-        # Looping over all needle images and trying to find them on the 
-        # haystack image. Appending bounding box information of found 
-        # matches to an empty list. This generates a list of 2D 
-        # numpy arrays.
-        object_rectangles = []
-        for image in objects_to_detect_list:
-            rectangles = self.find(haystack_image, 
-                                   objects_to_detect_path + image, 
-                                   threshold=threshold,
-                                   match_method=match_method)
-            object_rectangles.append(rectangles)
+        data = {}
 
-        # Converting a list of 2D numpy arrays into a list of 1D numpy 
-        # arrays.
-        object_rectangles_converted: Any = []
-        for i in object_rectangles:
-            for j in i:
-                object_rectangles_converted.append(j)
-
-        # Converting a list of 1D numpy arrays into one 2D numpy array.
-        object_rectangles_converted = np.array(object_rectangles_converted)
-
-        # Grouping all rectangles that are close-by.
-        object_rectangles_converted, weights = cv.groupRectangles(
-                                                object_rectangles_converted, 
-                                                1, 
-                                                0.5)
-
-        # Creating a list containing center (x, y) coordinates of found
-        # matches.
-        object_center_xy_coordinates = self.get_click_coords(
-                                                   object_rectangles_converted)
-
-        return object_rectangles_converted, object_center_xy_coordinates
-
-    def detect_objects_with_masks(self,
-                                  image_data,
-                                  image_list,
-                                  haystack_image,
-                                  threshold=0.9837,
-                                  match_method=cv.TM_CCORR_NORMED):
-        """
-        Detect multiple different 'needle' images on a 'haystack' image.
-
-        This method uses masks, unlike `detect_objects()`.
-
-        Parameters
-        ----------
-        image_data : dict[str: Tuple[np.ndarray, np.ndarray]]
-            Dictionary containing image information. Can be generated by
-            `generate_image_data()` method.
-        image_list : list[str]
-            `list` of images to search for. These images are used as
-            keys to access data in `image_data`.
-        haystack_image : np.ndarray
-            Image to search on.
-        threshold : float, optional
-            Detection threshold. Ranges from 0 to 1. Defaults to 0.9832.
-        match_method : int, optional
-            Comparison method used by `cv.matchTemplate()`. Defaults to 
-            `cv.TM_CCORR_NORMED`.
-
-        Returns
-        ----------
-        rects_list : list[list[int]]
-            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
-            of bounding box.
-        coords_list : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates.
-        rects_list : tuple
-            Empty `tuple` if no matches found.
-        coords_list : list
-            Empty `list` if no matches found.     
-        
-        """
-        rects = []
         for image in image_list:
 
-            rect = self.find(haystack_image,
-                             image_data[image][0],
-                             threshold=threshold,
-                             match_method=match_method,
-                             mask=image_data[image][1])
+            needle = image_path + image
+            needle = cv.imread(needle, cv.IMREAD_UNCHANGED)
 
-            if len(rect) > 0:
-                rects.append(rect)
-                rects.append(rect)
+            # Extracting alpha channel (transparency) from original image.
+            needle_mask = needle[:,:,3]
 
-        # Converting a list of 2D numpy arrays into a list of 1D numpy 
-        # arrays.
-        rects_list = []
-        for i in rects:
-            for j in i:
-                rects_list.append(j)
+            # Merging extracted alpha channel three times to create a
+            # 24 bit image (mask). Image is black & white.
+            needle_mask = cv.merge([needle_mask, needle_mask, needle_mask])
 
-        # Converting a list of 1D numpy arrays into one 2D numpy array.
-        rects_list = np.array(rects_list)
+            # Extracting all channels (RGB) except alpha (transparency) from
+            # original image to create a 24 bit image. Images must be the 
+            # same bit depth, otherwise 'cv.matchTemplate()' will throw 
+            # an assertion error.
+            needle_24bit = needle[:,:,0:3]
 
-        # Grouping all rectangles that are close-by.
-        rects_list, weights = cv.groupRectangles(rects_list, 1, 0.5)
+            data.update({image: (needle_24bit, needle_mask)})
 
-        # Creating a list containing center (x, y) coordinates of found
-        # matches.
-        coords_list = self.get_click_coords(rects_list)
+        return data
 
-        return rects_list, coords_list
-
-    def detect_text_from_image(self,
-                               image_path: np.ndarray | str,
+    @staticmethod
+    def detect_text_from_image(image_path: np.ndarray | str,
                                lang: str = "en",
                                use_angle_cls: bool = False,
                                show_log: bool = False) \
@@ -506,65 +410,163 @@ class Detection:
 
         return r_and_t, rectangles, text
 
-    @staticmethod
-    def generate_image_data(image_list, image_path):
+    @classmethod
+    def detect_objects(cls, 
+                       objects_to_detect_list: list[str],
+                       objects_to_detect_path: str, 
+                       haystack_image: np.ndarray | str, 
+                       threshold: float = 0.6,
+                       match_method: int = cv.TM_CCOEFF_NORMED) \
+                       -> Tuple[list[list[int]], list[Tuple[int, int]]]:
         """
-        Construct a dictionary.
+        Detect multiple different 'needle' images on a 'haystack' image.
 
-        This method allows for easy creation of a dictionary that is
-        used in `detect_objects_with_masks()` method as `image_data` 
-        argument.
-
-        Make sure that images in `image_list` are 32 bit depth and
-        have transparency (transparent background for example).
+        Best used when there are two or more different images to be 
+        detected. Otherwise use the `find()` method.
 
         Parameters
         ----------
-        image_list : list[str]
-            `list` of `str` containing names of image files.
-        image_path : str
-            Path to folder where images are stored.
+        objects_to_detect_list : list[str]
+            `list` containing `str` names of images to detect.
+        objects_to_detect_path : str
+            `str` path to location of images.
+        haystack_image : np.ndarray or str
+            Image to search on.
+        threshold : float, optional
+            Accuracy with which images will be searched for 
+            (0.0 to 1.0). Defaults to 0.6.
+        match_method : int, optional
+            Comparison method used by `cv.matchTemplate()`. Defaults to 
+            `cv.TM_CCOEFF_NORMED`.
 
         Returns
         ----------
-        data : dict[str: Tuple[np.ndarray, np.ndarray]]
-            Dictionary containing image information. Name of image
-            as key and a `tuple`, that holds respective image's data
-            without alpha channel at position 0 and image's mask
-            data at position 1, as value.
+        object_rectangles_converted : list[list[int]]
+            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
+            of bounding box.
+        object_center_xy_coordinates : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates.
+        object_rectangles_converted : tuple
+            Empty `tuple` if no matches found.
+        object_center_xy_coordinates : list
+            Empty `list` if no matches found.
 
-        Note
+        Raises
         ----------
-        Implementation inspired by this answer. Specifically channel
-        extraction:
-        https://stackoverflow.com/questions/63091761/how-to-improve
-        -accuracy-of-opencv-matching-results-in-python
+        (-215:Assertion failed) in function 'cv::matchTemplate'
+            If any `str` within `objects_to_detect_list` is incorrect.
+        (-215:Assertion failed) in function 'cv::matchTemplate'
+            If `objects_to_detect_path` is incorrect.
 
         """
         # Making sure the path string ends with a '\'.
-        if not image_path.endswith("\\"):
-            image_path += "\\"
+        if not objects_to_detect_path.endswith("\\"):
+            objects_to_detect_path += "\\"
 
-        data = {}
+        # Looping over all needle images and trying to find them on the 
+        # haystack image. Appending bounding box information of found 
+        # matches to an empty list. This generates a list of 2D 
+        # numpy arrays.
+        object_rectangles = []
+        for image in objects_to_detect_list:
+            rectangles = cls.find(haystack_image, 
+                                   objects_to_detect_path + image, 
+                                   threshold=threshold,
+                                   match_method=match_method)
+            object_rectangles.append(rectangles)
 
+        # Converting a list of 2D numpy arrays into a list of 1D numpy 
+        # arrays.
+        object_rectangles_converted: Any = []
+        for i in object_rectangles:
+            for j in i:
+                object_rectangles_converted.append(j)
+
+        # Converting a list of 1D numpy arrays into one 2D numpy array.
+        object_rectangles_converted = np.array(object_rectangles_converted)
+
+        # Grouping all rectangles that are close-by.
+        object_rectangles_converted, weights = cv.groupRectangles(
+                                                object_rectangles_converted, 
+                                                1, 
+                                                0.5)
+
+        # Creating a list containing center (x, y) coordinates of found
+        # matches.
+        object_center_xy_coordinates = cls.get_click_coords(
+                                                   object_rectangles_converted)
+
+        return object_rectangles_converted, object_center_xy_coordinates
+
+    @classmethod
+    def detect_objects_with_masks(cls,
+                                  image_data,
+                                  image_list,
+                                  haystack_image,
+                                  threshold=0.9837,
+                                  match_method=cv.TM_CCORR_NORMED):
+        """
+        Detect multiple different 'needle' images on a 'haystack' image.
+
+        This method uses masks, unlike `detect_objects()`.
+
+        Parameters
+        ----------
+        image_data : dict[str: Tuple[np.ndarray, np.ndarray]]
+            Dictionary containing image information. Can be generated by
+            `generate_image_data()` method.
+        image_list : list[str]
+            `list` of images to search for. These images are used as
+            keys to access data in `image_data`.
+        haystack_image : np.ndarray
+            Image to search on.
+        threshold : float, optional
+            Detection threshold. Ranges from 0 to 1. Defaults to 0.9832.
+        match_method : int, optional
+            Comparison method used by `cv.matchTemplate()`. Defaults to 
+            `cv.TM_CCORR_NORMED`.
+
+        Returns
+        ----------
+        rects_list : list[list[int]]
+            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
+            of bounding box.
+        coords_list : list[Tuple[int, int]]
+            `list` of `tuple` containing [(x, y)] coordinates.
+        rects_list : tuple
+            Empty `tuple` if no matches found.
+        coords_list : list
+            Empty `list` if no matches found.     
+        
+        """
+        rects = []
         for image in image_list:
 
-            needle = image_path + image
-            needle = cv.imread(needle, cv.IMREAD_UNCHANGED)
+            rect = cls.find(haystack_image,
+                             image_data[image][0],
+                             threshold=threshold,
+                             match_method=match_method,
+                             mask=image_data[image][1])
 
-            # Extracting alpha channel (transparency) from original image.
-            needle_mask = needle[:,:,3]
+            if len(rect) > 0:
+                rects.append(rect)
+                rects.append(rect)
 
-            # Merging extracted alpha channel three times to create a
-            # 24 bit image (mask). Image is black & white.
-            needle_mask = cv.merge([needle_mask, needle_mask, needle_mask])
+        # Converting a list of 2D numpy arrays into a list of 1D numpy 
+        # arrays.
+        rects_list = []
+        for i in rects:
+            for j in i:
+                rects_list.append(j)
 
-            # Extracting all channels (RGB) except alpha (transparency) from
-            # original image to create a 24 bit image. Images must be the 
-            # same bit depth, otherwise 'cv.matchTemplate()' will throw 
-            # an assertion error.
-            needle_24bit = needle[:,:,0:3]
+        # Converting a list of 1D numpy arrays into one 2D numpy array.
+        rects_list = np.array(rects_list)
 
-            data.update({image: (needle_24bit, needle_mask)})
+        # Grouping all rectangles that are close-by.
+        rects_list, weights = cv.groupRectangles(rects_list, 1, 0.5)
 
-        return data
+        # Creating a list containing center (x, y) coordinates of found
+        # matches.
+        coords_list = cls.get_click_coords(rects_list)
+
+        return rects_list, coords_list

@@ -3,13 +3,13 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
-import os
 import time
 
 import pyautogui
 
-from window_capture import WindowCapture
-
+import data
+import detection
+import window_capture
 
 class PopUp:
     """
@@ -17,6 +17,10 @@ class PopUp:
     
     Methods
     ----------
+    close_right_click_menu()
+        Close right mouse click menu.
+    detect_interfaces()
+        Detect any open interfaces.
     deal()
         Deal with any pop-ups or interfaces.
     interface()
@@ -24,33 +28,8 @@ class PopUp:
     
     """
 
-    # Pyautogui mouse move duration. Default is 0.1 which is too fast.
-    __move_duration = 0.15
-
-    def __ignore_for_session(self):
-        """Select 'Ignore for this session' during popup."""
-        log.info("Ignoring player ... ")
-
-        x, y = (466, 387)
-        start_time = time.time()
-        wait_time = 3
-
-        while time.time() - start_time < wait_time:
-
-            popup = self.__detect_offers()
-
-            if popup:
-                pyautogui.moveTo(x, y, duration=self.__move_duration)
-                pyautogui.click()
-            else:
-                log.info("Added player to ignore!")
-                return True
-        
-        else:
-            log.error(f"Failed to add to ignore in {wait_time} seconds!")
-            return False
-
-    def __detect_offers(self):
+    @staticmethod
+    def __detect_offers():
         """Detect exchange, challenge offers & guild, group invites."""
         dark_gray = (81, 74, 60)
         light_gray = (213, 207, 170)
@@ -75,34 +54,8 @@ class PopUp:
         else:
             return False
 
-    def __detect_interfaces(self):
-        """Detect interfaces."""
-        if self.__interface_information():
-            return "info"
-        elif self.__interface_main_menu():
-            return "main_menu"
-        elif self.__interface_banker_dialogue():
-            return "other"
-        elif self.__interface_characteristics():
-            return "characteristics"
-        elif self.__interface_spells():
-            return "spells"
-        elif self.__interface_inventory():
-            return "inventory"
-        elif self.__interface_quests():
-            return "quests"
-        elif self.__interface_map():
-            return "map"
-        elif self.__interface_friends():
-            return "friends"
-        elif self.__interface_guild():
-            return "guild"
-        elif self.__interface_mount():
-            return "mount"
-        else:
-            return False
-
-    def __interface_information(self):
+    @staticmethod
+    def __interface_information():
         """
         Detect 'Information' interface.
         
@@ -118,7 +71,8 @@ class PopUp:
         if px1 and px2 and px3:
             return True
 
-    def __interface_main_menu(self):
+    @staticmethod
+    def __interface_main_menu():
         """Detect 'Main Menu' interface."""
         dark_gray = (81, 74, 60)
         light_gray = (213, 207, 170)
@@ -128,7 +82,8 @@ class PopUp:
         if px1 and px2 and px3:
             return True 
 
-    def __interface_banker_dialogue(self):
+    @staticmethod
+    def __interface_banker_dialogue():
         """Detect Astrub banker dialogue interface."""
         white = (255, 255, 206)
         px1 = pyautogui.pixelMatchesColor(25, 255, white)
@@ -136,7 +91,30 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_characteristics(self):
+    @staticmethod
+    def __interface_caution():
+        light_gray = (213, 207, 170)
+        orange = (255, 97, 0)
+        dark_gray = (81, 74, 60)
+        px1 = pyautogui.pixelMatchesColor(280, 297, light_gray)
+        px2 = pyautogui.pixelMatchesColor(654, 303, light_gray)
+        px3 = pyautogui.pixelMatchesColor(426, 369, orange)
+        px4 = pyautogui.pixelMatchesColor(518, 369, orange)
+        px5 = pyautogui.pixelMatchesColor(465, 269, dark_gray)
+        if px1 and px2 and px3 and px4 and px5:
+            return True
+
+    @staticmethod
+    def __interface_login_screen():
+        sc = window_capture.WindowCapture.gamewindow_capture()
+        rects = detection.Detection.find(sc, 
+                                         data.ImageData.dofus_logo,
+                                         threshold=0.95)
+        if len(rects) > 0:
+            return True
+
+    @staticmethod
+    def __interface_characteristics():
         """Detect characteristics interface."""
         dark_gray = (81, 74, 60)
         px1 = pyautogui.pixelMatchesColor(902, 117, dark_gray)
@@ -144,7 +122,8 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_spells(self):
+    @staticmethod
+    def __interface_spells():
         """Detect spells interface."""
         dark_gray = (81, 74, 60)
         px1 = pyautogui.pixelMatchesColor(694, 108, dark_gray)
@@ -152,7 +131,8 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_inventory(self):
+    @staticmethod
+    def __interface_inventory():
         """Detect inventory interface."""
         bland_brown = (150, 138, 111)
         bland_yellow = (213, 207, 170)
@@ -163,7 +143,8 @@ class PopUp:
         if px1 and px2 and px3:
             return True
 
-    def __interface_quests(self):
+    @staticmethod
+    def __interface_quests():
         """Detect quests interface."""
         dark_gray = (81, 74, 60)
         lighter_gray = (147, 134, 108)
@@ -172,15 +153,17 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_map(self):
+    @staticmethod
+    def __interface_map():
         """Detect map interface."""
         bland_yellow = (213, 207, 170)
         px1 = pyautogui.pixelMatchesColor(465, 68, bland_yellow)
         px2 = pyautogui.pixelMatchesColor(924, 309, bland_yellow)
         if px1 and px2:
             return True
-    
-    def __interface_friends(self):
+
+    @staticmethod
+    def __interface_friends():
         """Detect friends interface."""
         dark_gray = (81, 74, 60)
         bland_yellow = (190, 185, 152)
@@ -189,7 +172,8 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_guild(self):
+    @staticmethod
+    def __interface_guild():
         """Detect guild interface."""
         dark_gray = (81, 74, 60)
         bland_yellow = (213, 207, 170)
@@ -198,7 +182,8 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __interface_mount(self):
+    @staticmethod
+    def __interface_mount():
         """Detect mount interface."""
         dark_gray = (81, 74, 60)
         px1 = pyautogui.pixelMatchesColor(865, 241, dark_gray)
@@ -206,7 +191,8 @@ class PopUp:
         if px1 and px2:
             return True
 
-    def __close_popup_or_interface(self):
+    @staticmethod
+    def __close_popup_or_interface():
         """
         Close any pop-up/interface using 'ESC'.
         
@@ -228,14 +214,14 @@ class PopUp:
         
         """
         # Waiting for 'Main Menu' interface to appear/disappear.
-        wait_main_menu = 0.2
+        wait_main_menu = 0.25
         # Colors
         dark_gray = (81, 74, 60)
         light_gray = (213, 207, 170)
         orange = (255, 97, 0)
         # Loop control variables.
         start_time = time.time()
-        timeout = 5
+        timeout = 7
         
         while time.time() - start_time < timeout:
 
@@ -267,12 +253,71 @@ class PopUp:
                       "seconds!")
             return False
 
-    def __close_right_click_menu(self):
+    @classmethod
+    def __ignore_for_session(cls):
+        """Select 'Ignore for this session' during popup."""
+        log.info("Ignoring player ... ")
+
+        x, y = (466, 387)
+        start_time = time.time()
+        wait_time = 3
+
+        while time.time() - start_time < wait_time:
+
+            popup = cls.__detect_offers()
+
+            if popup:
+                pyautogui.moveTo(x, y, duration=0.15)
+                pyautogui.click()
+            else:
+                log.info("Added player to ignore!")
+                return True
+        
+        else:
+            log.error(f"Failed to add to ignore in {wait_time} seconds!")
+            return False
+
+    @staticmethod
+    def close_right_click_menu():
         """Close right mouse click menu."""
         pyautogui.moveTo(929, 51)
-        pyautogui.click()
+        pyautogui.click(clicks=2)
+        time.sleep(0.1)
 
-    def deal(self):
+    @classmethod
+    def detect_interfaces(cls):
+        """Detect any open interfaces."""
+        if cls.__interface_information():
+            return "info"
+        elif cls.__interface_main_menu():
+            return "main_menu"
+        elif cls.__interface_banker_dialogue():
+            return "other"
+        elif cls.__interface_caution():
+            return "caution"
+        elif cls.__interface_login_screen():
+            return "login_screen"
+        elif cls.__interface_characteristics():
+            return "characteristics"
+        elif cls.__interface_spells():
+            return "spells"
+        elif cls.__interface_inventory():
+            return "inventory"
+        elif cls.__interface_quests():
+            return "quests"
+        elif cls.__interface_map():
+            return "map"
+        elif cls.__interface_friends():
+            return "friends"
+        elif cls.__interface_guild():
+            return "guild"
+        elif cls.__interface_mount():
+            return "mount"
+        else:
+            return False
+
+    @classmethod
+    def deal(cls):
         """
         Deal with any pop-ups or interfaces.
 
@@ -314,17 +359,17 @@ class PopUp:
         while attempts_total < attempts_allowed:
 
             # Closing accidental mouse right-click menus.
-            self.__close_right_click_menu()
+            cls.close_right_click_menu()
             # Detecting offers.
-            offers = self.__detect_offers()
+            offers = cls.__detect_offers()
 
             if offers and ignore_attempts <= ignore_attempts_allowed:
 
                 log.info("Offer from another player detected!")
 
-                if self.__ignore_for_session():
+                if cls.__ignore_for_session():
 
-                    interface = self.__detect_interfaces()
+                    interface = cls.detect_interfaces()
 
                     if interface == "info":
                         log.info("Information interface detected ... ")
@@ -333,10 +378,19 @@ class PopUp:
                         pyautogui.click()
                         continue
 
-                    if isinstance(interface, str) and interface != "info":
+                    if interface == "caution":
+                        log.info("'Caution' interface detected ... ")
+                        log.info("Closing ... ")
+                        pyautogui.moveTo(557, 370, duration=0.15)
+                        pyautogui.click()
+                        continue
+
+                    if (isinstance(interface, str) 
+                        and interface != "info"
+                        and interface != "caution"):
                         log.info("Interfaces detected ... ")
                         log.info("Closing ... ")
-                        if self.__close_popup_or_interface():
+                        if cls.__close_popup_or_interface():
                             return True
                         else:
                             attempts_total += 1
@@ -352,7 +406,7 @@ class PopUp:
 
                 log.info("Declining offer with `ESC` ... ")
 
-                if self.__close_popup_or_interface():
+                if cls.__close_popup_or_interface():
                     return True
                 else:
                     attempts_total += 1
@@ -360,7 +414,7 @@ class PopUp:
 
             elif not offers:
 
-                interface = self.__detect_interfaces()
+                interface = cls.detect_interfaces()
 
                 if interface == "info":
                         log.info("Information interface detected ... ")
@@ -368,11 +422,20 @@ class PopUp:
                         pyautogui.moveTo(469, 376, duration=0.15)
                         pyautogui.click()
                         continue
+                
+                if interface == "caution":
+                        log.info("'Caution' interface detected ... ")
+                        log.info("Closing ... ")
+                        pyautogui.moveTo(557, 370, duration=0.15)
+                        pyautogui.click()
+                        continue
 
-                if isinstance(interface, str) and interface != "info":
+                if (isinstance(interface, str) 
+                    and interface != "info"
+                    and interface != "caution"):
                     log.info("Interfaces detected ... ")
                     log.info("Closing ... ")
-                    if self.__close_popup_or_interface():
+                    if cls.__close_popup_or_interface():
                         return True
                     else:
                         attempts_total += 1
@@ -384,9 +447,10 @@ class PopUp:
             log.critical("Failed to deal with pop-ups/interfaces in "
                          f"{attempts_allowed} attempts!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            window_capture.WindowCapture.on_exit_capture()
 
-    def interface(self, interface, action):
+    @classmethod
+    def interface(cls, interface, action):
         """
         Open or close specified interface.
         
@@ -439,18 +503,18 @@ class PopUp:
 
         while time.time() - start_time < timeout:
             if action == "open":
-                if self.__detect_interfaces() == interface:
-                    log.info(f"Successfully opened {interface} interface!")
+                if cls.detect_interfaces() == interface:
+                    log.info(f"Successfully opened '{interface}' interface!")
                     return True
             else:
-                if not self.__detect_interfaces():
-                    log.info(f"Successfully closed {interface} interface!")
+                if not cls.detect_interfaces():
+                    log.info(f"Successfully closed '{interface}' interface!")
                     return True
         else:
             if action == "open":
-                log.error(f"Failed to open {interface} interface in {timeout}"
-                          " seconds!")
+                log.error(f"Failed to open '{interface}' interface in "
+                          f"{timeout} seconds!")
             else:
-                log.error(f"Failed to close {interface} interface in {timeout}"
-                          " seconds!")  
+                log.error(f"Failed to close '{interface}' interface in "
+                          f"{timeout} seconds!")
             return False
