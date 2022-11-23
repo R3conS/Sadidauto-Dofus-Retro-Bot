@@ -10,6 +10,9 @@ mouse_gotopos.py
 test.py
 *test_monster_images
 *test_images
+*route
+*test
+.vscode
 uninstall.txt
 route_images
 logs

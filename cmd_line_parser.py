@@ -14,27 +14,15 @@ class Parser:
     """
 
     @classmethod
-    def __str_to_bool(cls, argument):
-        """Convert 'str' argument values to 'bool'."""
-        if isinstance(argument, bool):
-            return argument
-        elif str(argument).lower() in ["true", "yes", "t", "y", "1"]:
-            return True
-        elif str(argument).lower() in ["false", "no", "f", "n", "0"]:
-            return False
-        else:
-            raise argparse.ArgumentTypeError("Boolean value expected.")
-
-    @classmethod
     def parse_command_line(cls):
         """Parse command-line arguments."""
         parser = argparse.ArgumentParser(description="Select 'Bot' options.")
 
         parser.add_argument("-s", "--script",
                             help="Name of bot script. "
-                                "Available: " 
-                                "'astrub_forest', "
-                                "'astrub_forest_reversed'.",
+                                 "Available: " 
+                                 "'af_anticlock', "
+                                 "'af_clockwise'.",
                             required=True)
 
         parser.add_argument("-cn", "--character_name", 
@@ -56,3 +44,15 @@ class Parser:
         args = parser.parse_args()
 
         return args
+
+    @classmethod
+    def __str_to_bool(cls, argument):
+        """Convert 'str' argument values to 'bool'."""
+        if isinstance(argument, bool):
+            return argument
+        elif str(argument).lower() in ["true", "yes", "t", "y", "1"]:
+            return True
+        elif str(argument).lower() in ["false", "no", "f", "n", "0"]:
+            return False
+        else:
+            raise argparse.ArgumentTypeError("Boolean value expected.")
