@@ -11,14 +11,14 @@ import random
 import cv2 as cv
 import pyautogui
 
-from bank import Bank
-from combat import Combat
-from data import ImageData, MapData, CombatData
-from detection import Detection
-from game_window import GameWindow
-from pop_up import PopUp
-from threading_tools import ThreadingTools
-from window_capture import WindowCapture
+import bank
+import combat as cbt
+import data
+import detection as dtc
+import game_window as gw
+import pop_up as pu
+import threading_tools as tt
+import window_capture as wc
 
 
 class BotState:
@@ -49,8 +49,6 @@ class Bot:
     """
 
     # Private class attributes.
-    # Pyautogui mouse movement duration. Default is '0.1' as per docs.
-    __move_duration = 0.15
     # Stores currently needed map data.
     __data_map = None
     # Stores loaded map data based on 'self.__script'.
@@ -66,13 +64,6 @@ class Bot:
     # 'Window_VisualDebugOutput_Thread' threading attributes.
     __VisualDebugWindow_Thread_stopped = True
     __VisualDebugWindow_Thread_thread = None
-
-    # Objects.
-    __threading_tools = ThreadingTools()
-    __window_capture = WindowCapture()
-    __detection = Detection()
-    __bank = Bank()
-    __popup = PopUp()
 
     # 'BotState' attributes.
     #-----------------------
@@ -120,7 +111,6 @@ class Bot:
                  character_name: str,
                  official_version: bool = False,
                  debug_window: bool = True,
-                 detection_threshold: float = 0.6,
                  bot_state: str = BotState.INITIALIZING):
         """
         Constructor
@@ -128,8 +118,8 @@ class Bot:
         Parameters
         ----------
         script : str
-            Bot script to load. Available: 'astrub_forest',
-            'astrub_forest_reversed'.
+            Bot script to load. Available: 'af_anticlock',
+            'af_clockwise'.
         character_name : str
             Character's nickname.
         official_version : bool, optional
@@ -137,9 +127,6 @@ class Bot:
             servers. Official = `True`. Defaults to `False`.
         debug_window : bool, optional
             Whether to open visual debug window. Defaults to: `True`.
-        detection_threshold : bool, optional
-            Controls threshold value for `detect_objects()` in
-            `BotState.HUNTING`. Defaults to 0.6.
         bot_state : str, optional
             Current state of bot. Defaults to: `BotState.INITIALIZING`.
 
@@ -148,11 +135,11 @@ class Bot:
         self.__character_name = character_name
         self.__official_version = official_version
         self.__debug_window = debug_window
-        self.__detection_threshold = detection_threshold
-        self.__state = bot_state 
-        self.__game_window = GameWindow(self.__character_name,
-                                        self.__official_version)
-        self.__combat = Combat(self.__character_name)
+        self.__state = bot_state
+
+        gw.GameWindow.character_name = character_name
+        gw.GameWindow.official_version = official_version
+        cbt.Combat.character_name = character_name
 
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
@@ -218,14 +205,14 @@ class Bot:
         while time.time() - start_time < timeout:
 
             # Checking for offers/interfaces and closing them.
-            self.__popup.deal()
+            pu.PopUp.deal()
 
             # Get a screenshot of coordinates on minimap. Moving mouse
             # over the red area on the minimap for the black map tooltip
             # to appear.
             pyautogui.moveTo(517, 680)
             time.sleep(wait_before_detecting)
-            screenshot = self.__window_capture.custom_area_capture(
+            screenshot = wc.WindowCapture.custom_area_capture(
                     capture_region=(525, 650, 45, 30),
                     conversion_code=cv.COLOR_RGB2GRAY,
                     interpolation_flag=cv.INTER_LINEAR,
@@ -237,7 +224,7 @@ class Bot:
             pyautogui.move(20, 0)
 
             # Get map coordinates as a string.
-            r_and_t, _, _ = self.__detection.detect_text_from_image(screenshot)
+            r_and_t, _, _ = dtc.Detection.detect_text_from_image(screenshot)
             try:
                 coords = r_and_t[0][1]
                 coords = coords.replace(".", ",")
@@ -256,13 +243,13 @@ class Bot:
             else:
                 log.critical(f"Map ({coords}) doesn't exist in database!")
                 log.critical("Exiting ... ")
-                WindowCapture.on_exit_capture()
+                wc.WindowCapture.on_exit_capture()
 
         else:
             log.critical("Fatal error in '__get_coordinates()'!")
             log.critical(f"Exceeded detection limit of {timeout} second(s)!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __get_map_type(self, map_coordinates):
         """
@@ -292,8 +279,8 @@ class Bot:
     def __initializing(self):
         """'INITIALIZING' state logic."""
         # Making sure 'Dofus.exe' is launched and char is logged in.
-        if self.__game_window.check_if_exists():
-            self.__game_window.resize_and_move()
+        if gw.GameWindow.check_if_exists():
+            gw.GameWindow.resize_and_move()
         else:
             os._exit(1)
 
@@ -341,36 +328,36 @@ class Bot:
 
         script = script.lower()
 
-        if script == "astrub_forest":
-            self.__data_map_hunting = MapData.AstrubForest.hunting
-            self.__data_map_banking = MapData.AstrubForest.banking
-            self.__data_monsters = self.__detection.generate_image_data(
-                    ImageData.AstrubForest.monster_img_list,
-                    ImageData.AstrubForest.monster_img_path
+        if script == "af_anticlock":
+            self.__data_map_hunting = data.scripts.af_anticlock.Hunting.data
+            self.__data_map_banking = data.scripts.af_anticlock.Banking.data
+            self.__data_monsters = dtc.Detection.generate_image_data(
+                    data.images.monster.AstrubForest.img_list,
+                    data.images.monster.AstrubForest.img_path
                 )
-            # self.__data_monsters = self.__detection.generate_image_data(
-            #         ImageData.test_monster_images_list,
-            #         ImageData.test_monster_images_path
+            # self.__data_monsters = dtc.Detection.generate_image_data(
+            #         image_list=["test_1.png"],
+            #         image_path="data\\images\\test\\monster_images\\"
             #     )
-            self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
-            self.__combat.data_movement = CombatData.Movement.AstrubForest.af
-            self.__bank.img_path = ImageData.AstrubForest.banker_images_path
-            self.__bank.img_list = ImageData.AstrubForest.banker_images_list
-            self.__script = "Astrub Forest"
+            cbt.Combat.data_spell_cast = data.scripts.af_anticlock.Cast.data
+            cbt.Combat.data_movement = data.scripts.af_anticlock.Movement.data
+            bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
+            bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
+            self.__script = "Astrub Forest - Anticlock"
             return True
 
-        elif script == "astrub_forest_reversed":
-            self.__data_map_hunting = MapData.AstrubForest.hunting_reversed
-            self.__data_map_banking = MapData.AstrubForest.banking
-            self.__data_monsters = self.__detection.generate_image_data(
-                    ImageData.AstrubForest.monster_img_list,
-                    ImageData.AstrubForest.monster_img_path
+        elif script == "af_clockwise":
+            self.__data_map_hunting = data.scripts.af_clockwise.Hunting.data
+            self.__data_map_banking = data.scripts.af_clockwise.Banking.data
+            self.__data_monsters = dtc.Detection.generate_image_data(
+                    data.images.monster.AstrubForest.img_list,
+                    data.images.monster.AstrubForest.img_path
                 )
-            self.__combat.data_spell_cast = CombatData.Spell.AstrubForest.af
-            self.__combat.data_movement = CombatData.Movement.AstrubForest.af
-            self.__bank.img_path = ImageData.AstrubForest.banker_images_path
-            self.__bank.img_list = ImageData.AstrubForest.banker_images_list
-            self.__script = "Astrub Forest - Reversed"
+            cbt.Combat.data_spell_cast = data.scripts.af_clockwise.Cast.data
+            cbt.Combat.data_movement = data.scripts.af_clockwise.Movement.data
+            bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
+            bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
+            self.__script = "Astrub Forest - Clockwise"
             return True
 
         else:
@@ -402,18 +389,16 @@ class Bot:
 
         while attempts_total < attempts_allowed:
 
-            self.__popup.deal()
+            pu.PopUp.deal()
 
-            if self.__popup.interface("characteristics", "open"):
+            if pu.PopUp.interface("characteristics", "open"):
 
-                sc = self.__window_capture.custom_area_capture(
-                        (685, 93, 205, 26)
-                    )
-                r_and_t, _, _ = self.__detection.detect_text_from_image(sc)
+                sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
+                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
                 detected_name = r_and_t[0][1]
 
                 if character_name == detected_name:
-                    self.__popup.interface("characteristics", "close")
+                    pu.PopUp.interface("characteristics", "close")
                     return True
                 else:
                     log.critical("Invalid character name!")
@@ -427,7 +412,7 @@ class Bot:
             log.critical("Failed to open characteristics interface "
                          f"{attempts_allowed} times!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __initializing_verify_group(self):
         """Check if character is in group and close group tab."""
@@ -449,7 +434,7 @@ class Bot:
         else:
             log.critical(f"Failed to verify group in {timeout} seconds!")
             log.critical(f"Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __initializing_in_group(self):
         """Check if character is in group."""
@@ -489,7 +474,7 @@ class Bot:
 
         while time.time() - start_time < timeout:
 
-            self.__popup.deal()
+            pu.PopUp.deal()
 
             if self.__initializing_group_tab_check() == "opened":
                 log.info("Hiding group tab ... ")
@@ -503,24 +488,24 @@ class Bot:
         else:
             log.critical(f"Failed to hide group tab in {timeout} seconds!")
             log.critical(f"Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __controller(self):
         """Set bot state according to situation."""
 
         if self.__official_version:
-            self.__popup.close_right_click_menu()
+            pu.PopUp.close_right_click_menu()
             if not self.__initializing_in_group():
                 log.critical("Character is not in group!")
                 log.critical("Exiting ... ")
-                WindowCapture.on_exit_capture()
+                wc.WindowCapture.on_exit_capture()
 
         if self.__fight_counter % 6 == 0:
             # Incrementing by '1' instantly so bot doesn't check pods
             # everytime 'controller' is called.
             self.__fight_counter += 1
             # Getting pods percentage.
-            pods_percentage = self.__bank.get_pods_percentage()
+            pods_percentage = bank.Bank.get_pods_percentage()
 
             if pods_percentage >= self.__pod_limit:
                 log.info("Overloaded! Going to bank ... ")
@@ -554,7 +539,7 @@ class Bot:
                 log.critical(f"Invalid map type '{map_type}' for map "
                              f"'{self.__map_coordinates}'!")
                 log.critical(f"Exiting ... ")
-                WindowCapture.on_exit_capture()
+                wc.WindowCapture.on_exit_capture()
 
     def __hunting(self):
         """'HUNTING' state logic."""
@@ -647,10 +632,10 @@ class Bot:
         """
         # Moving mouse of the screen so it doesn't hightlight mobs
         # by accident causing them to be undetectable.
-        self.__popup.close_right_click_menu()
+        pu.PopUp.close_right_click_menu()
 
-        screenshot = self.__window_capture.gamewindow_capture()
-        obj_rects, obj_coords = self.__detection.detect_objects_with_masks(
+        screenshot = wc.WindowCapture.gamewindow_capture()
+        obj_rects, obj_coords = dtc.Detection.detect_objects_with_masks(
                 image_data,
                 image_list,
                 screenshot,
@@ -688,7 +673,7 @@ class Bot:
 
         for i in range(0, attempts_allowed):
 
-            self.__popup.deal()
+            pu.PopUp.deal()
             scs_before_attack = self.__moving_screenshot_minimap()
 
             x, y = monster_coords[i]
@@ -699,14 +684,14 @@ class Bot:
             attack_time = time.time()
             while time.time() - attack_time < wait_after_attacking:
 
-                screenshot = self.__window_capture.gamewindow_capture()
-                cc_icon = self.__detection.find(
+                screenshot = wc.WindowCapture.gamewindow_capture()
+                cc_icon = dtc.Detection.find(
                         screenshot,
-                        ImageData.s_i + ImageData.preparing_sv_1
+                        data.images.Status.preparing_sv_1
                     )
-                ready_button = self.__detection.find(
+                ready_button = dtc.Detection.find(
                         screenshot,
-                        ImageData.s_i + ImageData.preparing_sv_2
+                        data.images.Status.preparing_sv_2
                     )
                 
                 if len(cc_icon) > 0 and len(ready_button) > 0:
@@ -727,9 +712,9 @@ class Bot:
     def __hunting_accidental_map_change(self, sc_before_attack):
         """Check if map was changed accidentally during an attack."""
         sc_after_attack = self.__moving_screenshot_minimap()
-        rects = self.__detection.find(sc_before_attack, 
-                                      sc_after_attack,
-                                      threshold=0.98)
+        rects = dtc.Detection.find(sc_before_attack, 
+                                   sc_after_attack,
+                                   threshold=0.98)
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
             return True
@@ -804,7 +789,7 @@ class Bot:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __preparing_enable_tactical_mode(self):
         """Enable tactical mode."""
@@ -826,7 +811,7 @@ class Bot:
                 tactical_mode = pyautogui.pixelMatchesColor(790, 526, c_green)
                 if not tactical_mode:
                     log.info("Enabling 'Tactical Mode' ... ")
-                    pyautogui.moveTo(790, 526, duration=self.__move_duration)
+                    pyautogui.moveTo(790, 526, duration=0.15)
                     pyautogui.click()
                     time.sleep(wait_time_click)
                 else:
@@ -837,7 +822,7 @@ class Bot:
                 tactical_mode = pyautogui.pixelMatchesColor(817, 524, c_green)
                 if not tactical_mode:
                     log.info("Enabling 'Tactical Mode' ... ")
-                    pyautogui.moveTo(817, 524, duration=self.__move_duration)
+                    pyautogui.moveTo(817, 524, duration=0.15)
                     pyautogui.click()
                     time.sleep(wait_time_click)
                 else:
@@ -857,7 +842,7 @@ class Bot:
         map_coords : str
             Map's coordinates as `str`.
         database : list[dict]
-            `list` of `dict` from `MapData`.
+            `list` of `dict` from script's 'Hunting.data'.
         
         Returns
         ----------
@@ -917,7 +902,7 @@ class Bot:
         map_coords : str
             Map's coordinates as `str`.
         database : list[dict]
-            `list` of `dict` from `MapData`.
+            `list` of `dict` from script's 'Hunting.data'.
         start_cell_coords : Tuple[int, int]
             Starting cell's (x, y) coordinates.
 
@@ -1019,11 +1004,11 @@ class Bot:
 
         while True:
 
-            screenshot = self.__window_capture.gamewindow_capture()
-            ready_button_icon = self.__detection.get_click_coords(
-                    self.__detection.find(
+            screenshot = wc.WindowCapture.gamewindow_capture()
+            ready_button_icon = dtc.Detection.get_click_coords(
+                    dtc.Detection.find(
                             screenshot,
-                            ImageData.s_i + ImageData.preparing_sv_2,
+                            data.images.Status.preparing_sv_2,
                             threshold=0.8
                         )
                     )
@@ -1034,7 +1019,7 @@ class Bot:
                 log.info("Clicking 'READY' ... ")
                 pyautogui.moveTo(x=ready_button_icon[0][0],
                                  y=ready_button_icon[0][1],
-                                 duration=self.__move_duration)
+                                 duration=0.15)
                 pyautogui.click()
                 # Moving the mouse off the 'READY' button in case it 
                 # needs to be detected again.
@@ -1045,20 +1030,20 @@ class Bot:
             # Checking if combat started after 'READY' was clicked.
             if ready_button_clicked:
 
-                screenshot = self.__window_capture.gamewindow_capture()
-                cc_icon = self.__detection.find(
+                screenshot = wc.WindowCapture.gamewindow_capture()
+                cc_icon = dtc.Detection.find(
                         screenshot,
-                        ImageData.s_i + ImageData.fighting_sv_1,
+                        data.images.Status.fighting_sv_1,
                         threshold=0.8
                     )
-                ap_icon = self.__detection.find(
+                ap_icon = dtc.Detection.find(
                         screenshot, 
-                        ImageData.s_i + ImageData.fighting_sv_2,
+                        data.images.Status.fighting_sv_2,
                         threshold=0.8
                     )
-                mp_icon = self.__detection.find(
+                mp_icon = dtc.Detection.find(
                         screenshot,
-                        ImageData.s_i + ImageData.fighting_sv_3,
+                        data.images.Status.fighting_sv_3,
                         threshold=0.8
                     )
                 
@@ -1083,14 +1068,14 @@ class Bot:
 
         while time.time() - start_time < timeout:
 
-            if self.__combat.turn_detect_start():
+            if cbt.Combat.turn_detect_start():
 
                 if not tbar_shrunk:
-                    if self.__combat.shrink_turn_bar():
+                    if cbt.Combat.shrink_turn_bar():
                         tbar_shrunk = True
 
                 if not models_hidden:
-                    if self.__combat.hide_models():
+                    if cbt.Combat.hide_models():
                         models_hidden = True
 
                 if not character_moved:
@@ -1099,14 +1084,14 @@ class Bot:
 
                 if character_moved and first_turn:
                     if self.__fighting_cast_spells(first_turn=True):
-                        if self.__combat.turn_pass():
+                        if cbt.Combat.turn_pass():
                             log.info("Waiting for turn ... ")
                             first_turn = False
                             continue
 
                 elif character_moved and not first_turn:
                     if self.__fighting_cast_spells(first_turn=False):
-                        if self.__combat.turn_pass():
+                        if cbt.Combat.turn_pass():
                             log.info("Waiting for turn ... ")
                             continue
 
@@ -1122,7 +1107,7 @@ class Bot:
                          "seconds!")
             log.critical("Timed out!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __fighting_move_character(self):
         """Move character."""
@@ -1142,13 +1127,13 @@ class Bot:
                         )
                 self.__cell_selection_failed = False
 
-            move_coords = self.__combat.get_movement_coordinates(
+            move_coords = cbt.Combat.get_movement_coordinates(
                     self.__map_coordinates,
                     self.__preparing_cell_color,
                     self.__preparing_cell_coords,
                 )
 
-            if self.__combat.get_if_char_on_correct_cell(move_coords):
+            if cbt.Combat.get_if_char_on_correct_cell(move_coords):
                 log.info("Character is standing on correct cell!")
                 # Moving mouse cursor off character so that spell bar
                 # is visible and ready for detection.
@@ -1157,13 +1142,13 @@ class Bot:
 
             else:
                 log.info("Moving character ... ")
-                self.__combat.move_character(move_coords)
+                cbt.Combat.move_character(move_coords)
 
                 start_time = time.time()
                 wait_time = 3
 
                 while time.time() - start_time < wait_time:
-                    if self.__combat.get_if_char_on_correct_cell(move_coords):
+                    if cbt.Combat.get_if_char_on_correct_cell(move_coords):
                         pyautogui.moveTo(x=609, y=752)
                         return True
                 else:
@@ -1172,7 +1157,7 @@ class Bot:
         else:
             log.critical(f"Failed to move character in {attempts} attempts!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __fighting_get_cell_coords_and_color(self, map_coords):
         """
@@ -1195,14 +1180,13 @@ class Bot:
 
         """
         # Getting all possible starting cells on current map.
-        # self.__data_map_hunting = MapData.AstrubForest.hunting
         for _, value in enumerate(self.__data_map_hunting):
             for i_key, i_value in value.items():
                 if map_coords == i_key:
                     cell_coordinates_list = i_value["cell"]
 
         # Getting character's coordinates.
-        char_coords = self.__combat.get_char_position()
+        char_coords = cbt.Combat.get_char_position()
 
         # Calculating distances between char. coords and cells.
         distances = {}
@@ -1249,7 +1233,7 @@ class Bot:
 
         while time.time() - start_time < timeout:
 
-            available_spells = self.__combat.get_available_spells()
+            available_spells = cbt.Combat.get_available_spells()
 
             if len(available_spells) <= 0:
                 log.info("No spells available!")
@@ -1257,7 +1241,7 @@ class Bot:
 
             for spell in available_spells:
   
-                spell_coords = self.__combat.get_spell_coordinates(spell)
+                spell_coords = cbt.Combat.get_spell_coordinates(spell)
                 
                 if spell_coords is None:
                     log.debug(f"Spell coords: {spell_coords}")
@@ -1265,23 +1249,23 @@ class Bot:
                     break
 
                 if first_turn:
-                    cast_coords = self.__combat.get_spell_cast_coordinates(
+                    cast_coords = cbt.Combat.get_spell_cast_coordinates(
                             spell,
                             self.__map_coordinates,
                             self.__preparing_cell_color,
                             self.__preparing_cell_coords
                         )
                 elif not first_turn and get_char_pos:
-                    cast_coords = self.__combat.get_char_position()
+                    cast_coords = cbt.Combat.get_char_position()
                     get_char_pos = False
 
-                self.__combat.cast_spell(spell, spell_coords, cast_coords)
+                cbt.Combat.cast_spell(spell, spell_coords, cast_coords)
                 break
 
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __fighting_detect_results_window(self):
         """
@@ -1293,11 +1277,11 @@ class Bot:
             `list` of `tuple` containing [(x, y)] coordinates.
 
         """
-        screenshot = self.__window_capture.gamewindow_capture()
-        close_button = self.__detection.get_click_coords(
-                self.__detection.find(
+        screenshot = wc.WindowCapture.gamewindow_capture()
+        close_button = dtc.Detection.get_click_coords(
+                dtc.Detection.find(
                         screenshot,
-                        ImageData.s_i + ImageData.end_of_combat_v_1,
+                        data.images.Status.end_of_combat_v_1,
                         threshold=0.75
                     )
                 )
@@ -1346,21 +1330,21 @@ class Bot:
                         log.info("Closing 'Fight Results' window ... ")
                         pyautogui.moveTo(x=close_button[0][0],
                                          y=close_button[0][1],
-                                         duration=self.__move_duration)
+                                         duration=0.15)
                         pyautogui.click()
                         # Moving mouse off the 'Close' button in case it 
                         # needs to be detected again.
                         pyautogui.move(100, 0)
 
                         # Checking for offers/interfaces and closing them.
-                        self.__popup.deal()
+                        pu.PopUp.deal()
 
                 else:
                     log.critical("Couldn't close 'Fight Results' window in "
                                  f"{timeout_time} second(s)!")
                     log.critical("Timed out!")
                     log.critical("Exiting ... ")
-                    WindowCapture.on_exit_capture()
+                    wc.WindowCapture.on_exit_capture()
 
     def __moving(self):
         """'MOVING' state logic."""
@@ -1374,7 +1358,7 @@ class Bot:
                 self.__state = BotState.CONTROLLER
                 break
             else:
-                self.__popup.deal()
+                pu.PopUp.deal()
                 attempts_total += 1
 
                 if self.__map_coordinates == "1,-25":
@@ -1394,7 +1378,7 @@ class Bot:
             log.critical(f"Failed to change maps in {attempts_allowed} "
                          "attempts!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     def __moving_detect_lumberjack_ws_interior(self):
         """Detect if character is inside lumberjack's workshop."""
@@ -1427,7 +1411,7 @@ class Bot:
         # List of valid directions for moving.
         directions = ["top", "bottom", "left", "right"]
 
-        # Get all possible moving directions from 'MapData'. 
+        # Get all possible moving directions from loaded map data. 
         p_directions = []
         map_index = None
         for index, value in enumerate(self.__data_map):
@@ -1478,7 +1462,7 @@ class Bot:
         wait_bottom_click = 0.5
 
         # Changing maps.
-        self.__popup.close_right_click_menu()
+        pu.PopUp.close_right_click_menu()
         coords, choice = self.__moving_get_move_coords()
         log.info(f"Clicking on: {coords[0], coords[1]} to move {choice} ... ")
         pyautogui.keyDown('e')
@@ -1518,7 +1502,7 @@ class Bot:
         # Waiting makes overall performance better because of less
         # screenshots. Also gives time for map tooltip to appear.
         time.sleep(0.5)
-        screenshot = self.__window_capture.custom_area_capture(
+        screenshot = wc.WindowCapture.custom_area_capture(
                 capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
                 interpolation_flag=cv.INTER_LINEAR,
@@ -1562,9 +1546,9 @@ class Bot:
         # time allows the black loading screen to disappear.
         wait_map_loading = 1
         sc_minimap_needle = self.__moving_screenshot_minimap()
-        minimap_rects = self.__detection.find(sc_minimap,
-                                              sc_minimap_needle,
-                                              threshold=0.99)
+        minimap_rects = dtc.Detection.find(sc_minimap,
+                                           sc_minimap_needle,
+                                           threshold=0.99)
 
         # If screenshots are different.
         if len(minimap_rects) <= 0:
@@ -1589,7 +1573,7 @@ class Bot:
         while True:
 
             if not self.__recall_potion_used:
-                if self.__bank.recall_potion() == "available":
+                if bank.Bank.recall_potion() == "available":
                     self.__banking_use_recall_potion()
                     self.__recall_potion_used = True
                 else:
@@ -1619,8 +1603,8 @@ class Bot:
 
         while time.time() - use_time < timeout:
 
-            self.__popup.deal()
-            self.__bank.use_recall_potion()
+            pu.PopUp.deal()
+            bank.Bank.use_recall_potion()
             self.__map_coordinates = self.__get_coordinates(
                     self.__data_map
                 )
@@ -1657,17 +1641,17 @@ class Bot:
 
         while attempts_total < attempts_allowed:
 
-            self.__popup.deal()
-            character_inside_bank = self.__bank.inside_or_outside()
+            pu.PopUp.deal()
+            character_inside_bank = bank.Bank.inside_or_outside()
 
             if not character_inside_bank:
-                if self.__bank.enter_bank():
+                if bank.Bank.enter_bank():
                     continue
                 else:
                     attempts_total += 1
 
             elif character_inside_bank and items_deposited:
-                if self.__bank.exit_bank():
+                if bank.Bank.exit_bank():
                     self.__fight_counter = 0
                     return True
                 else:
@@ -1680,10 +1664,10 @@ class Bot:
                 timeout = 60
 
                 while time.time() - start_time < timeout:
-                    self.__popup.deal()
-                    if self.__bank.open_bank_vault():
-                        if self.__bank.deposit_items():
-                            if self.__bank.close_bank_vault():
+                    pu.PopUp.deal()
+                    if bank.Bank.open_bank_vault():
+                        if bank.Bank.deposit_items():
+                            if bank.Bank.close_bank_vault():
                                 items_deposited = True
                                 break
 
@@ -1692,13 +1676,13 @@ class Bot:
                                  f"bank in {timeout} seconds!")
                     log.critical("Timed out!")
                     log.critical("Exiting ... ")
-                    WindowCapture.on_exit_capture()
+                    wc.WindowCapture.on_exit_capture()
 
         else:
             log.critical("Failed to enter/exit bank in "
                          f"{attempts_allowed} attempts!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
 #------------------------MAIN THREAD OF CONTROL------------------------#
@@ -1742,7 +1726,7 @@ class Bot:
 
             log.exception("An exception occured!")
             log.critical("Exiting ... ")
-            WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
 #--------------------------THREADING METHODS---------------------------#
@@ -1755,13 +1739,13 @@ class Bot:
                 target=self.__Bot_Thread_run
             )
         self.__Bot_Thread_thread.start()
-        self.__threading_tools.wait_thread_start(self.__Bot_Thread_thread)
+        tt.ThreadingTools.wait_thread_start(self.__Bot_Thread_thread)
 
     def Bot_Thread_stop(self):
         """Stop bot thread."""
         self.__Bot_Thread_stopped = True
         self.__VisualDebugWindow_Thread_stop()
-        self.__threading_tools.wait_thread_stop(self.__Bot_Thread_thread)
+        tt.ThreadingTools.wait_thread_stop(self.__Bot_Thread_thread)
 
 #----------------------------------------------------------------------#
 
@@ -1772,7 +1756,7 @@ class Bot:
                 target=self.__VisualDebugWindow_Thread_run
             )
         self.__VisualDebugWindow_Thread_thread.start()
-        self.__threading_tools.wait_thread_start(
+        tt.ThreadingTools.wait_thread_start(
                 self.__VisualDebugWindow_Thread_thread
             )
 
@@ -1789,10 +1773,10 @@ class Bot:
         while not self.__VisualDebugWindow_Thread_stopped:
 
             # Get screenshot of game.
-            screenshot = self.__window_capture.gamewindow_capture()
+            screenshot = wc.WindowCapture.gamewindow_capture()
 
             # Draw boxes around detected monsters.
-            output_image = self.__detection.draw_rectangles(
+            output_image = dtc.Detection.draw_rectangles(
                     screenshot,
                     self.__obj_rects
                 )

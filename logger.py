@@ -33,71 +33,6 @@ class Logger:
     CRITICAL = logging.CRITICAL
 
     @classmethod
-    def __create_logger(cls, 
-                        logger_name: str, 
-                        log_level: int, 
-                        stream_handler: bool):
-        """
-        Initialize and return instance of `logging.getLogger()`.
-
-        Parameters
-        ----------
-        logger_name : str
-            Name of logger.
-        log_level : int
-            Logging level. Available: NOTSET, DEBUG, INFO, WARNING, 
-            ERROR, CRITICAL. Example: `log_level`=`Logger.DEBUG`.
-        stream_handler : bool
-            Print logs to console or not.
-
-        Returns
-        ----------
-        logger : logging.getLogger()
-            An instance of `logging.getLogger()`.
-
-        """
-        # Generating log file name.
-        now = datetime.datetime.now()
-        log_file_name = now.strftime("[%Y-%m-%d] Start - %Hh %Mm %Ss") + ".log"
-
-        # Generating log folder path.
-        folder_path = os.path.join(
-                cls.current_work_dir,
-                cls.master_log_folder,
-                logger_name
-            )
-
-        # Creating log folder if it's missing.
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-
-        # Creating the logger and configuring options.
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(log_level)
-        logger.propagate = False
-
-        formatter_file = logging.Formatter(
-                "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
-            )
-        formatter_stream = logging.Formatter(
-                "%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-                "%H:%M:%S"
-            )
-        
-        file_handler = logging.FileHandler(
-                os.path.join(folder_path, log_file_name)
-            )
-        file_handler.setFormatter(formatter_file)
-        logger.addHandler(file_handler)
-
-        if stream_handler:
-            s_handler = logging.StreamHandler()
-            s_handler.setFormatter(formatter_stream)
-            logger.addHandler(s_handler)
-
-        return logger
-
-    @classmethod
     def setup_logger(cls,
                      logger_name: str,
                      log_level: int,
@@ -162,3 +97,68 @@ class Logger:
                                          log_level,
                                          stream_handler)
             return logger
+
+    @classmethod
+    def __create_logger(cls, 
+                        logger_name: str, 
+                        log_level: int, 
+                        stream_handler: bool):
+        """
+        Initialize and return instance of `logging.getLogger()`.
+
+        Parameters
+        ----------
+        logger_name : str
+            Name of logger.
+        log_level : int
+            Logging level. Available: NOTSET, DEBUG, INFO, WARNING, 
+            ERROR, CRITICAL. Example: `log_level`=`Logger.DEBUG`.
+        stream_handler : bool
+            Print logs to console or not.
+
+        Returns
+        ----------
+        logger : logging.getLogger()
+            An instance of `logging.getLogger()`.
+
+        """
+        # Generating log file name.
+        now = datetime.datetime.now()
+        log_file_name = now.strftime("[%Y-%m-%d] Start - %Hh %Mm %Ss") + ".log"
+
+        # Generating log folder path.
+        folder_path = os.path.join(
+                cls.current_work_dir,
+                cls.master_log_folder,
+                logger_name
+            )
+
+        # Creating log folder if it's missing.
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
+
+        # Creating the logger and configuring options.
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(log_level)
+        logger.propagate = False
+
+        formatter_file = logging.Formatter(
+                "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+            )
+        formatter_stream = logging.Formatter(
+                "%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
+                "%H:%M:%S"
+            )
+        
+        file_handler = logging.FileHandler(
+                os.path.join(folder_path, log_file_name)
+            )
+        file_handler.setFormatter(formatter_file)
+        logger.addHandler(file_handler)
+
+        if stream_handler:
+            s_handler = logging.StreamHandler()
+            s_handler.setFormatter(formatter_stream)
+            logger.addHandler(s_handler)
+
+        return logger

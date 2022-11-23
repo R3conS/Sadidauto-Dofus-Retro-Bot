@@ -5,11 +5,10 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import time
 
-import cv2 as cv
 import pyautogui
 
-from data import CombatData
-import detection
+import data
+import detection as dtc
 import window_capture as wc
 
 
@@ -17,40 +16,28 @@ class Combat:
     """
     Holds methods related to combat.
 
-    Instance attributes
-    ----------
-    character_name : str
-        Character's nickname.
-
-    Public class attributes
-    ----------
-    data_spell_cast : list[dict]
-        Stores spell cast data based on loaded bot script (in 'bot.py').
-    data_movement : list[dict]
-        Stores movement data based on loaded bot script (in 'bot.py').
-
     Methods
     ----------
     turn_detect_start()
         Detect if turn started.
-    turn_detect_end()
-        Detect if turn ended.
     turn_pass()
         Pass turn.
     get_available_spells()
         Get all castable spells.
-    get_spell_status()
-        Check if spell is available to cast.
-    get_spell_coordinates()
-        Get coordinates of spell in spellbar.
     get_spell_cast_coordinates()
         Get coordinates of point to click on to cast spell.
     get_movement_coordinates()
         Get coordinates to click on to move character on correct cell.
+    get_spell_status()
+        Check if spell is available to cast.
+    get_spell_coordinates()
+        Get coordinates of spell in spellbar.
     get_if_char_on_correct_cell()
         Check if character is standing on correct cell.
     get_char_position()
         Get (x, y) position of character on screen.
+    turn_detect_end()
+        Detect if turn ended.
     move_character()
         Click on provided coordinates to move character.
     cast_spell()
@@ -67,20 +54,11 @@ class Combat:
     data_spell_cast = None
     # Stores movement data based on loaded bot script (in 'bot.py').
     data_movement = None
+    # Stores character's name.
+    character_name = None
 
-    def __init__(self, character_name: str):
-        """
-        Constructor
-
-        Parameters
-        ----------
-        character_name : str
-            Character's nickname.
-
-        """
-        self.character_name = character_name
-
-    def turn_detect_start(self):
+    @classmethod
+    def turn_detect_start(cls):
         """
         Detect if turn started.
         
@@ -103,51 +81,18 @@ class Combat:
 
             if px_1 and px_2 and not px_3:
 
-                screenshot = wc.WindowCapture.custom_area_capture(
-                        (170, 95, 200, 30)
-                    )
-
-                r_and_t, _, _ = detection.Detection.detect_text_from_image(
-                        screenshot
-                    )
+                sc = wc.WindowCapture.custom_area_capture((170, 95, 200, 30))
+                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
 
                 if r_and_t:
-                    if r_and_t[0][1] == self.character_name:
+                    if r_and_t[0][1] == cls.character_name:
                         log.info("Turn started!")
                         return True
             else:
                 return False
 
-    def turn_detect_end(self):
-        """
-        Detect if turn ended.
-        
-        Returns
-        ----------
-        True : bool
-            If turn has ended.
-        False : bool
-            If end of turn could not be detected within 'timeout_time'
-            seconds.
-        
-        """
-        start_time = time.time()
-        timeout_time = 2
-        while True:
-
-            orange_pixel = pyautogui.pixelMatchesColor(
-                    x=549,
-                    y=630,
-                    expectedRGBColor=(255, 102, 0),
-                    tolerance=10
-                )
-
-            if time.time() - start_time > timeout_time:
-                return False
-            if not orange_pixel:
-                return True
-
-    def turn_pass(self):
+    @classmethod
+    def turn_pass(cls):
         """
         Pass turn.
         
@@ -165,18 +110,12 @@ class Combat:
         
         while time.time() - start_time < timeout_time:
 
-            screenshot = wc.WindowCapture.custom_area_capture(
-                    (525, 595, 120, 155)
-                )
-
-            rects = detection.Detection.find(
-                    screenshot, 
-                    CombatData.icon_turn_pass
-                )
+            sc = wc.WindowCapture.custom_area_capture((525, 595, 120, 155))
+            rects = dtc.Detection.find(sc, data.images.Combat.icon_turn_pass)
 
             if len(rects) > 0:
                 log.info("Passing turn ... ")
-                coords = detection.Detection.get_click_coords(
+                coords = dtc.Detection.get_click_coords(
                         rects,
                         (525, 595, 120, 155)
                     )
@@ -190,7 +129,7 @@ class Combat:
                 # falsely detects another turn.
                 time.sleep(0.5)
                 
-                if self.turn_detect_end():
+                if cls.turn_detect_end():
                     log.info("Turn passed successfully!")
                     return True
                 else:
@@ -201,7 +140,8 @@ class Combat:
             log.critical("Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-    def get_available_spells(self):
+    @classmethod
+    def get_available_spells(cls):
         """
         Get all castable spells.
 
@@ -211,68 +151,21 @@ class Combat:
             `list` of available spells as `str`.
 
         """
+        spells = [
+            data.images.Combat.Spell.Sadida.earthquake,
+            data.images.Combat.Spell.Sadida.poisoned_wind,
+            data.images.Combat.Spell.Sadida.sylvan_power
+        ]
+
         available_spells = []
-        for spell in CombatData.Spell.spells:
-            if self.get_spell_status(spell):
+        for spell in spells:
+            if cls.get_spell_status(spell):
                 available_spells.append(spell)
         return available_spells
 
-    def get_spell_status(self, spell, threshold=0.85):
-        """
-        Check if spell is available to cast.
-        
-        Parameters
-        ----------
-        spell : str
-            Name of `spell`.
-        threshold : float, optional
-            Detection `threshold` used in `find()`. Defaults to 0.85.
-
-        Returns
-        ----------
-        True : bool
-            If `spell` is available.
-        False : bool
-            If `spell` is not available.
-        
-        """
-        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
-        rects = detection.Detection.find(sc, spell, threshold=threshold)
-        if len(rects) > 0:
-            return True
-        else:
-            return False
-
-    def get_spell_coordinates(self, spell, threshold=0.85):
-        """
-        Get coordinates of spell in spellbar.
-
-        Parameters
-        ----------
-        spell : str
-            Name of `spell`.
-        threshold : float, optional
-            Detection `threshold` used in `find()`. Defaults to 0.85.
-
-        Returns
-        ----------
-        coords[0][0], coords[0][1] : Tuple[int, int]
-            (x, y) coordinates of `spell` in spellbar.
-        None : bool
-            If coordinates couldn't be detected.
-        
-        """
-        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
-        rects = detection.Detection.find(sc, spell, threshold=threshold)
-        if len(rects) > 0:
-            coords = detection.Detection.get_click_coords(
-                    rects,
-                    (645, 660, 265, 80)
-                )
-            return coords[0][0], coords[0][1]
-
-    def get_spell_cast_coordinates(self, 
-                                   spell, 
+    @classmethod
+    def get_spell_cast_coordinates(cls,
+                                   spell,
                                    map_coordinates,
                                    start_cell_color,
                                    start_cell_coordinates):
@@ -319,7 +212,7 @@ class Combat:
             start_cell_color = "b"
 
         # Getting cast coordinates.
-        for _, value in enumerate(self.data_spell_cast):
+        for _, value in enumerate(cls.data_spell_cast):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
@@ -331,7 +224,8 @@ class Combat:
                                 coords = j_value[spell]
                                 return coords
 
-    def get_movement_coordinates(self, 
+    @classmethod
+    def get_movement_coordinates(cls, 
                                  map_coordinates, 
                                  start_cell_color,
                                  start_cell_coordinates):
@@ -353,7 +247,7 @@ class Combat:
             (x, y) coordinates of cell to click on.
 
         """
-        for _, value in enumerate(self.data_movement):
+        for _, value in enumerate(cls.data_movement):
             for i_key, i_value in value.items():
                 if i_key == map_coordinates:
                     for j_key, j_value in i_value.items():
@@ -365,7 +259,65 @@ class Combat:
                                 cell_coords = j_value
                                 return cell_coords
 
-    def get_if_char_on_correct_cell(self, cell_coordinates):
+    @staticmethod
+    def get_spell_status(spell, threshold=0.85):
+        """
+        Check if spell is available to cast.
+        
+        Parameters
+        ----------
+        spell : str
+            Name of `spell`.
+        threshold : float, optional
+            Detection `threshold` used in `find()`. Defaults to 0.85.
+
+        Returns
+        ----------
+        True : bool
+            If `spell` is available.
+        False : bool
+            If `spell` is not available.
+        
+        """
+        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
+        rects = dtc.Detection.find(sc, spell, threshold=threshold)
+        if len(rects) > 0:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def get_spell_coordinates(spell, threshold=0.85):
+        """
+        Get coordinates of spell in spellbar.
+
+        Parameters
+        ----------
+        spell : str
+            Name of `spell`.
+        threshold : float, optional
+            Detection `threshold` used in `find()`. Defaults to 0.85.
+
+        Returns
+        ----------
+        coords[0][0], coords[0][1] : Tuple[int, int]
+            (x, y) coordinates of `spell` in spellbar.
+        None : bool
+            If coordinates couldn't be detected.
+        
+        """
+        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
+        rects = dtc.Detection.find(sc, spell, threshold=threshold)
+
+        if len(rects) > 0:
+            coords = dtc.Detection.get_click_coords(
+                    rects,
+                    (645, 660, 265, 80)
+                )
+            return coords[0][0], coords[0][1]
+
+    @staticmethod
+    def get_if_char_on_correct_cell(cell_coordinates):
         """
         Check if character is standing on correct cell.
 
@@ -405,7 +357,8 @@ class Combat:
         else:
             return True
 
-    def get_char_position(self, color="red"):
+    @staticmethod
+    def get_char_position(color="red"):
         """
         Find circles that are drawn around character/monsters.
         
@@ -427,15 +380,13 @@ class Combat:
 
         """
         if color == "red":
-            circle = "red_circle_1.png"
+            circle = data.images.Combat.red_circle
         else:
-            circle = "blue_circle_1.png"
+            circle = data.images.Combat.blue_circle
 
         screenshot = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
-        rects = detection.Detection.find(screenshot,
-                                      CombatData.images_path + circle,
-                                      threshold=0.8)
-        coords = detection.Detection.get_click_coords(rects)
+        rects = dtc.Detection.find(screenshot, circle, threshold=0.8)
+        coords = dtc.Detection.get_click_coords(rects)
 
         if len(coords) > 0:
             return coords[0]
@@ -443,7 +394,38 @@ class Combat:
             log.critical("Couldn't get character position!")
             return None
 
-    def move_character(self, cell_coordinates):
+    @staticmethod
+    def turn_detect_end():
+        """
+        Detect if turn ended.
+        
+        Returns
+        ----------
+        True : bool
+            If turn has ended.
+        False : bool
+            If end of turn could not be detected within 'timeout_time'
+            seconds.
+        
+        """
+        start_time = time.time()
+        timeout_time = 2
+        while True:
+
+            orange_pixel = pyautogui.pixelMatchesColor(
+                    x=549,
+                    y=630,
+                    expectedRGBColor=(255, 102, 0),
+                    tolerance=10
+                )
+
+            if time.time() - start_time > timeout_time:
+                return False
+            if not orange_pixel:
+                return True
+
+    @staticmethod
+    def move_character(cell_coordinates):
         """
         Click on provided coordinates to move character.
 
@@ -457,7 +439,8 @@ class Combat:
         pyautogui.moveTo(x=x, y=y, duration=0.15)
         pyautogui.click()
 
-    def cast_spell(self, spell, spell_coordinates, cast_coordinates):
+    @staticmethod
+    def cast_spell(spell, spell_coordinates, cast_coordinates):
         """
         Cast spell.
         
@@ -498,7 +481,8 @@ class Combat:
         # Giving time for spell animation to finish.
         time.sleep(0.5)
 
-    def hide_models(self):
+    @staticmethod
+    def hide_models():
         """
         Hide player and monster models.
         
@@ -533,7 +517,8 @@ class Combat:
             log.error(f"Failed to hide models in {wait_time} seconds!")
             return False
 
-    def shrink_turn_bar(self):
+    @staticmethod
+    def shrink_turn_bar():
         """
         Shrink turn bar.
         
