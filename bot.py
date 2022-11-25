@@ -140,6 +140,7 @@ class Bot:
         gw.GameWindow.character_name = character_name
         gw.GameWindow.official_version = official_version
         cbt.Combat.character_name = character_name
+        bank.Bank.official_version = official_version
 
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
