@@ -54,7 +54,7 @@ class Combat:
     data_spell_cast = None
     # Stores movement data based on loaded bot script (in 'bot.py').
     data_movement = None
-    # Stores character's name.
+    # Stores character's name (loaded in 'bot.py').
     character_name = None
 
     @classmethod
@@ -259,6 +259,58 @@ class Combat:
                                 cell_coords = j_value
                                 return cell_coords
 
+    @classmethod
+    def get_char_position(cls, color="red"):
+        """
+        Find circles that are drawn around character/monsters.
+        
+        `color` should always be 'red', unless developing or testing on 
+        PvP combat. Only during PvP `color` can be 'blue'. During normal 
+        PvM it's always 'red'.
+
+        Parameters
+        ----------
+        color : str, optional 
+            Color of starting cell. Defaults to "red".
+
+        Returns
+        ----------
+        coords : Tuple[int, int]
+            `tuple` containing (x, y) coordinates of character.
+        coords : None
+            `None` if character couldn't be found.
+
+        """
+        if color == "red":
+            circle = data.images.Combat.red_circle
+        else:
+            circle = data.images.Combat.blue_circle
+
+        sc_for_circles = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
+        _, coords = dtc.Detection.detect_objects(
+                [circle, circle], 
+                data.images.Combat.path,
+                sc_for_circles,
+                threshold=0.73
+            )
+
+        if len(coords) > 0:
+
+            for coord in coords:
+
+                pyautogui.moveTo(coord[0], coord[1], duration=0.15)
+                time.sleep(0.25)
+                sc = wc.WindowCapture.gamewindow_capture((597, 599, 215, 30))
+                _, _, text = dtc.Detection.detect_text_from_image(sc)
+
+                if cls.character_name in text:
+                    # Moving mouse off char. so spell bar is visible.
+                    pyautogui.moveTo(929, 51)
+                    return coord
+
+        else:
+            return None
+
     @staticmethod
     def get_spell_status(spell, threshold=0.85):
         """
@@ -358,43 +410,6 @@ class Combat:
             return True
 
     @staticmethod
-    def get_char_position(color="red"):
-        """
-        Find circles that are drawn around character/monsters.
-        
-        `color` should always be 'red', unless developing or testing on 
-        PvP combat. Only during PvP `color` can be 'blue'. During normal 
-        PvM it's always 'red'.
-
-        Parameters
-        ----------
-        color : str, optional 
-            Color of starting cell. Defaults to "red".
-
-        Returns
-        ----------
-        coords : Tuple[int, int]
-            `tuple` containing (x, y) coordinates of character.
-        coords : None
-            `None` if character couldn't be found.
-
-        """
-        if color == "red":
-            circle = data.images.Combat.red_circle
-        else:
-            circle = data.images.Combat.blue_circle
-
-        screenshot = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
-        rects = dtc.Detection.find(screenshot, circle, threshold=0.8)
-        coords = dtc.Detection.get_click_coords(rects)
-
-        if len(coords) > 0:
-            return coords[0]
-        else:
-            log.critical("Couldn't get character position!")
-            return None
-
-    @staticmethod
     def turn_detect_end():
         """
         Detect if turn ended.
@@ -479,7 +494,7 @@ class Combat:
         # detection in 'Bot.__fighting_cast_spells()'.
         pyautogui.moveTo(574, 749)
         # Giving time for spell animation to finish.
-        time.sleep(0.5)
+        time.sleep(0.65)
 
     @staticmethod
     def hide_models():

@@ -53,6 +53,8 @@ class Bank:
     # Stores banker 'NPC' image data. Loaded in 'bot.py'.
     img_list = None
     img_path = None
+    # Stores whether on official Dofus servers or not.
+    official_version = None
 
     @classmethod
     def get_pods_percentage(cls):
@@ -153,13 +155,13 @@ class Bank:
         while True:
 
             if not tab_resources_empty:
-                if cls.__open_tab_resources():
+                if cls.__open_tab("resources"):
                     if cls.__deposit_items():
                         tab_resources_empty = True
                         continue
 
             elif not tab_equipment_empty:
-                if cls.__open_tab_equipment():
+                if cls.__open_tab("equipment"):
                     if cls.__deposit_items():
                         tab_equipment_empty = True
                         continue
@@ -325,6 +327,69 @@ class Bank:
         else:
             return True
 
+    @classmethod
+    def __open_tab(cls, tab):
+        """
+        Open specified tab in character's inventory when bank interface 
+        is open.
+        """
+        log.info(f"Opening '{tab}' tab ... ")
+
+        if cls.official_version:
+            tabs = {
+                "equipment": (703, 206),
+                "misc": (730, 206),
+                "resources": (758, 206),
+                "souls": (786, 206),
+                "runes": (813, 206),
+                "cards": (843, 206)
+            }
+        else:
+            tabs = {
+                "equipment": (817, 206),
+                "misc": (844, 206),
+                "resources": (870, 206),
+            } 
+
+        x, y = tabs[tab][0], tabs[tab][1]
+        pyautogui.moveTo(x, y, duration=0.15)
+        pyautogui.click()
+
+        if cls.__check_tab_open(tab):
+            log.info(f"Successfully opened '{tab}' tab!")
+            return True
+        else:
+            log.info(f"Failed to open '{tab}' tab!")
+            return False
+
+    @staticmethod
+    def __check_tab_open(tab):
+        """
+        Check if specified tab is open in character's inventory when
+        bank interface is open.
+        """
+        tab_region = (684, 186, 231, 40)
+        tabs = {
+            "equipment": data.images.Bank.tab_equipment,
+            "misc": data.images.Bank.tab_misc,
+            "resources": data.images.Bank.tab_resources,
+            "souls": data.images.Bank.tab_souls,
+            "runes": data.images.Bank.tab_runes,
+            "cards": data.images.Bank.tab_cards
+        }
+
+        # Making sure mouse cursor doesn't get in the way of screenshot.
+        pyautogui.moveTo(929, 51)
+
+        sc = wc.WindowCapture.custom_area_capture(tab_region)
+        img = cv.imread(tabs[tab])
+        rects = dtc.Detection.find(sc, img, threshold=0.8)
+
+        if len(rects) <= 0:
+            return True
+        else:
+            return False
+
     @staticmethod
     def __inventory():
         """Get status of inventory (opened/closed)."""
@@ -410,52 +475,6 @@ class Bank:
         
         else:
             log.error(f"Failed to select option in {wait_time} seconds!")
-            return False
-
-    @staticmethod
-    def __open_tab_equipment():
-        """Open char's equipment tab when bank interface is open."""
-        log.info("Opening 'Equipment' tab ... ")
-
-        pyautogui.moveTo(817, 205, duration=0.15)
-        pyautogui.click()
-
-        wait_time = 3
-        click_time = time.time()
-
-        while time.time() - click_time < wait_time:
-
-            gray_pixel = pyautogui.pixelMatchesColor(813, 199, (81, 74, 60))
-
-            if gray_pixel:
-                log.info("Successfully opened!")
-                return True
-        
-        else:
-            log.error(f"Failed to open tab in '{wait_time}' seconds!")
-            return False
-
-    @staticmethod
-    def __open_tab_resources():
-        """Open char's resources tab when bank interface is open."""
-        log.info("Opening 'Resources' tab ... ")
-
-        pyautogui.moveTo(870, 205, duration=0.15)
-        pyautogui.click()
-
-        wait_time = 3
-        click_time = time.time()
-
-        while time.time() - click_time < wait_time:
-
-            gray_pixel = pyautogui.pixelMatchesColor(863, 199, (81, 74, 60))
-
-            if gray_pixel:
-                log.info("Successfully opened!")
-                return True
-        
-        else:
-            log.error(f"Failed to open tab in '{wait_time}' seconds!")
             return False
 
     @staticmethod

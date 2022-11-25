@@ -97,6 +97,8 @@ class Bot:
     # 'BotState.FIGHTING'.
     # Counts total completed fights. Just for statistics.
     __total_fights = 0
+    # Stores if character failed to move during combat.
+    __failed_to_move = False
 
     # 'BotState.BANKING'.
     # If 'Recall Potion' was used.
@@ -140,6 +142,7 @@ class Bot:
         gw.GameWindow.character_name = character_name
         gw.GameWindow.official_version = official_version
         cbt.Combat.character_name = character_name
+        bank.Bank.official_version = official_version
 
 #----------------------------------------------------------------------#
 #-------------------------------METHODS--------------------------------#
@@ -680,6 +683,10 @@ class Bot:
             log.info(f"Attacking monster at: {x, y} ... ")
             pyautogui.moveTo(x, y, duration=0.15)
             pyautogui.click(button="right")
+
+            if self.__hunting_check_right_click_menu():
+                log.info(f"Failed to attack monster at: {x, y}!")
+                return "right_click_menu"
             
             attack_time = time.time()
             while time.time() - attack_time < wait_after_attacking:
@@ -718,6 +725,17 @@ class Bot:
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
             return True
+
+    def __hunting_check_right_click_menu(self):
+        """Check if right click menu is open."""
+        # Allowing the menu to appear before taking a screnshot.
+        time.sleep(0.5)
+        sc = wc.WindowCapture.gamewindow_capture()
+        rects = dtc.Detection.find(sc, data.images.Interface.right_click_menu)
+        if len(rects) > 0:
+            return True
+        else:
+            return False
 
     def __preparing(self):
         """'PREPARING' state logic."""
@@ -998,11 +1016,18 @@ class Bot:
         """Click ready to start combat."""
         # Time to wait after clicking ready. How long to keep chacking 
         # if combat was started successfully.
-        wait_combat_start = 10
+        wait_combat_start = 5
         # 'Ready' button state.
         ready_button_clicked = False
+        # Controls if clicking 'Ready' first time. Will click twice
+        # after failing the first time.
+        first_try = True
+        # Loop control variables.
+        timeout = 15
+        start_time = time.time()
 
-        while True:
+        # Getting (x, y) coords of 'Ready' button.
+        while time.time() - start_time < timeout:
 
             screenshot = wc.WindowCapture.gamewindow_capture()
             ready_button_icon = dtc.Detection.get_click_coords(
@@ -1013,21 +1038,34 @@ class Bot:
                         )
                     )
 
-            # If 'READY' button was found.
-            if len(ready_button_icon) > 0 and not ready_button_clicked:
+            if len(ready_button_icon) > 0:
+                x, y = ready_button_icon[0][0], ready_button_icon[0][1]
+                break
+
+        else:
+            log.critical(f"Failed to locate 'Ready' button!")
+            log.critical("Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
+
+        # Clicking 'Ready' to start combat.
+        while True:
+
+            # If 'Ready' button wasn't clicked.
+            if not ready_button_clicked:
 
                 log.info("Clicking 'READY' ... ")
-                pyautogui.moveTo(x=ready_button_icon[0][0],
-                                 y=ready_button_icon[0][1],
-                                 duration=0.15)
-                pyautogui.click()
-                # Moving the mouse off the 'READY' button in case it 
+                pyautogui.moveTo(x, y, duration=0.15)
+                if first_try:
+                    pyautogui.click()
+                else:
+                    pyautogui.click(clicks=2, interval=0.1)
+                # Moving the mouse off the 'Ready' button in case it 
                 # needs to be detected again.
                 pyautogui.move(0, 80)
                 click_time = time.time()
                 ready_button_clicked = True 
 
-            # Checking if combat started after 'READY' was clicked.
+            # Checking if combat started after 'Ready' was clicked.
             if ready_button_clicked:
 
                 screenshot = wc.WindowCapture.gamewindow_capture()
@@ -1051,6 +1089,7 @@ class Bot:
                     log.error("Failed to start combat!")
                     log.error("Retrying ... ")
                     ready_button_clicked = False
+                    first_try = False
                     continue
 
                 if len(cc_icon) > 0 and len(ap_icon) > 0 and len(mp_icon) > 0:
@@ -1155,9 +1194,10 @@ class Bot:
                     attempts += 1
 
         else:
-            log.critical(f"Failed to move character in {attempts} attempts!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            self.__failed_to_move = True
+            log.error(f"Failed to move character in {attempts} attempts!")
+            log.debug(f"'self.__failed_to_move' = {self.__failed_to_move}")
+            return True
 
     def __fighting_get_cell_coords_and_color(self, map_coords):
         """
@@ -1227,6 +1267,8 @@ class Bot:
         # a spell the orange 'cast range' area stays around the 
         # character (Ascalion's bug) and it messes up detection.
         get_char_pos = True
+        # Keeps count of how many times spells were cast.
+        cast_times = 0
         # Loop control variables.
         start_time = time.time()
         timeout = 20
@@ -1237,7 +1279,14 @@ class Bot:
 
             if len(available_spells) <= 0:
                 log.info("No spells available!")
+                self.__failed_to_move = False
                 return True
+
+            if cast_times >= 5:
+                log.debug(f"Setting first turn to 'False' due to too many "
+                          "failed attempts to cast spells ... ")
+                first_turn = False
+                cast_times = 0
 
             for spell in available_spells:
   
@@ -1249,17 +1298,36 @@ class Bot:
                     break
 
                 if first_turn:
-                    cast_coords = cbt.Combat.get_spell_cast_coordinates(
-                            spell,
-                            self.__map_coordinates,
-                            self.__preparing_cell_color,
-                            self.__preparing_cell_coords
-                        )
+                    if self.__failed_to_move and get_char_pos:
+                        log.debug(f"Getting 'cast_coords' after failing "
+                                  "to move ... ")
+                        cast_coords = cbt.Combat.get_char_position()
+                        if cast_coords is None:
+                            log.debug(f"cast_coords={cast_coords} ... ")
+                            log.debug("Continuing ... ")
+                            continue
+                        else:
+                            get_char_pos = False
+                    
+                    elif not self.__failed_to_move:
+                        cast_coords = cbt.Combat.get_spell_cast_coordinates(
+                                spell,
+                                self.__map_coordinates,
+                                self.__preparing_cell_color,
+                                self.__preparing_cell_coords
+                            )
+
                 elif not first_turn and get_char_pos:
                     cast_coords = cbt.Combat.get_char_position()
-                    get_char_pos = False
+                    if cast_coords is None:
+                        log.debug(f"cast_coords={cast_coords} ... ")
+                        log.debug("Continuing ... ")
+                        continue
+                    else:
+                        get_char_pos = False
 
                 cbt.Combat.cast_spell(spell, spell_coords, cast_coords)
+                cast_times += 1
                 break
 
         else:

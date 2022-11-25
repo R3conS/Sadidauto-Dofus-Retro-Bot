@@ -4,8 +4,8 @@ class Combat:
     """Combat images."""
     path = "data\\images\\combat\\"
     icon_turn_pass = path + "icon_turn_pass.jpg"
-    red_circle = path + "red_circle_1.png"
-    blue_circle = path + "blue_circle_1.png"
+    red_circle = "red_circle_1.png"
+    blue_circle = "blue_circle_1.png"
 
     class Spell:
         """Spell images."""

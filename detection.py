@@ -46,6 +46,13 @@ class Detection:
         Best used when there are two or more different images to be 
         detected. Otherwise use the `find()` method.
 
+        Note
+        ----------
+        If you want to search for all locations of a single image,
+        make sure that `objects_to_detect_list` contains the image name 
+        string two times. Oterwise the return will be blank even though
+        image is clearly on screen.
+
         Parameters
         ----------
         objects_to_detect_list : list[str]
