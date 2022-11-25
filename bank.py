@@ -329,7 +329,10 @@ class Bank:
 
     @classmethod
     def __open_tab(cls, tab):
-        """Open char's equipment tab when bank interface is open."""
+        """
+        Open specified tab in character's inventory when bank interface 
+        is open.
+        """
         log.info(f"Opening '{tab}' tab ... ")
 
         if cls.official_version:
@@ -361,7 +364,10 @@ class Bank:
 
     @staticmethod
     def __check_tab_open(tab):
-
+        """
+        Check if specified tab is open in character's inventory when
+        bank interface is open.
+        """
         tab_region = (684, 186, 231, 40)
         tabs = {
             "equipment": data.images.Bank.tab_equipment,

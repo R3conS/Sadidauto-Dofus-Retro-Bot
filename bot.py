@@ -681,6 +681,10 @@ class Bot:
             log.info(f"Attacking monster at: {x, y} ... ")
             pyautogui.moveTo(x, y, duration=0.15)
             pyautogui.click(button="right")
+
+            if self.__hunting_check_right_click_menu():
+                log.info(f"Failed to attack monster at: {x, y}!")
+                return "right_click_menu"
             
             attack_time = time.time()
             while time.time() - attack_time < wait_after_attacking:
@@ -719,6 +723,17 @@ class Bot:
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
             return True
+
+    def __hunting_check_right_click_menu(self):
+        """Check if right click menu is open."""
+        # Allowing the menu to appear before taking a screnshot.
+        time.sleep(0.5)
+        sc = wc.WindowCapture.gamewindow_capture()
+        rects = dtc.Detection.find(sc, data.images.Interface.right_click_menu)
+        if len(rects) > 0:
+            return True
+        else:
+            return False
 
     def __preparing(self):
         """'PREPARING' state logic."""
