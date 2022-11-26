@@ -104,6 +104,10 @@ class Bot:
     # If 'Recall Potion' was used.
     __recall_potion_used = False
 
+    # 'BotState.RECOVERY'.
+    # Counts how many times emergency teleport was used.
+    __emergency_teleports = 0
+
 #----------------------------------------------------------------------#
 #-----------------------------CONSTRUCTOR------------------------------#
 #----------------------------------------------------------------------#
@@ -203,7 +207,7 @@ class Bot:
         wait_before_detecting = 0.25
         # Loop control variables.
         start_time = time.time()
-        timeout = 60
+        timeout = 7
 
         while time.time() - start_time < timeout:
 
@@ -244,15 +248,13 @@ class Bot:
             if self.__check_if_map_in_database(coords, map_database):
                 return coords
             else:
-                log.critical(f"Map ({coords}) doesn't exist in database!")
-                log.critical("Exiting ... ")
-                wc.WindowCapture.on_exit_capture()
+                log.error(f"Map ({coords}) doesn't exist in database!")
+                self.__recovery_emergency_teleport()
 
         else:
-            log.critical("Fatal error in '__get_coordinates()'!")
-            log.critical(f"Exceeded detection limit of {timeout} second(s)!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            log.error("Error in '__get_coordinates()'!")
+            log.error(f"Exceeded detection limit of {timeout} second(s)!")
+            self.__recovery_emergency_teleport()
 
     def __get_map_type(self, map_coordinates):
         """
@@ -731,7 +733,9 @@ class Bot:
         # Allowing the menu to appear before taking a screnshot.
         time.sleep(0.5)
         sc = wc.WindowCapture.gamewindow_capture()
-        rects = dtc.Detection.find(sc, data.images.Interface.right_click_menu)
+        rects = dtc.Detection.find(sc, 
+                                   data.images.Interface.right_click_menu,
+                                   threshold=0.7)
         if len(rects) > 0:
             return True
         else:
@@ -1424,6 +1428,10 @@ class Bot:
             if self.__moving_change_map():
                 self.__map_searched = False
                 self.__state = BotState.CONTROLLER
+                # Resetting emergency teleport count to 0 after a
+                # successful map change. Means character is not stuck
+                # and good to go.
+                self.__emergency_teleports = 0
                 break
             else:
                 pu.PopUp.deal()
@@ -1443,10 +1451,9 @@ class Bot:
                 continue
 
         else:
-            log.critical(f"Failed to change maps in {attempts_allowed} "
-                         "attempts!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            log.error(f"Failed to change maps in {attempts_allowed} "
+                      "attempts!")
+            self.__recovery_emergency_teleport()
 
     def __moving_detect_lumberjack_ws_interior(self):
         """Detect if character is inside lumberjack's workshop."""
@@ -1667,7 +1674,7 @@ class Bot:
 
         """
         use_time = time.time()
-        timeout = 30
+        timeout = 15
 
         while time.time() - use_time < timeout:
 
@@ -1682,7 +1689,7 @@ class Bot:
                 return True
 
         else:
-            log.error("Failed to use 'Recall Potion'!")
+            log.error(f"Failed to use 'Recall Potion' in {timeout} seconds!")
             return False
 
     def __banking_astrub_bank(self):
@@ -1750,6 +1757,22 @@ class Bot:
             log.critical("Failed to enter/exit bank in "
                          f"{attempts_allowed} attempts!")
             log.critical("Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
+
+    def __recovery_emergency_teleport(self):
+        """Teleport using 'Recall Potion' when stuck somewhere."""
+
+        log.debug(f"Emergency teleports: {self.__emergency_teleports}")
+        pu.PopUp.deal()
+
+        if self.__emergency_teleports >= 3:
+            log.info(f"Emergency teleport limit exceeded!")
+            log.info(f"Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
+        elif bank.Bank.recall_potion() == "available":
+            self.__emergency_teleports += 1
+            self.__banking_use_recall_potion()
+        else:
             wc.WindowCapture.on_exit_capture()
 
 #----------------------------------------------------------------------#
