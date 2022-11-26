@@ -239,6 +239,7 @@ class Bank:
         Make sure the potion is in first slot of second 'Item' row.
 
         """
+        log.info("Checking if 'Recall Potion' is available ... ")
         color = (120, 151, 154)
         px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=20)
         if px:
