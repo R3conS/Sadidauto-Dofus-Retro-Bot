@@ -1,9 +1,9 @@
-class Hunting:
+class Anticlock:
     """
     Holds map data.
 
     Pathing from Astrub Bank to multiple Astrub Forest maps.
-    
+
     - When adding cell coordinates to maps, the first two coordinates 
     must be red color cells and the last two must be blue. A total of 
     4 cells is accepted. 
@@ -25,7 +25,7 @@ class Hunting:
     ----------
     - Fightable - character will search for monsters and fight on it.
     - Traversable - character will run through it without fighting.
-    
+
     """
 
     data = [
@@ -69,10 +69,10 @@ class Hunting:
         {"2,-28" : {"left"   : (8, 443),   "map_type": "fightable",
                     "cell"   : [(535, 356),(567, 339),(602, 389),(634, 372)]}},
 
-        {"1,-28" : {"bottom" : (367, 580),  "map_type": "fightable",
+        {"1,-28" : {"bottom" : (367, 580), "map_type": "fightable",
                     "cell"   : [(266, 323),(300, 306),(433, 408),(467, 424)]}},
 
-        {"1,-27" : {"bottom" : (567, 589),  "map_type": "fightable",
+        {"1,-27" : {"bottom" : (567, 589), "map_type": "fightable",
                     "cell"   : [(636, 372),(670, 388),(135, 219),(101, 202)]}},
 
         {"1,-26" : {"bottom" : (633, 580), "map_type": "fightable",
@@ -135,33 +135,33 @@ class Hunting:
         {"2,-23" : {"right"  : (901, 308), "map_type": "traversable"}},
 
         # Used only when map was changed accidentally during attack.
-        {"-1,-22" : {"top"   : (500, 56),  "map_type": "traversable"}},
+        {"-1,-22" : {"top"    : (500, 56),  "map_type": "traversable"}},
 
-        {"-2,-23" : {"top"   : (500, 55),  "right": (925, 375), 
-                     "map_type": "traversable"}},
+        {"-2,-23" : {"top"    : (500, 55),  "right": (925, 375), 
+                    "map_type": "traversable"}},
 
-        {"-3,-24" : {"right" : (930, 308), "map_type": "traversable"}},
+        {"-3,-24" : {"right"  : (930, 308), "map_type": "traversable"}},
 
-        {"-3,-26" : {"right" : (930, 308), "map_type": "traversable"}},
+        {"-3,-26" : {"right"  : (930, 308), "map_type": "traversable"}},
 
-        {"-3,-28" : {"right" : (925, 308), "map_type": "traversable"}},
+        {"-3,-28" : {"right"  : (925, 308), "map_type": "traversable"}},
 
-        {"-2,-29" : {"bottom": (433, 592), "map_type": "traversable"}},
+        {"-2,-29" : {"bottom" : (433, 592), "map_type": "traversable"}},
 
-        {"-1,-26" : {"left"  : (5, 341),   "right": (927, 307), 
-                     "map_type": "traversable"}},
+        {"-1,-26" : {"left"   : (5, 341),   "right": (927, 307), 
+                    "map_type": "traversable"}},
 
-        {"-1,-25" : {"left"  : (5, 307),   "right": (926, 307), 
-                     "map_type": "traversable"}},
+        {"-1,-25" : {"left"   : (5, 307),   "right": (926, 307), 
+                    "map_type": "traversable"}},
 
-        {"2,-29"  : {"bottom": (493, 588), "map_type": "traversable"}},
+        {"2,-29"  : {"bottom" : (493, 588), "map_type": "traversable"}},
 
-        {"3,-28"  : {"left"  : (5, 342),   "map_type": "traversable"}},
+        {"3,-28"  : {"left"   : (5, 342),   "map_type": "traversable"}},
 
-        {"3,-27"  : {"bottom": (700, 592), "left": (6, 342),
-                     "map_type": "traversable"}},
+        {"3,-27"  : {"bottom" : (700, 592), "left": (6, 342),
+                    "map_type": "traversable"}},
 
-        {"4,-26"  : {"left"  : (4, 377),   "map_type": "traversable"}},
+        {"4,-26"  : {"left"   : (4, 377),   "map_type": "traversable"}},
 
-        {"4,-25"  : {"left"  : (8, 408),   "map_type": "traversable"}},
+        {"4,-25"  : {"left"   : (8, 408),   "map_type": "traversable"}},
     ]

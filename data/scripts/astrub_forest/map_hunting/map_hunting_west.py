@@ -1,0 +1,3 @@
+class West:
+    data = []
+    pass

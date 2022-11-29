@@ -333,9 +333,23 @@ class Bot:
 
         script = script.lower()
 
-        if script == "af_anticlock":
-            self.__data_map_hunting = data.scripts.af_anticlock.Hunting.data
-            self.__data_map_banking = data.scripts.af_anticlock.Banking.data
+        if "af_" in script:
+
+            if script == "af_anticlock":
+                hunting = data.scripts.astrub_forest.Hunting.Anticlock.data
+            elif script == "af_clockwise":
+                hunting = data.scripts.astrub_forest.Hunting.Clockwise.data
+            elif script == "af_north":
+                hunting = data.scripts.astrub_forest.Hunting.North.data
+            elif script == "af_east":
+                hunting = data.scripts.astrub_forest.Hunting.East.data
+            elif script == "af_south":
+                hunting = data.scripts.astrub_forest.Hunting.South.data
+            elif script == "af_west":
+                hunting = data.scripts.astrub_forest.Hunting.West.data
+
+            self.__data_map_hunting = hunting
+            self.__data_map_banking = data.scripts.astrub_forest.Banking.data
             self.__data_monsters = dtc.Detection.generate_image_data(
                     data.images.monster.AstrubForest.img_list,
                     data.images.monster.AstrubForest.img_path
@@ -344,25 +358,10 @@ class Bot:
             #         image_list=["test_1.png"],
             #         image_path="data\\images\\test\\monster_images\\"
             #     )
-            cbt.Combat.data_spell_cast = data.scripts.af_anticlock.Cast.data
-            cbt.Combat.data_movement = data.scripts.af_anticlock.Movement.data
+            cbt.Combat.data_spell_cast = data.scripts.astrub_forest.Cast.data
+            cbt.Combat.data_movement = data.scripts.astrub_forest.Movement.data
             bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
             bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
-            self.__script = "Astrub Forest - Anticlock"
-            return True
-
-        elif script == "af_clockwise":
-            self.__data_map_hunting = data.scripts.af_clockwise.Hunting.data
-            self.__data_map_banking = data.scripts.af_clockwise.Banking.data
-            self.__data_monsters = dtc.Detection.generate_image_data(
-                    data.images.monster.AstrubForest.img_list,
-                    data.images.monster.AstrubForest.img_path
-                )
-            cbt.Combat.data_spell_cast = data.scripts.af_clockwise.Cast.data
-            cbt.Combat.data_movement = data.scripts.af_clockwise.Movement.data
-            bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
-            bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
-            self.__script = "Astrub Forest - Clockwise"
             return True
 
         else:

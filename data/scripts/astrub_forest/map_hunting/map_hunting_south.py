@@ -1,0 +1,3 @@
+class South:
+    data = []
+    pass
