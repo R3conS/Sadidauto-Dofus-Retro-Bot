@@ -72,7 +72,7 @@ class Bot:
     # Helps '__controller' determine which 'BotState' to set.
     __map_searched = False
     # Stores current map's coordinates.
-    __map_coordinates = None
+    __map_coords = None
     # Store maximum allowed pod percentage, bot banks when reached.
     # If character has at least 1 pod taken, the calculated % will be 
     # '14'.
@@ -89,8 +89,8 @@ class Bot:
 
     # 'BotState.PREPARING'.
     # Info of cell the combat was started on.
-    __preparing_cell_coords = None
-    __preparing_cell_color = None
+    __cell_coords = None
+    __cell_color = None
     __tactical_mode = False
     __cell_selection_failed = False
 
@@ -521,13 +521,13 @@ class Bot:
 
         if self.__character_overloaded:
             self.__data_map = self.__data_map_banking
-            self.__map_coordinates = self.__get_coordinates(self.__data_map)
+            self.__map_coords = self.__get_coordinates(self.__data_map)
             self.__state = BotState.BANKING
 
         elif not self.__character_overloaded:
             self.__data_map = self.__data_map_hunting
-            self.__map_coordinates = self.__get_coordinates(self.__data_map)
-            map_type = self.__get_map_type(self.__map_coordinates)
+            self.__map_coords = self.__get_coordinates(self.__data_map)
+            map_type = self.__get_map_type(self.__map_coords)
 
             if map_type == "fightable":
 
@@ -542,13 +542,13 @@ class Bot:
 
             else:
                 log.critical(f"Invalid map type '{map_type}' for map "
-                             f"'{self.__map_coordinates}'!")
+                             f"'{self.__map_coords}'!")
                 log.critical(f"Exiting ... ")
                 wc.WindowCapture.on_exit_capture()
 
     def __hunting(self):
         """'HUNTING' state logic."""
-        log.info(f"Hunting on map ({self.__map_coordinates}) ... ")
+        log.info(f"Hunting on map ({self.__map_coords}) ... ")
 
         chunks = self.__hunting_chunkate_data(
                 image_list=list(self.__data_monsters.keys()),
@@ -575,7 +575,7 @@ class Bot:
                     break
                 
             if chunk_number + 1 == len(chunks.keys()):
-                log.info(f"Map ({self.__map_coordinates}) is clear!")
+                log.info(f"Map ({self.__map_coords}) is clear!")
                 self.__map_searched = True
                 self.__state = BotState.CONTROLLER
 
@@ -747,12 +747,12 @@ class Bot:
         # '__VisualDebugWindow_Thread_run()' is clean.
         self.__obj_rects = []
         self.__obj_coords = []
-        # Failed attempts to select starting cell.
-        failed_attempts = 0
-        attempts_allowed = 2
+        # Stores whether to check for dummy cells. Always checks on
+        # first iteration of loop.
+        check_for_dummy_cells = True
         # Loop control variables.
         start_time = time.time()
-        allowed_time = 30
+        allowed_time = 45
         # Giving time for monsters to load before starting to check for 
         # empty cells. If ommited, may return false empty cell values
         # on first iteration of loop.
@@ -766,52 +766,130 @@ class Bot:
 
             if self.__tactical_mode:
 
-                cells = self.__preparing_get_cells_from_database(
-                        self.__map_coordinates,
-                        self.__data_map
-                    )
-                e_cells = self.__preparing_get_empty_cells(cells)
+                if check_for_dummy_cells:
 
-                if len(e_cells) <= 0:
-                    self.__map_coordinates = self.__get_coordinates(
-                            self.__data_map
-                        )
-                    continue
-
-                if self.__preparing_move_char_to_cell(e_cells):
-
-                    self.__preparing_cell_color = \
-                            self.__preparing_get_start_cell_color(
-                                    self.__map_coordinates,
-                                    self.__data_map,
-                                    self.__preparing_cell_coords
-                                )
-
-                    if self.__preparing_start_combat():
-                        self.__state = BotState.FIGHTING
-                        break
+                    check_for_dummy_cells = False
+                    if self.__preparing_check_dummy_cells(self.__map_coords,
+                                                          self.__data_map):
+                        self.__preparing_select_dummy_cells()
 
                 else:
 
-                    if failed_attempts < attempts_allowed:
-                        self.__map_coordinates = self.__get_coordinates(
-                                self.__data_map
-                            )
-                        failed_attempts += 1
-                        continue
-
+                    if self.__preparing_select_starting_cell():
+                        self.__state = BotState.FIGHTING
+                        break
                     else:
-                        if self.__preparing_start_combat():
-                            log.debug("Cell selection failed!")
-                            self.__cell_selection_failed = True                           
-                            self.__state = BotState.FIGHTING
-                            break
+                        continue
 
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
             log.critical("Exiting ... ")
             wc.WindowCapture.on_exit_capture()
+
+    def __preparing_select_starting_cell(self):
+        """Select starting cell and start combat."""
+        failed_attempts = 0
+        attempts_allowed = 2
+
+        log.info(f"Trying to move character to starting cell ... ")
+
+        while True:
+
+            cells = self.__preparing_get_cells_from_database(self.__map_coords,
+                                                             self.__data_map)
+            e_cells = self.__preparing_get_empty_cells(cells)
+
+            if len(e_cells) <= 0:
+                self.__map_coords = self.__get_coordinates(self.__data_map)
+                continue
+
+            if self.__preparing_move_char_to_cell(e_cells):
+
+                self.__cell_color = self.__preparing_get_start_cell_color(
+                                            self.__map_coords,
+                                            self.__data_map,
+                                            self.__cell_coords
+                                        )
+
+                if self.__preparing_start_combat():
+                    log.info(f"Successfully selected starting cell!")
+                    return "combat_start"
+
+            else:
+
+                if failed_attempts < attempts_allowed:
+                    self.__map_coords = self.__get_coordinates(self.__data_map)
+                    failed_attempts += 1
+                    continue
+
+                else:
+                    log.error("Cell selection failed!")
+                    log.info("Trying to start combat ... ")
+                    if self.__preparing_start_combat():
+                        self.__cell_selection_failed = True                           
+                        return "selection_fail"
+
+    def __preparing_select_dummy_cells(self):
+        """
+        Select dummy cell to make starting cells visible.
+        
+        On certain maps character might spawn on a starting cell and
+        block visibility of another starting cell. This method moves
+        character out of the way so that all starting cells are visible.
+
+        """
+        failed_attempts = 0
+        attempts_allowed = 1
+
+        log.info("Trying to move character to dummy cell ... ")
+
+        while True:
+
+            cells = self.__preparing_get_dummy_cells(self.__map_coords,
+                                                     self.__data_map)
+            e_cells = self.__preparing_get_empty_cells(cells)
+
+            if len(e_cells) <= 0:
+                self.__map_coords = self.__get_coordinates(self.__data_map)
+                continue
+
+            if self.__preparing_move_char_to_cell(e_cells):
+                log.info("Successfully moved character to dummy cell!")
+                return True
+
+            else:
+
+                if failed_attempts < attempts_allowed:
+                    self.__map_coords = self.__get_coordinates(self.__data_map)
+                    failed_attempts += 1
+                    continue
+                else:
+                    log.error("Failed to move character to dummy cell!")
+                    return False
+
+    def __preparing_check_dummy_cells(self, map_coords, database):
+        """Check if map has dummy cells."""
+
+        log.info("Checking for dummy cells ... ")
+
+        for _, value in enumerate(database):
+            for i_key, i_value in value.items():
+                if map_coords == i_key:
+                    if "d_cell" in i_value.keys():
+                        log.info("Dummy cells available!")
+                        return True
+                    else:
+                        log.info("No dummy cells available on this map!")
+                        return False
+
+    def __preparing_get_dummy_cells(self, map_coords, database):
+        """Get current map's dummy cells."""
+        for _, value in enumerate(database):
+            for i_key, i_value in value.items():
+                if map_coords == i_key:
+                    cell_coordinates_list = i_value["d_cell"]
+                    return cell_coordinates_list
 
     def __preparing_enable_tactical_mode(self):
         """Enable tactical mode."""
@@ -977,7 +1055,7 @@ class Bot:
             pyautogui.click()
             time.sleep(wait_after_move_char)
             if self.__preparing_check_if_char_moved(cell):
-                self.__preparing_cell_coords = cell
+                self.__cell_coords = cell
                 return True
         return False
 
@@ -1001,7 +1079,9 @@ class Bot:
         
         """
         pixels = []
-        colors = [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]
+        colors = [
+            (255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154), (85, 81, 56)
+        ]
         
         for color in colors:
             px = pyautogui.pixelMatchesColor(cell_coordinates[0],
@@ -1164,16 +1244,16 @@ class Bot:
                 # Giving time for 'Illustration to signal your turn' 
                 # to disappear.
                 time.sleep(3)
-                self.__preparing_cell_coords, self.__preparing_cell_color = \
+                self.__cell_coords, self.__cell_color = \
                     self.__fighting_get_cell_coords_and_color(
-                            self.__map_coordinates
+                            self.__map_coords
                         )
                 self.__cell_selection_failed = False
 
             move_coords = cbt.Combat.get_movement_coordinates(
-                    self.__map_coordinates,
-                    self.__preparing_cell_color,
-                    self.__preparing_cell_coords,
+                    self.__map_coords,
+                    self.__cell_color,
+                    self.__cell_coords,
                 )
 
             if cbt.Combat.get_if_char_on_correct_cell(move_coords):
@@ -1316,9 +1396,9 @@ class Bot:
                     elif not self.__failed_to_move:
                         cast_coords = cbt.Combat.get_spell_cast_coordinates(
                                 spell,
-                                self.__map_coordinates,
-                                self.__preparing_cell_color,
-                                self.__preparing_cell_coords
+                                self.__map_coords,
+                                self.__cell_color,
+                                self.__cell_coords
                             )
 
                 elif not first_turn and get_char_pos:
@@ -1437,7 +1517,7 @@ class Bot:
                 pu.PopUp.deal()
                 attempts_total += 1
 
-                if self.__map_coordinates == "1,-25":
+                if self.__map_coords == "1,-25":
                     if self.__moving_detect_lumberjack_ws_interior():
                         pyautogui.keyDown('e')
                         pyautogui.moveTo(667, 507)
@@ -1445,7 +1525,7 @@ class Bot:
                         pyautogui.keyUp('e')
                         time.sleep(3)
                     
-                self.__map_coordinates = self.__get_coordinates(
+                self.__map_coords = self.__get_coordinates(
                             self.__data_map
                         )
                 continue
@@ -1491,7 +1571,7 @@ class Bot:
         map_index = None
         for index, value in enumerate(self.__data_map):
             for i_key, i_value in value.items():
-                if self.__map_coordinates == i_key:
+                if self.__map_coords == i_key:
                     for j_key, _ in i_value.items():
                         if j_key in directions:
                             p_directions.append(j_key)
@@ -1502,7 +1582,7 @@ class Bot:
   
         # Getting (x, y) coordinates.
         move_coords = self.__data_map[map_index]\
-                                     [self.__map_coordinates]\
+                                     [self.__map_coords]\
                                      [move_choice]
 
         return move_coords, move_choice
@@ -1654,7 +1734,7 @@ class Bot:
                 else:
                     self.__recall_potion_used = True
 
-            elif self.__map_coordinates == "4,-16":
+            elif self.__map_coords == "4,-16":
                 if self.__banking_astrub_bank():
                     self.__recall_potion_used = False
                     self.__state = BotState.CONTROLLER
@@ -1680,11 +1760,11 @@ class Bot:
 
             pu.PopUp.deal()
             bank.Bank.use_recall_potion()
-            self.__map_coordinates = self.__get_coordinates(
+            self.__map_coords = self.__get_coordinates(
                     self.__data_map
                 )
 
-            if self.__map_coordinates == "4,-19":
+            if self.__map_coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")
                 return True
 
