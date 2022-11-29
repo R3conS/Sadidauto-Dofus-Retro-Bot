@@ -6,6 +6,8 @@ class Combat:
     icon_turn_pass = path + "icon_turn_pass.jpg"
     red_circle = "red_circle_1.png"
     blue_circle = "blue_circle_1.png"
+    a_sword = "ally_sword.png"
+    m_sword = "monster_sword.png"
 
     class Spell:
         """Spell images."""

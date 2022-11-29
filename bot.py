@@ -682,11 +682,19 @@ class Bot:
             scs_before_attack = self.__moving_screenshot_minimap()
 
             x, y = monster_coords[i]
+
+            # Checking if monster was attacked by other player.
+            if self.__hunting_check_sword((x, y)):
+                log.info(f"Monster at {x, y} was attacked by someone else!")
+                log.info(f"Failed to attack monster at: {x, y}!")
+                return "sword"
+
             log.info(f"Attacking monster at: {x, y} ... ")
             pyautogui.moveTo(x, y, duration=0.15)
             pyautogui.click(button="right")
 
             if self.__hunting_check_right_click_menu():
+                log.info(f"Monster at {x, y} moved!")
                 log.info(f"Failed to attack monster at: {x, y}!")
                 return "right_click_menu"
             
@@ -740,6 +748,36 @@ class Bot:
             return True
         else:
             return False
+
+    def __hunting_check_sword(self, coordinates):
+        """
+        Check if 'Join' sword is around provided coordinates.
+
+        Parameters
+        ---------- 
+        coordinates : Tuple[int, int]
+            (x, y) coordinate to search around.
+        
+        Returns
+        ----------
+        coords : list[Tuple[int, int]]
+            `list` of `tuple` of (x, y) coordinates where sword was
+            found.
+        coords : list
+            Empty `list` if no sword was found.
+
+        """
+        path = data.images.Combat.path
+        swords = [data.images.Combat.a_sword, data.images.Combat.m_sword]
+        sc = wc.WindowCapture.area_around_mouse_capture(75, coordinates)
+        img_data = dtc.Detection.generate_image_data(swords, path)
+        _, coords = dtc.Detection.detect_objects_with_masks(
+                img_data,
+                swords,
+                sc,
+                threshold=0.967
+            )
+        return coords
 
     def __preparing(self):
         """'PREPARING' state logic."""
