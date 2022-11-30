@@ -135,33 +135,33 @@ class Anticlock:
         {"2,-23" : {"right"  : (901, 308), "map_type": "traversable"}},
 
         # Used only when map was changed accidentally during attack.
-        {"-1,-22" : {"top"    : (500, 56),  "map_type": "traversable"}},
+        {"-1,-22" : {"top"   : (500, 56),  "map_type": "traversable"}},
 
-        {"-2,-23" : {"top"    : (500, 55),  "right": (925, 375), 
-                    "map_type": "traversable"}},
+        {"-2,-23" : {"top"   : (500, 55),  "map_type": "traversable",
+                     "right" : (925, 375)}},
 
-        {"-3,-24" : {"right"  : (930, 308), "map_type": "traversable"}},
+        {"-3,-24" : {"right" : (930, 308), "map_type": "traversable"}},
 
-        {"-3,-26" : {"right"  : (930, 308), "map_type": "traversable"}},
+        {"-3,-26" : {"right" : (930, 308), "map_type": "traversable"}},
 
-        {"-3,-28" : {"right"  : (925, 308), "map_type": "traversable"}},
+        {"-3,-28" : {"right" : (925, 308), "map_type": "traversable"}},
 
-        {"-2,-29" : {"bottom" : (433, 592), "map_type": "traversable"}},
+        {"-2,-29" : {"bottom": (433, 592), "map_type": "traversable"}},
 
-        {"-1,-26" : {"left"   : (5, 341),   "right": (927, 307), 
-                    "map_type": "traversable"}},
+        {"-1,-26" : {"left"  : (5, 341),   "map_type": "traversable",
+                     "right" : (927, 307)}},
 
-        {"-1,-25" : {"left"   : (5, 307),   "right": (926, 307), 
-                    "map_type": "traversable"}},
+        {"-1,-25" : {"left"  : (5, 307),   "map_type": "traversable",
+                     "right" : (926, 307)}},
 
-        {"2,-29"  : {"bottom" : (493, 588), "map_type": "traversable"}},
+        {"2,-29"  : {"bottom": (493, 588), "map_type": "traversable"}},
 
-        {"3,-28"  : {"left"   : (5, 342),   "map_type": "traversable"}},
+        {"3,-28"  : {"left"  : (5, 342),   "map_type": "traversable"}},
 
-        {"3,-27"  : {"bottom" : (700, 592), "left": (6, 342),
-                    "map_type": "traversable"}},
+        {"3,-27"  : {"bottom": (700, 592), "map_type": "traversable",
+                     "left"  : (6, 342)}},
 
-        {"4,-26"  : {"left"   : (4, 377),   "map_type": "traversable"}},
+        {"4,-26"  : {"left"  : (4, 377),   "map_type": "traversable"}},
 
-        {"4,-25"  : {"left"   : (8, 408),   "map_type": "traversable"}},
+        {"4,-25"  : {"left"  : (8, 408),   "map_type": "traversable"}},
     ]
