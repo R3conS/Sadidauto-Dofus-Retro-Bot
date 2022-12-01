@@ -22,7 +22,7 @@ import window_capture as wc
 
 
 class Initializing:
-    """Holds various "INITIALIZING' state methods."""
+    """Holds various 'INITIALIZING' state methods."""
 
     # Public class attributes.
     script = None
@@ -139,7 +139,7 @@ class Initializing:
                     data.images.monster.AstrubForest.img_list,
                     data.images.monster.AstrubForest.img_path
                 )
-            # self.data_monsters = dtc.Detection.generate_image_data(
+            # cls.data_monsters = dtc.Detection.generate_image_data(
             #         image_list=["test_1.png"],
             #         image_path="data\\images\\test\\monster_images\\"
             #     )
