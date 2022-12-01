@@ -38,6 +38,7 @@ class Initializing:
         gw.GameWindow.character_name = cls.character_name
         gw.GameWindow.official_version = cls.official_version
         cbt.Combat.character_name = cls.character_name
+        bank.Bank.official_version = cls.official_version
 
         # Making sure 'Dofus.exe' is launched and char is logged in.
         if gw.GameWindow.check_if_exists():
