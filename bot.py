@@ -17,20 +17,12 @@ import data
 import detection as dtc
 import game_window as gw
 import pop_up as pu
+
+import state
+from state.botstate_enum import BotState
+
 import threading_tools as tt
 import window_capture as wc
-
-
-class BotState:
-    """Bot states enum."""
-
-    INITIALIZING = "INITIALIZING"
-    CONTROLLER = "CONTROLLER"
-    HUNTING = "HUNTING"
-    PREPARING = "PREPARING"
-    FIGHTING = "FIGHTING"
-    MOVING = "MOVING"
-    BANKING = "BANKING"
 
 
 class Bot:
@@ -61,9 +53,6 @@ class Bot:
     # 'Bot_Thread' threading attributes.
     __Bot_Thread_stopped = True
     __Bot_Thread_thread = None
-    # 'Window_VisualDebugOutput_Thread' threading attributes.
-    __VisualDebugWindow_Thread_stopped = True
-    __VisualDebugWindow_Thread_thread = None
 
     # 'BotState' attributes.
     #-----------------------
@@ -137,15 +126,19 @@ class Bot:
             Current state of bot. Defaults to: `BotState.INITIALIZING`.
 
         """
-        self.__script = script
-        self.__character_name = character_name
         self.__official_version = official_version
-        self.__debug_window = debug_window
         self.__state = bot_state
+
+        state.Initializing.script = script
+        state.Initializing.character_name = character_name
+        state.Initializing.official_version = official_version
+        state.Initializing.debug_window = debug_window
 
         gw.GameWindow.character_name = character_name
         gw.GameWindow.official_version = official_version
+
         cbt.Combat.character_name = character_name
+
         bank.Bank.official_version = official_version
 
 #----------------------------------------------------------------------#
@@ -281,225 +274,12 @@ class Bot:
 #--------------------------BOT STATE METHODS---------------------------#
 #----------------------------------------------------------------------#
 
-    def __initializing(self):
-        """'INITIALIZING' state logic."""
-        # Making sure 'Dofus.exe' is launched and char is logged in.
-        if gw.GameWindow.check_if_exists():
-            gw.GameWindow.resize_and_move()
-        else:
-            os._exit(1)
-
-        # Starts 'Window_VisualDebugOutput_Thread' if needed.
-        if self.__debug_window:
-            self.__VisualDebugWindow_Thread_start()
-
-        # Loading bot script data.
-        if self.__initializing_load_bot_script_data(self.__script):
-            log.info(f"Successfully loaded '{self.__script}' script!")
-
-        if self.__official_version:
-            if self.__initializing_verify_group():
-                log.info("Group verified successfully!")
-
-        if self.__initializing_verify_character_name(self.__character_name):
-            log.info("Character's name set correctly!")
-
-        # Passing control to 'CONTROLLER' state.
-        log.info(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
-        self.__state = BotState.CONTROLLER
-
-    def __initializing_load_bot_script_data(self, script):
-        """
-        Load data based on `script`.
-
-        Parameters
-        ----------
-        script : str
-            Name of bot `script`.
-        
-        Returns
-        ----------
-        True : bool
-            If `script` was loaded successfully.
-        NoReturn
-            Exits program if `script` is not `str` or if `script` is not
-            among valid/available scripts.
-        
-        """
-        if not isinstance(script, str):
-            log.critical("Parameter 'script' must be a string!")
-            log.critical("Exiting ... ")
-            os._exit(1)
-
-        script = script.lower()
-
-        if "af_" in script:
-
-            if script == "af_anticlock":
-                hunting = data.scripts.astrub_forest.Hunting.Anticlock.data
-            elif script == "af_clockwise":
-                hunting = data.scripts.astrub_forest.Hunting.Clockwise.data
-            elif script == "af_north":
-                hunting = data.scripts.astrub_forest.Hunting.North.data
-            elif script == "af_east":
-                hunting = data.scripts.astrub_forest.Hunting.East.data
-            elif script == "af_south":
-                hunting = data.scripts.astrub_forest.Hunting.South.data
-            elif script == "af_west":
-                hunting = data.scripts.astrub_forest.Hunting.West.data
-
-            self.__data_map_hunting = hunting
-            self.__data_map_banking = data.scripts.astrub_forest.Banking.data
-            self.__data_monsters = dtc.Detection.generate_image_data(
-                    data.images.monster.AstrubForest.img_list,
-                    data.images.monster.AstrubForest.img_path
-                )
-            # self.__data_monsters = dtc.Detection.generate_image_data(
-            #         image_list=["test_1.png"],
-            #         image_path="data\\images\\test\\monster_images\\"
-            #     )
-            cbt.Combat.data_spell_cast = data.scripts.astrub_forest.Cast.data
-            cbt.Combat.data_movement = data.scripts.astrub_forest.Movement.data
-            bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
-            bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
-            return True
-
-        else:
-            log.critical(f"Couldn't find script '{script}' in database!")
-            log.critical("Exiting ... ")
-            os._exit(1)
-
-    def __initializing_verify_character_name(self, character_name):
-        """
-        Check if name in characteristics interface matches one that's
-        passed in during script startup.
-
-        character_name : str
-            Character's name.
-
-        Returns
-        ----------
-        True : bool
-            If names match.
-        NoReturn
-            Program will exit if names do not match or characteristics
-            interface couldn't be opened `attempts_allowed` times.
-        
-        """
-        log.info("Verifying character's name ... ")
-
-        attempts_allowed = 3
-        attempts_total = 0
-
-        while attempts_total < attempts_allowed:
-
-            pu.PopUp.deal()
-
-            if pu.PopUp.interface("characteristics", "open"):
-
-                sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
-                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
-                detected_name = r_and_t[0][1]
-
-                if character_name == detected_name:
-                    pu.PopUp.interface("characteristics", "close")
-                    return True
-                else:
-                    log.critical("Invalid character name!")
-                    log.critical("Exiting ... ")
-                    os._exit(1)
-
-            else:
-                attempts_total += 1
-        
-        else:
-            log.critical("Failed to open characteristics interface "
-                         f"{attempts_allowed} times!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
-
-    def __initializing_verify_group(self):
-        """Check if character is in group and close group tab."""
-        log.info("Verifying group ... ")
-
-        start_time = time.time()
-        timeout = 15
-
-        while time.time() - start_time < timeout:
-
-            if self.__initializing_in_group():
-                log.info("Character is in group!")
-                if self.__initializing_group_tab_check() == "opened":
-                    if self.__initializing_group_tab_hide():
-                        return True
-                else:
-                    return True
-
-        else:
-            log.critical(f"Failed to verify group in {timeout} seconds!")
-            log.critical(f"Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
-
-    def __initializing_in_group(self):
-        """Check if character is in group."""
-        coords = [(908, 120), (913, 115), (902, 117)]
-        colors = [(0, 153, 0), (0, 138, 0)]
-        pixels = []
-
-        for coord in coords:
-            for color in colors:
-                px = pyautogui.pixelMatchesColor(coord[0], coord[1], color)
-                pixels.append(px)
-
-        if pixels.count(True) == len(coords):
-            return True
-        else:
-            return False  
-
-    def __initializing_group_tab_check(self):
-        """Check if group tab is opened or closed."""
-        coords = [(908, 142), (910, 138), (915, 142)]
-        colors = [(197, 73, 6), (102, 45, 23), (103, 32, 5)]
-        pixels = []
-
-        for i in range(len(colors)):
-            px = pyautogui.pixelMatchesColor(coords[i][0], coords[i][1], colors[i])
-            pixels.append(px)
-
-        if all(pixels):
-            return "opened"
-        else:
-            return "closed"
-
-    def __initializing_group_tab_hide(self):
-        """Hide group tab if it's open."""
-        start_time = time.time()
-        timeout = 30
-
-        while time.time() - start_time < timeout:
-
-            pu.PopUp.deal()
-
-            if self.__initializing_group_tab_check() == "opened":
-                log.info("Hiding group tab ... ")
-                pyautogui.moveTo(927, 117, duration=0.15)
-                pyautogui.click()
-                time.sleep(0.5)
-            else:
-                log.info("Group tab hidden successfully!")
-                return True
-
-        else:
-            log.critical(f"Failed to hide group tab in {timeout} seconds!")
-            log.critical(f"Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
-
     def __controller(self):
         """Set bot state according to situation."""
 
         if self.__official_version:
             pu.PopUp.close_right_click_menu()
-            if not self.__initializing_in_group():
+            if not state.Initializing.in_group():
                 log.critical("Character is not in group!")
                 log.critical("Exiting ... ")
                 wc.WindowCapture.on_exit_capture()
@@ -768,7 +548,7 @@ class Bot:
         """
         path = data.images.Combat.path
         swords = [data.images.Combat.a_sword, data.images.Combat.m_sword]
-        sc = wc.WindowCapture.area_around_mouse_capture(75, coordinates)
+        sc = wc.WindowCapture.area_around_mouse_capture(85, coordinates)
         img_data = dtc.Detection.generate_image_data(swords, path)
         _, coords = dtc.Detection.detect_objects_with_masks(
                 img_data,
@@ -1904,7 +1684,10 @@ class Bot:
 
                 # Makes bot ready to go. Always starts in this state.
                 if self.__state == BotState.INITIALIZING:
-                    self.__initializing()
+                    self.__state = state.Initializing.initializing()
+                    self.__data_map_hunting = state.Initializing.data_hunting
+                    self.__data_map_banking = state.Initializing.data_banking
+                    self.__data_monsters = state.Initializing.data_monsters
 
                 # Determines what state to switch to when out of combat.
                 elif self.__state == BotState.CONTROLLER:
@@ -1954,61 +1737,5 @@ class Bot:
         self.__Bot_Thread_stopped = True
         self.__VisualDebugWindow_Thread_stop()
         tt.ThreadingTools.wait_thread_stop(self.__Bot_Thread_thread)
-
-#----------------------------------------------------------------------#
-
-    def __VisualDebugWindow_Thread_start(self):
-        """Start VisualDebugOutput thread."""
-        self.__VisualDebugWindow_Thread_stopped = False
-        self.__VisualDebugWindow_Thread_thread = threading.Thread(
-                target=self.__VisualDebugWindow_Thread_run
-            )
-        self.__VisualDebugWindow_Thread_thread.start()
-        tt.ThreadingTools.wait_thread_start(
-                self.__VisualDebugWindow_Thread_thread
-            )
-
-    def __VisualDebugWindow_Thread_stop(self):
-        """Stop VisualDebugOutput thread."""
-        self.__VisualDebugWindow_Thread_stopped = True
-        
-    def __VisualDebugWindow_Thread_run(self):
-        """Execute this code while thread is alive."""
-        start_time = time.time()
-        counter = 0
-        fps = 0
-
-        while not self.__VisualDebugWindow_Thread_stopped:
-
-            # Get screenshot of game.
-            screenshot = wc.WindowCapture.gamewindow_capture()
-
-            # Draw boxes around detected monsters.
-            output_image = dtc.Detection.draw_rectangles(
-                    screenshot,
-                    self.__obj_rects
-                )
-
-            # Calculating and displaying debug output FPS.
-            output_image = cv.putText(img=output_image,
-                                      text=f"Debug Window FPS: {fps}",
-                                      org=(0, 70),
-                                      fontFace=cv.FONT_HERSHEY_PLAIN,
-                                      fontScale=1,
-                                      color=(0, 255, 255),
-                                      thickness=2)
-
-            # Press 'q' while the DEBUG window is focused to exit.
-            # Force killing all threads (not clean).
-            cv.imshow("Visual Debug Window", output_image)
-            if cv.waitKey(1) == ord("q"):
-                cv.destroyAllWindows()
-                os._exit(1)
-
-            counter += 1
-            if (time.time() - start_time) > 1:
-                fps = round(counter / (time.time() - start_time))
-                start_time = time.time()
-                counter = 0
 
 #----------------------------------------------------------------------#

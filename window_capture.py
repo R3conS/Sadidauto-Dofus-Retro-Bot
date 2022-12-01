@@ -219,5 +219,5 @@ class WindowCapture:
         log.info(f"Saved: '{os.path.join(images_folder_path, image_name)}'!")
 
         if exit_dofus:
-            GameWindow.logout()
+            #GameWindow.logout()
             os._exit(1)
