@@ -22,7 +22,11 @@ class Parser:
                             help="Name of bot script. "
                                  "Available: " 
                                  "'af_anticlock', "
-                                 "'af_clockwise'.",
+                                 "'af_clockwise', "
+                                 "'af_north', "
+                                 "'af_east', "
+                                 "'af_south', "
+                                 "'af_west'.",
                             required=True)
 
         parser.add_argument("-cn", "--character_name", 
@@ -31,14 +35,8 @@ class Parser:
 
         parser.add_argument("-ov", "--official_version", 
                             help="Official or private 'Dofus Retro' server. "
-                                 "Default = 'False'.",
+                                 "Official = 'True'.",
                             default=False,
-                            type=lambda x: cls.__str_to_bool(x))
-
-        parser.add_argument("-dw", "--debug_window",
-                            help="Launch visual debug window or not. "
-                                 "Default = 'True'.",
-                            default=True,
                             type=lambda x: cls.__str_to_bool(x))
 
         args = parser.parse_args()

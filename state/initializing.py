@@ -4,20 +4,17 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import os
-import threading
 import time
 
-import cv2 as cv
 import pyautogui as pyag
 
-import bank
 from .botstate_enum import BotState
+import bank
 import combat as cbt
 import data
 import detection as dtc
 import game_window as gw
 import pop_up as pu
-import threading_tools as tt
 import window_capture as wc
 
 
@@ -28,35 +25,25 @@ class Initializing:
     script = None
     character_name = None
     official_version = None
-    debug_window = None
-    state = None
-
-    # Initialization data.
     data_hunting = None
     data_banking = None
     data_monsters = None
 
-    # 'BotState.HUNTING'.
-    # Bounding box information and coordinates of detected monsters.
-    obj_rects = []
-    obj_coords = []
-
-    # 'Window_VisualDebugOutput_Thread' threading attributes.
-    __VisualDebugWindow_Thread_stopped = True
-    __VisualDebugWindow_Thread_thread = None
+    # Private class attributes.
+    __state = None
 
     @classmethod
     def initializing(cls):
         """'INITIALIZING' state logic."""
+        gw.GameWindow.character_name = cls.character_name
+        gw.GameWindow.official_version = cls.official_version
+        cbt.Combat.character_name = cls.character_name
+
         # Making sure 'Dofus.exe' is launched and char is logged in.
         if gw.GameWindow.check_if_exists():
             gw.GameWindow.resize_and_move()
         else:
             os._exit(1)
-
-        # Starts 'Window_VisualDebugOutput_Thread' if needed.
-        if cls.debug_window:
-            cls.__VisualDebugWindow_Thread_start()
 
         # Loading bot script data.
         if cls.__load_bot_script_data(cls.script):
@@ -72,8 +59,8 @@ class Initializing:
         # Passing control to 'CONTROLLER' state.
         log.info("Initialization successful!")
         log.info(f"Changing 'BotState' to: '{BotState.CONTROLLER}' ... ")
-        cls.state = BotState.CONTROLLER
-        return cls.state
+        cls.__state = BotState.CONTROLLER
+        return cls.__state
 
     @staticmethod
     def in_group():
@@ -266,61 +253,3 @@ class Initializing:
             return "opened"
         else:
             return "closed"
-
-#----------------------------------------------------------------------#
-
-    def __VisualDebugWindow_Thread_start(self):
-        """Start VisualDebugOutput thread."""
-        self.__VisualDebugWindow_Thread_stopped = False
-        self.__VisualDebugWindow_Thread_thread = threading.Thread(
-                target=self.__VisualDebugWindow_Thread_run
-            )
-        self.__VisualDebugWindow_Thread_thread.start()
-        tt.ThreadingTools.wait_thread_start(
-                self.__VisualDebugWindow_Thread_thread
-            )
-
-    def __VisualDebugWindow_Thread_stop(self):
-        """Stop VisualDebugOutput thread."""
-        self.__VisualDebugWindow_Thread_stopped = True
-        
-    def __VisualDebugWindow_Thread_run(self):
-        """Execute this code while thread is alive."""
-        start_time = time.time()
-        counter = 0
-        fps = 0
-
-        while not self.__VisualDebugWindow_Thread_stopped:
-
-            # Get screenshot of game.
-            screenshot = wc.WindowCapture.gamewindow_capture()
-
-            # Draw boxes around detected monsters.
-            output_image = dtc.Detection.draw_rectangles(
-                    screenshot,
-                    self.obj_rects
-                )
-
-            # Calculating and displaying debug output FPS.
-            output_image = cv.putText(img=output_image,
-                                      text=f"Debug Window FPS: {fps}",
-                                      org=(0, 70),
-                                      fontFace=cv.FONT_HERSHEY_PLAIN,
-                                      fontScale=1,
-                                      color=(0, 255, 255),
-                                      thickness=2)
-
-            # Press 'q' while the DEBUG window is focused to exit.
-            # Force killing all threads (not clean).
-            cv.imshow("Visual Debug Window", output_image)
-            if cv.waitKey(1) == ord("q"):
-                cv.destroyAllWindows()
-                os._exit(1)
-
-            counter += 1
-            if (time.time() - start_time) > 1:
-                fps = round(counter / (time.time() - start_time))
-                start_time = time.time()
-                counter = 0
-
-#----------------------------------------------------------------------#

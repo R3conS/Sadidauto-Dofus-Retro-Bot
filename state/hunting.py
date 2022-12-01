@@ -5,14 +5,13 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import time
 
-import cv2 as cv
 import pyautogui as pyag
 
 from .botstate_enum import BotState
 import data
 import detection as dtc
 import pop_up as pu
-from state.moving import Moving
+import state
 import window_capture as wc
 
 
@@ -20,46 +19,41 @@ class Hunting:
     """Holds various 'HUNTING' state methods."""
 
     # Public class attributes.
-    data_monsters = None
-    map_coords = None
-    state = None
     map_searched = False
+    map_coords = None
+    data_monsters = None
 
+    # Private class attributes.
+    __state = None
 
     @classmethod
     def hunting(cls):
         """'HUNTING' state logic."""
         log.info(f"Hunting on map ({cls.map_coords}) ... ")
 
-        chunks = cls.__chunkate_data(
-                image_list=list(cls.data_monsters.keys()),
-                chunk_size=4
-            )
+        chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 4)
 
         for chunk_number, chunk in chunks.items():
 
-            cls.__obj_rects, cls.__obj_coords = cls.__search(
-                    image_data=cls.data_monsters,
-                    image_list=chunk
-                )
+            _, obj_coords = cls.__search(cls.data_monsters, chunk)
 
-            if len(cls.__obj_coords) > 0:
+            if len(obj_coords) > 0:
 
-                attack = cls.__attack(cls.__obj_coords)
+                attack = cls.__attack(obj_coords)
 
                 if attack == "success":
-                    cls.state = BotState.PREPARING
-                    return cls.state, cls.map_searched
+                    cls.__state = BotState.PREPARING
+                    return cls.__state, cls.map_searched
 
                 elif attack == "map_change":
-                    cls.state = BotState.CONTROLLER
-                    return cls.state, cls.map_searched
+                    cls.__state = BotState.CONTROLLER
+                    return cls.__state, cls.map_searched
                 
             if chunk_number + 1 == len(chunks.keys()):
                 log.info(f"Map ({cls.map_coords}) is clear!")
                 cls.map_searched = True
-                cls.state = BotState.CONTROLLER
-                return cls.state, cls.map_searched
+                cls.__state = BotState.CONTROLLER
+                return cls.__state, cls.map_searched
 
     @classmethod
     def __attack(cls, monster_coords):
@@ -89,7 +83,7 @@ class Hunting:
         for i in range(0, attempts_allowed):
 
             pu.PopUp.deal()
-            scs_before_attack = Moving.screenshot_minimap()
+            scs_before_attack = state.Moving.screenshot_minimap()
 
             x, y = monster_coords[i]
 
@@ -138,8 +132,21 @@ class Hunting:
 
     @classmethod
     def __accidental_map_change(cls, sc_before_attack):
-        """Check if map was changed accidentally during an attack."""
-        sc_after_attack = Moving.screenshot_minimap()
+        """
+        Check if map was changed accidentally during an attack.
+
+        Parameters
+        ----------
+        sc_before_attack : np.ndarray
+            Screenshot of minimap before attacking.
+
+        Returns
+        ----------
+        True : bool
+            If map was changed.
+        
+        """
+        sc_after_attack = state.Moving.screenshot_minimap()
         rects = dtc.Detection.find(sc_before_attack,
                                    sc_after_attack,
                                    threshold=0.98)
@@ -239,7 +246,7 @@ class Hunting:
     @staticmethod
     def __check_sword(coordinates):
         """
-        Check if 'Join' sword is around provided coordinates.
+        Check if 'Join' sword is around `coordinates`.
 
         Parameters
         ---------- 

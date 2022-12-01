@@ -25,8 +25,7 @@ def main():
     args = clp.Parser.parse_command_line()
     bot = Bot(script=args.script,
               character_name=args.character_name,
-              official_version=args.official_version,
-              debug_window=args.debug_window)
+              official_version=args.official_version)
     bot.Bot_Thread_start()
     exit_with_hotkey()
 

@@ -9,8 +9,8 @@ import time
 import cv2 as cv
 import pyautogui as pyag
 
-import bank
 from .botstate_enum import BotState
+import bank
 import detection as dtc
 import pop_up as pu
 import window_capture as wc
@@ -20,12 +20,13 @@ class Moving:
     """Holds various 'MOVING' state methods."""
 
     # Public class attributes.
-    emergency_teleports = 0
+    map_searched = None
     map_coords = None
     data_map = None
-    state = None
-    map_searched = None
 
+    # Private class attributes.
+    __state = None
+    __emergency_teleports = 0
 
     @classmethod
     def moving(cls):
@@ -37,12 +38,12 @@ class Moving:
 
             if cls.__change_map(cls.data_map, cls.map_coords):
                 cls.map_searched = False
-                cls.state = BotState.CONTROLLER
+                cls.__state = BotState.CONTROLLER
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
                 # and good to go.
-                cls.emergency_teleports = 0
-                return cls.state, cls.map_searched
+                cls.__emergency_teleports = 0
+                return cls.__state, cls.map_searched
 
             else:
 
@@ -303,18 +304,18 @@ class Moving:
     def __recovery_emergency_teleport(cls):
         """Teleport using 'Recall Potion' when stuck somewhere."""
 
-        log.debug(f"Emergency teleports: {cls.emergency_teleports}")
+        log.debug(f"Emergency teleports: {cls.__emergency_teleports}")
         pu.PopUp.deal()
 
-        if cls.emergency_teleports >= 3:
+        if cls.__emergency_teleports >= 3:
             log.info(f"Emergency teleport limit exceeded!")
             log.info(f"Exiting ... ")
             wc.WindowCapture.on_exit_capture()
-        # elif bank.Bank.recall_potion() == "available":
-        #     cls.emergency_teleports += 1
-        #     cls.__banking_use_recall_potion()
-        # else:
-        #     wc.WindowCapture.on_exit_capture()
+        elif bank.Bank.recall_potion() == "available":
+            cls.__emergency_teleports += 1
+            bank.Bank.use_recall_potion()
+        else:
+            wc.WindowCapture.on_exit_capture()
 
     @staticmethod
     def __detect_lumberjack_ws_interior():
