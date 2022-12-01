@@ -12,6 +12,7 @@ from .botstate_enum import BotState
 import data
 import detection as dtc
 import pop_up as pu
+from state.moving import Moving
 import window_capture as wc
 
 
@@ -88,7 +89,7 @@ class Hunting:
         for i in range(0, attempts_allowed):
 
             pu.PopUp.deal()
-            scs_before_attack = cls.__screenshot_minimap()
+            scs_before_attack = Moving.screenshot_minimap()
 
             x, y = monster_coords[i]
 
@@ -138,7 +139,7 @@ class Hunting:
     @classmethod
     def __accidental_map_change(cls, sc_before_attack):
         """Check if map was changed accidentally during an attack."""
-        sc_after_attack = cls.__screenshot_minimap()
+        sc_after_attack = Moving.screenshot_minimap()
         rects = dtc.Detection.find(sc_before_attack,
                                    sc_after_attack,
                                    threshold=0.98)
@@ -265,36 +266,3 @@ class Hunting:
                 threshold=0.967
             )
         return coords
-
-    @staticmethod
-    def __screenshot_minimap():
-        """
-        Get screenshot of coordinates on minimap.
-
-        Used in '__moving_change_map()' when checking if map was
-        changed successfully.
-        
-        Returns
-        ----------
-        screenshot : np.ndarray
-            Screenshot of coordinates on the minimap.
-
-        """
-        # Moving mouse over the red area on the minimap for the black 
-        # map tooltip to appear.
-        pyag.moveTo(517, 680)
-        # Waiting makes overall performance better because of less
-        # screenshots. Also gives time for map tooltip to appear.
-        time.sleep(0.5)
-        screenshot = wc.WindowCapture.custom_area_capture(
-                capture_region=(525, 650, 45, 30),
-                conversion_code=cv.COLOR_RGB2GRAY,
-                interpolation_flag=cv.INTER_LINEAR,
-                scale_width=100,
-                scale_height=100
-            )
-        # Moving mouse off the red area on the minimap in case a new 
-        # screenshot is required for another detection.
-        pyag.move(20, 0)
-
-        return screenshot
