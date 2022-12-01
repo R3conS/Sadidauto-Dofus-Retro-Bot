@@ -173,6 +173,7 @@ class Fighting:
                 log.debug(f"Setting first turn to 'False' due to too many "
                           "failed attempts to cast spells ... ")
                 first_turn = False
+                get_char_pos = True
                 cast_times = 0
 
             for spell in available_spells:
