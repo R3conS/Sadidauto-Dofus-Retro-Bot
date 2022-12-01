@@ -211,6 +211,7 @@ class Fighting:
                     cast_coords = cbt.Combat.get_char_position()
                     if cast_coords is None:
                         log.debug(f"cast_coords={cast_coords} ... ")
+                        pu.PopUp.close_right_click_menu()
                         log.debug("Continuing ... ")
                         continue
                     else:
