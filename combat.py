@@ -484,10 +484,12 @@ class Combat:
         pyautogui.moveTo(spell_coordinates[0], 
                          spell_coordinates[1], 
                          duration=0.15)
+        time.sleep(0.15)
         pyautogui.click()
         pyautogui.moveTo(cast_coordinates[0], 
                          cast_coordinates[1], 
                          duration=0.15)
+        time.sleep(0.15)
         pyautogui.click()
         # Moving mouse off of character so that his information
         # doesn't block spell bar. If omitted, may mess up spell
