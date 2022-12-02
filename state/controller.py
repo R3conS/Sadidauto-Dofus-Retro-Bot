@@ -53,13 +53,17 @@ class Controller:
 
         if cls.__character_overloaded:
             cls.data_map = cls.data_banking
+            cls.load_data_map(cls.data_map)
             cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+            cls.load_map_coords(cls.map_coords)
             cls.__state = BotState.BANKING
             return cls.__state
 
         elif not cls.__character_overloaded:
             cls.data_map = cls.data_hunting
+            cls.load_data_map(cls.data_map)
             cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+            cls.load_map_coords(cls.map_coords)
             map_type = state.Moving.get_map_type(cls.data_map, cls.map_coords)
 
             if map_type == "fightable":
@@ -81,3 +85,18 @@ class Controller:
                              f"'{cls.map_coords}'!")
                 log.critical(f"Exiting ... ")
                 wc.WindowCapture.on_exit_capture()
+
+
+    @staticmethod
+    def load_data_map(data):
+        state.Banking.data_map = data
+        state.Fighting.data_map = data
+        state.Moving.data_map = data
+        state.Preparing.data_map = data
+
+    @staticmethod
+    def load_map_coords(data):
+        state.Banking.map_coords = data
+        state.Fighting.map_coords = data
+        state.Moving.map_coords = data
+        state.Preparing.map_coords = data

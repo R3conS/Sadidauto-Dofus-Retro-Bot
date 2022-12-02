@@ -31,9 +31,6 @@ class Moving:
     @classmethod
     def moving(cls):
         """'MOVING' state logic."""
-        cls.map_coords = state.Controller.map_coords
-        cls.data_map = state.Controller.data_map
-
         attempts_total = 0
         attempts_allowed = 3
 
@@ -96,7 +93,7 @@ class Moving:
         wait_before_detecting = 0.35
         # Loop control variables.
         start_time = time.time()
-        timeout = 7
+        timeout = 30
 
         while time.time() - start_time < timeout:
 
@@ -306,8 +303,6 @@ class Moving:
     @classmethod
     def __recovery_emergency_teleport(cls):
         """Teleport using 'Recall Potion' when stuck somewhere."""
-
-        log.debug(f"Emergency teleports: {cls.__emergency_teleports}")
         pu.PopUp.deal()
 
         if cls.__emergency_teleports >= 3:
@@ -316,7 +311,12 @@ class Moving:
             wc.WindowCapture.on_exit_capture()
         elif bank.Bank.recall_potion() == "available":
             cls.__emergency_teleports += 1
-            bank.Bank.use_recall_potion()
+            log.debug(f"Emergency teleports: {cls.__emergency_teleports}")
+            if state.Banking.use_recall_potion(cls.data_map):
+                cls.__state = BotState.CONTROLLER
+                return cls.__state
+            else:
+                log.info(f"Failed to use 'Recall Potion'!")
         else:
             wc.WindowCapture.on_exit_capture()
 

@@ -258,10 +258,10 @@ class Bank:
 
         """
         log.info("Using 'Recall Potion' ... ")
-        x, y = (664, 725)
-        pyautogui.moveTo(x, y, duration=0.15)
+        pyautogui.moveTo(664, 725, duration=0.15)
         pyautogui.click(clicks=2, interval=0.1)
-        time.sleep(1)
+        pyautogui.moveTo(929, 51)
+        time.sleep(3)
 
     @classmethod
     def __banker_detect_npc(cls):

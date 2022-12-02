@@ -20,19 +20,16 @@ class Preparing:
     # Public class attributes.
     map_coords = None
     data_map = None
-    cell_coords = None
-    cell_color = None
 
     # Private class attributes.
     __state = None
     __tactical_mode = False
+    __cell_coords = None
+    __cell_color = None
 
     @classmethod
     def preparing(cls):
         """'PREPARING' state logic."""
-        cls.map_coords = state.Controller.map_coords
-        cls.data_map = state.Controller.data_map
-
         # Stores whether to check for dummy cells. Always checks on
         # first iteration of loop.
         check_for_dummy_cells = True
@@ -132,7 +129,8 @@ class Preparing:
             pyag.click()
             time.sleep(wait_after_move_char)
             if cls.__check_if_char_moved(cell):
-                cls.cell_coords = cell
+                cls.__cell_coords = cell
+                state.Fighting.cell_coords = cls.__cell_coords
                 return True
         return False
 
@@ -155,9 +153,10 @@ class Preparing:
 
             if cls.__move_char_to_cell(e_cells):
 
-                cls.cell_color = cls.get_start_cell_color(cls.map_coords,
-                                                          cls.data_map,
-                                                          cls.cell_coords)
+                cls.__cell_color = cls.get_start_cell_color(cls.map_coords,
+                                                            cls.data_map,
+                                                            cls.__cell_coords)
+                state.Fighting.cell_color = cls.__cell_color
 
                 if cls.__start_combat():
                     log.info(f"Successfully selected starting cell!")
@@ -464,4 +463,3 @@ class Preparing:
                 if len(cc_icon) > 0 and len(ap_icon) > 0 and len(mp_icon) > 0:
                     log.info("Successfully started combat!")
                     return True
-

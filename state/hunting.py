@@ -97,6 +97,7 @@ class Hunting:
 
             log.info(f"Attacking monster at: {x, y} ... ")
             pyag.moveTo(x, y, duration=0.15)
+            time.sleep(0.25)
             pyag.click(button="right")
 
             if cls.__check_right_click_menu():

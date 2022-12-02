@@ -38,14 +38,12 @@ class Banking:
             - Change 'BotState' to 'MOVING'.
 
         """
-        cls.map_coords = state.Controller.map_coords
-        cls.data_map = state.Controller.data_map
 
         while True:
 
             if not cls.__recall_potion_used:
                 if bank.Bank.recall_potion() == "available":
-                    cls.use_recall_potion()
+                    cls.use_recall_potion(cls.data_map)
                     cls.__recall_potion_used = True
                 else:
                     cls.__recall_potion_used = True
@@ -61,7 +59,7 @@ class Banking:
                 return cls.__state
 
     @classmethod
-    def use_recall_potion(cls):
+    def use_recall_potion(cls, database):
         """
         Use 'Recall Potion'.
         
@@ -77,7 +75,7 @@ class Banking:
 
             pu.PopUp.deal()
             bank.Bank.use_recall_potion()
-            cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+            cls.map_coords = state.Moving.get_coordinates(database)
 
             if cls.map_coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")

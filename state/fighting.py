@@ -34,11 +34,6 @@ class Fighting:
     @classmethod
     def fighting(cls):
         """'FIGHTING' state logic."""
-        cls.map_coords = state.Controller.map_coords
-        cls.data_map = state.Controller.data_map
-        cls.cell_coords = state.Preparing.cell_coords
-        cls.cell_color = state.Preparing.cell_color
-
         first_turn = True
         tbar_shrunk = False
         character_moved = False
