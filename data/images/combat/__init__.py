@@ -3,7 +3,6 @@
 class Combat:
     """Combat images."""
     path = "data\\images\\combat\\"
-    icon_turn_pass = path + "icon_turn_pass.jpg"
     red_circle_1 = "red_circle_1.png"
     red_circle_2 = "red_circle_2.png"
     red_circle_3 = "red_circle_3.png"

@@ -229,7 +229,7 @@ class Moving:
         # a slower machine 'SEARCHING' state will act too fast & try to 
         # search for monsters on a black "LOADING MAP" screen. This wait 
         # time allows the black loading screen to disappear.
-        wait_map_loading = 2.5
+        wait_map_loading = 2
         sc_minimap_needle = cls.screenshot_minimap()
         minimap_rects = dtc.Detection.find(sc_minimap,
                                            sc_minimap_needle,

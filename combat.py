@@ -5,7 +5,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import time
 
-import pyautogui
+import pyautogui as pyag
 
 import data
 import detection as dtc
@@ -73,12 +73,12 @@ class Combat:
         """
         while True:
        
-            px_1 = pyautogui.pixelMatchesColor(406, 106, (251, 103, 0),
-                                               tolerance=5)
-            px_2 = pyautogui.pixelMatchesColor(353, 109, (213, 208, 169),
-                                               tolerance=3)
-            px_3 = pyautogui.pixelMatchesColor(110, 100, (232, 228, 198),
-                                               tolerance=3)
+            px_1 = pyag.pixelMatchesColor(406, 106, (251, 103, 0), 
+                                          tolerance=5)
+            px_2 = pyag.pixelMatchesColor(353, 109, (213, 208, 169),
+                                          tolerance=3)
+            px_3 = pyag.pixelMatchesColor(110, 100, (232, 228, 198),
+                                          tolerance=3)
 
             if px_1 and px_2 and not px_3:
 
@@ -110,31 +110,24 @@ class Combat:
         timeout_time = 30
         
         while time.time() - start_time < timeout_time:
-
-            sc = wc.WindowCapture.custom_area_capture((525, 595, 120, 155))
-            rects = dtc.Detection.find(sc, data.images.Combat.icon_turn_pass)
-
-            if len(rects) > 0:
-                log.info("Passing turn ... ")
-                coords = dtc.Detection.get_click_coords(
-                        rects,
-                        (525, 595, 120, 155)
-                    )
-                pyautogui.moveTo(coords[0][0], coords[0][1], duration=0.15)
-                pyautogui.click()
-                # Moving mouse off 'pass turn' button.
-                pyautogui.move(0, 30)
-                # Giving time for "Illustration to signal your turn" to 
-                # disappear. Otherwise when character passes quickly at 
-                # the start of turn, detection starts too early and 
-                # falsely detects another turn.
-                time.sleep(0.5)
-                
-                if cls.turn_detect_end():
-                    log.info("Turn passed successfully!")
-                    return True
-                else:
-                    log.error("Failed to pass turn!")
+            
+            log.info("Passing turn ... ")
+            pyag.moveTo(616, 726, duration=0.15)
+            pyag.click()
+            # Moving mouse off 'pass turn' button.
+            pyag.move(0, 30)
+            # Giving time for "Illustration to signal your turn" to 
+            # disappear. Otherwise when character passes quickly at 
+            # the start of turn, detection starts too early and 
+            # falsely detects another turn.
+            time.sleep(0.65)
+            
+            if cls.turn_detect_end():
+                log.info("Turn passed successfully!")
+                return True
+            else:
+                log.error("Failed to pass turn!")
+                continue
         else:
             log.critical(f"Couldn't pass turn for {timeout_time} second(s)!")
             log.critical("Timed out!")
@@ -310,14 +303,14 @@ class Combat:
 
             for coord in coords:
 
-                pyautogui.moveTo(coord[0], coord[1], duration=0.15)
+                pyag.moveTo(coord[0], coord[1], duration=0.15)
                 time.sleep(0.25)
                 sc = wc.WindowCapture.gamewindow_capture((597, 599, 215, 30))
                 _, _, text = dtc.Detection.detect_text_from_image(sc)
 
                 if cls.character_name in text:
                     # Moving mouse off char. so spell bar is visible.
-                    pyautogui.moveTo(929, 51)
+                    pyag.moveTo(929, 51)
                     return coord
 
         else:
@@ -411,7 +404,7 @@ class Combat:
         # at (x, y) coordinates. Counting failed matches.
         pixels = []
         for color in colors:
-            pixel = pyautogui.pixelMatchesColor(x, y, color)
+            pixel = pyag.pixelMatchesColor(x, y, color)
             pixels.append(pixel)
 
         # If no colors from 'colors' list match pixel color (all false) 
@@ -431,25 +424,21 @@ class Combat:
         True : bool
             If turn has ended.
         False : bool
-            If end of turn could not be detected within 'timeout_time'
+            If end of turn could not be detected within 'timeout'
             seconds.
         
         """
+        x, y = (544, 630)
+        color = (255, 102, 0)
         start_time = time.time()
-        timeout_time = 5
-        while True:
+        timeout = 3
 
-            orange_pixel = pyautogui.pixelMatchesColor(
-                    x=549,
-                    y=630,
-                    expectedRGBColor=(255, 102, 0),
-                    tolerance=10
-                )
-
-            if time.time() - start_time > timeout_time:
-                return False
+        while time.time() - start_time < timeout:
+            orange_pixel = pyag.pixelMatchesColor(x, y, color, tolerance=10)
             if not orange_pixel:
                 return True
+        else:
+            return False
 
     @staticmethod
     def move_character(cell_coordinates):
@@ -462,9 +451,8 @@ class Combat:
             Coordinates to click on.
 
         """
-        x, y = cell_coordinates
-        pyautogui.moveTo(x=x, y=y, duration=0.15)
-        pyautogui.click()
+        pyag.moveTo(cell_coordinates[0], cell_coordinates[1], duration=0.15)
+        pyag.click()
 
     @staticmethod
     def cast_spell(spell, spell_coordinates, cast_coordinates):
@@ -493,20 +481,18 @@ class Combat:
                 spell = spell.title()
 
         log.info(f"Casting spell: '{spell}' ... ")
-        pyautogui.moveTo(spell_coordinates[0], 
-                         spell_coordinates[1], 
-                         duration=0.15)
-        time.sleep(0.65)
-        pyautogui.click()
-        pyautogui.moveTo(cast_coordinates[0], 
-                         cast_coordinates[1], 
-                         duration=0.15)
-        time.sleep(0.65)
-        pyautogui.click()
+        # Selecting spell.
+        pyag.moveTo(spell_coordinates[0], spell_coordinates[1], duration=0.15)
+        time.sleep(0.25)
+        pyag.click()
+        # Moving mouse to cast coordinates.
+        pyag.moveTo(cast_coordinates[0], cast_coordinates[1], duration=0.15)
+        time.sleep(0.75)
+        pyag.click()
         # Moving mouse off of character so that his information
         # doesn't block spell bar. If omitted, may mess up spell
         # detection in 'Bot.__fighting_cast_spells()'.
-        pyautogui.moveTo(574, 749)
+        pyag.moveTo(574, 749)
         # Giving time for spell animation to finish.
         time.sleep(1)
 
@@ -532,15 +518,15 @@ class Combat:
 
         while time.time() - start_time < wait_time:
 
-            button_clicked = pyautogui.pixelMatchesColor(x, y, color)
+            button_clicked = pyag.pixelMatchesColor(x, y, color)
 
             if button_clicked:
                 log.info("Models hidden successfully!")
                 return True
             else:
-                pyautogui.moveTo(x, y, duration=0.15)
-                pyautogui.click()
-                pyautogui.moveTo(574, 749)
+                pyag.moveTo(x, y, duration=0.15)
+                pyag.click()
+                pyag.moveTo(574, 749)
 
         else:
             log.error(f"Failed to hide models in {wait_time} seconds!")
@@ -574,11 +560,11 @@ class Combat:
 
         while time.time() - start_time < wait_time:
 
-            pyautogui.moveTo(x, y, duration=0.15)
-            pyautogui.click()
+            pyag.moveTo(x, y, duration=0.15)
+            pyag.click()
 
             for color in colors:
-                pixel = pyautogui.pixelMatchesColor(869, 548, color)
+                pixel = pyag.pixelMatchesColor(869, 548, color)
                 if not pixel:
                     log.info("Successfully shrunk 'Turn Bar'!")
                     return True

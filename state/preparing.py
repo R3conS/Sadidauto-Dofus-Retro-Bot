@@ -137,12 +137,14 @@ class Preparing:
     @classmethod
     def __select_starting_cell(cls):
         """Select starting cell and start combat."""
-        failed_attempts = 0
-        attempts_allowed = 2
-
         log.info(f"Trying to move character to starting cell ... ")
 
-        while True:
+        failed_attempts = 0
+        attempts_allowed = 2
+        start_time = time.time()
+        timeout = 20
+
+        while time.time() - start_time < timeout:
 
             cells = cls.__get_cells_from_database(cls.map_coords, cls.data_map)
             e_cells = cls.__get_empty_cells(cells)
@@ -176,6 +178,14 @@ class Preparing:
                         state.Fighting.cell_select_failed = True
                         return "selection_fail"
 
+        else:
+            log.error(f"Timed out in '__select_starting_cell()'!")
+            log.error("Cell selection failed!")
+            log.info("Trying to start combat ... ")
+            if cls.__start_combat():
+                state.Fighting.cell_select_failed = True
+                return "selection_fail"
+
     @classmethod
     def __select_dummy_cells(cls):
         """
@@ -186,12 +196,14 @@ class Preparing:
         character out of the way so that all starting cells are visible.
 
         """
-        failed_attempts = 0
-        attempts_allowed = 1
-
         log.info("Trying to move character to dummy cell ... ")
 
-        while True:
+        failed_attempts = 0
+        attempts_allowed = 1
+        start_time = time.time()
+        timeout = 20
+
+        while time.time() - start_time < timeout:
 
             cells = cls.__get_dummy_cells(cls.map_coords, cls.data_map)
             e_cells = cls.__get_empty_cells(cells)
@@ -213,6 +225,11 @@ class Preparing:
                 else:
                     log.error("Failed to move character to dummy cell!")
                     return False
+
+        else:
+            log.error(f"Timed out in '__select_dummy_cells()'!")
+            log.error("Failed to move character to dummy cell!")
+            return False
 
     @staticmethod
     def __check_dummy_cells(map_coords, database):
@@ -391,38 +408,17 @@ class Preparing:
         # after failing the first time.
         first_try = True
         # Loop control variables.
-        timeout = 15
+        timeout = 30
         start_time = time.time()
 
-        # Getting (x, y) coords of 'Ready' button.
-        while time.time() - start_time < timeout:
-
-            screenshot = wc.WindowCapture.gamewindow_capture()
-            ready_button_icon = dtc.Detection.get_click_coords(
-                    dtc.Detection.find(
-                            screenshot,
-                            data.images.Status.preparing_sv_2,
-                            threshold=0.8
-                        )
-                    )
-
-            if len(ready_button_icon) > 0:
-                x, y = ready_button_icon[0][0], ready_button_icon[0][1]
-                break
-
-        else:
-            log.critical(f"Failed to locate 'Ready' button!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
-
         # Clicking 'Ready' to start combat.
-        while True:
+        while time.time() - start_time < timeout:
 
             # If 'Ready' button wasn't clicked.
             if not ready_button_clicked:
 
-                log.info("Clicking 'READY' ... ")
-                pyag.moveTo(x, y, duration=0.15)
+                log.info("Clicking 'Ready' ... ")
+                pyag.moveTo(865, 565, duration=0.15)
                 if first_try:
                     pyag.click()
                 else:
@@ -463,3 +459,9 @@ class Preparing:
                 if len(cc_icon) > 0 and len(ap_icon) > 0 and len(mp_icon) > 0:
                     log.info("Successfully started combat!")
                     return True
+        
+        else:
+            log.error(f"Timed out in '__start_combat()!")
+            log.error(f"'Dofus' preparation stage time ran out!")
+            log.error(f"Assuming that combat has started ... ")
+            return True
