@@ -19,7 +19,6 @@ class Hunting:
     """Holds various 'HUNTING' state methods."""
 
     # Public class attributes.
-    map_searched = False
     map_coords = None
     data_monsters = None
 
@@ -29,6 +28,9 @@ class Hunting:
     @classmethod
     def hunting(cls):
         """'HUNTING' state logic."""
+        cls.map_coords = state.Controller.map_coords
+        cls.data_monsters = state.Controller.data_monsters
+
         log.info(f"Hunting on map ({cls.map_coords}) ... ")
 
         chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 4)
@@ -43,17 +45,17 @@ class Hunting:
 
                 if attack == "success":
                     cls.__state = BotState.PREPARING
-                    return cls.__state, cls.map_searched
+                    return cls.__state
 
                 elif attack == "map_change":
                     cls.__state = BotState.CONTROLLER
-                    return cls.__state, cls.map_searched
+                    return cls.__state
                 
             if chunk_number + 1 == len(chunks.keys()):
                 log.info(f"Map ({cls.map_coords}) is clear!")
-                cls.map_searched = True
+                state.Controller.map_searched = True
                 cls.__state = BotState.CONTROLLER
-                return cls.__state, cls.map_searched
+                return cls.__state
 
     @classmethod
     def __attack(cls, monster_coords):

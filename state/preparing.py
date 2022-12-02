@@ -22,7 +22,6 @@ class Preparing:
     data_map = None
     cell_coords = None
     cell_color = None
-    cell_select_failed = False
 
     # Private class attributes.
     __state = None
@@ -31,6 +30,9 @@ class Preparing:
     @classmethod
     def preparing(cls):
         """'PREPARING' state logic."""
+        cls.map_coords = state.Controller.map_coords
+        cls.data_map = state.Controller.data_map
+
         # Stores whether to check for dummy cells. Always checks on
         # first iteration of loop.
         check_for_dummy_cells = True
@@ -172,7 +174,7 @@ class Preparing:
                     log.error("Cell selection failed!")
                     log.info("Trying to start combat ... ")
                     if cls.__start_combat():
-                        cls.cell_select_failed = True                           
+                        state.Fighting.cell_select_failed = True
                         return "selection_fail"
 
     @classmethod
@@ -383,7 +385,7 @@ class Preparing:
         """Click ready to start combat."""
         # Time to wait after clicking ready. How long to keep chacking 
         # if combat was started successfully.
-        wait_combat_start = 5
+        wait_combat_start = 8
         # 'Ready' button state.
         ready_button_clicked = False
         # Controls if clicking 'Ready' first time. Will click twice

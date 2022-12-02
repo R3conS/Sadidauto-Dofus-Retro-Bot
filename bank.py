@@ -261,7 +261,7 @@ class Bank:
         x, y = (664, 725)
         pyautogui.moveTo(x, y, duration=0.15)
         pyautogui.click(clicks=2, interval=0.1)
-        time.sleep(0.25)
+        time.sleep(1)
 
     @classmethod
     def __banker_detect_npc(cls):

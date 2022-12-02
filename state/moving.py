@@ -13,6 +13,7 @@ from .botstate_enum import BotState
 import bank
 import detection as dtc
 import pop_up as pu
+import state
 import window_capture as wc
 
 
@@ -20,7 +21,6 @@ class Moving:
     """Holds various 'MOVING' state methods."""
 
     # Public class attributes.
-    map_searched = None
     map_coords = None
     data_map = None
 
@@ -31,19 +31,22 @@ class Moving:
     @classmethod
     def moving(cls):
         """'MOVING' state logic."""
+        cls.map_coords = state.Controller.map_coords
+        cls.data_map = state.Controller.data_map
+
         attempts_total = 0
-        attempts_allowed = 5
+        attempts_allowed = 3
 
         while attempts_total < attempts_allowed:
 
             if cls.__change_map(cls.data_map, cls.map_coords):
-                cls.map_searched = False
+                state.Controller.map_searched = False
                 cls.__state = BotState.CONTROLLER
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
                 # and good to go.
                 cls.__emergency_teleports = 0
-                return cls.__state, cls.map_searched
+                return cls.__state
 
             else:
 
@@ -90,7 +93,7 @@ class Moving:
         # appear. Otherwise on a slower machine the program might take a
         # screenshot too fast resulting in an image with no coordinates
         # to detect.
-        wait_before_detecting = 0.25
+        wait_before_detecting = 0.35
         # Loop control variables.
         start_time = time.time()
         timeout = 7
@@ -185,7 +188,7 @@ class Moving:
         pyag.moveTo(517, 680)
         # Waiting makes overall performance better because of less
         # screenshots. Also gives time for map tooltip to appear.
-        time.sleep(0.5)
+        time.sleep(1)
         screenshot = wc.WindowCapture.custom_area_capture(
                 capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
@@ -229,7 +232,7 @@ class Moving:
         # a slower machine 'SEARCHING' state will act too fast & try to 
         # search for monsters on a black "LOADING MAP" screen. This wait 
         # time allows the black loading screen to disappear.
-        wait_map_loading = 1
+        wait_map_loading = 2.5
         sc_minimap_needle = cls.screenshot_minimap()
         minimap_rects = dtc.Detection.find(sc_minimap,
                                            sc_minimap_needle,
@@ -272,7 +275,7 @@ class Moving:
 
         """
         # How long to keep checking if map was changed.
-        wait_change_map = 9
+        wait_change_map = 10
         # Time to wait before clicking on yellow 'sun' to change maps.
         # Must wait when moving in 'bottom' direction, because 'Dofus' 
         # GUI blocks the sun otherwise.

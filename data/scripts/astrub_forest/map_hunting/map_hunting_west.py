@@ -46,7 +46,7 @@ class West:
 
         {"1,-20" : {"left"   : (4, 343),   "map_type": "traversable"}},
 
-        {"0,-20" : {"left"   : (31, 308),  "map_type": "traversable"}},
+        {"0,-20" : {"left"   : (8, 306),  "map_type": "traversable"}},
 
         {"-1,-20": {"left"   : (32, 376),  "map_type": "traversable"}},
 

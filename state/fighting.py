@@ -34,6 +34,11 @@ class Fighting:
     @classmethod
     def fighting(cls):
         """'FIGHTING' state logic."""
+        cls.map_coords = state.Controller.map_coords
+        cls.data_map = state.Controller.data_map
+        cls.cell_coords = state.Preparing.cell_coords
+        cls.cell_color = state.Preparing.cell_color
+
         first_turn = True
         tbar_shrunk = False
         character_moved = False
@@ -158,7 +163,7 @@ class Fighting:
         cast_times = 0
         # Loop control variables.
         start_time = time.time()
-        timeout = 20
+        timeout = 30
 
         while time.time() - start_time < timeout:
 
@@ -193,7 +198,6 @@ class Fighting:
                         if cast_coords is None:
                             log.debug(f"cast_coords={cast_coords} ... ")
                             log.debug("Using 'close_right_click_menu()' ... ")
-                            pu.PopUp.close_right_click_menu()
                             log.debug("Continuing ... ")
                             continue
                         else:
@@ -211,7 +215,6 @@ class Fighting:
                     cast_coords = cbt.Combat.get_char_position()
                     if cast_coords is None:
                         log.debug(f"cast_coords={cast_coords} ... ")
-                        pu.PopUp.close_right_click_menu()
                         log.debug("Continuing ... ")
                         continue
                     else:

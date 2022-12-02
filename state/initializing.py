@@ -15,6 +15,7 @@ import data
 import detection as dtc
 import game_window as gw
 import pop_up as pu
+import state
 import window_capture as wc
 
 
@@ -25,9 +26,6 @@ class Initializing:
     script = None
     character_name = None
     official_version = None
-    data_hunting = None
-    data_banking = None
-    data_monsters = None
 
     # Private class attributes.
     __state = None
@@ -35,20 +33,15 @@ class Initializing:
     @classmethod
     def initializing(cls):
         """'INITIALIZING' state logic."""
-        gw.GameWindow.character_name = cls.character_name
-        gw.GameWindow.official_version = cls.official_version
-        cbt.Combat.character_name = cls.character_name
-        bank.Bank.official_version = cls.official_version
+        # Loading bot script data.
+        if cls.__load_bot_script_data(cls.script):
+            log.info(f"Successfully loaded '{cls.script}' script!")
 
         # Making sure 'Dofus.exe' is launched and char is logged in.
         if gw.GameWindow.check_if_exists():
             gw.GameWindow.resize_and_move()
         else:
             os._exit(1)
-
-        # Loading bot script data.
-        if cls.__load_bot_script_data(cls.script):
-            log.info(f"Successfully loaded '{cls.script}' script!")
 
         if cls.official_version:
             if cls.__verify_group():
@@ -121,20 +114,30 @@ class Initializing:
             elif script == "af_west":
                 hunting = data.scripts.astrub_forest.Hunting.West.data
 
-            cls.data_hunting = hunting
-            cls.data_banking = data.scripts.astrub_forest.Banking.data
-            cls.data_monsters = dtc.Detection.generate_image_data(
+            state.Controller.data_hunting = hunting
+            state.Controller.data_banking = \
+                    data.scripts.astrub_forest.Banking.data
+            state.Controller.data_monsters = dtc.Detection.generate_image_data(
                     data.images.monster.AstrubForest.img_list,
                     data.images.monster.AstrubForest.img_path
                 )
-            # cls.data_monsters = dtc.Detection.generate_image_data(
+            # state.Controller.data_monsters = dtc.Detection.generate_image_data(
             #         image_list=["test_1.png"],
             #         image_path="data\\images\\test\\monster_images\\"
             #     )
+            state.Controller.official_version = cls.official_version
+
             cbt.Combat.data_spell_cast = data.scripts.astrub_forest.Cast.data
             cbt.Combat.data_movement = data.scripts.astrub_forest.Movement.data
+            cbt.Combat.character_name = cls.character_name
+
             bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
             bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
+            bank.Bank.official_version = cls.official_version
+
+            gw.GameWindow.character_name = cls.character_name
+            gw.GameWindow.official_version = cls.official_version
+
             return True
 
         else:

@@ -33,12 +33,6 @@ class Bot:
     """
 
     # Private class attributes.
-    # Stores current map's coordinates.
-    __map_coords = None   
-    # Stores currently needed map data.
-    __data_map = None
-    # Stores monster image data.
-    __data_monsters = None
     # 'Bot_Thread' threading attributes.
     __Bot_Thread_stopped = False
     __Bot_Thread_thread = None
@@ -80,48 +74,29 @@ class Bot:
                 # Makes bot ready to go. Always starts in this state.
                 if self.__state == BotState.INITIALIZING:
                     self.__state = Initializing.initializing()
-                    self.__data_monsters = Initializing.data_monsters
-                    Controller.data_hunting = Initializing.data_hunting
-                    Controller.data_banking = Initializing.data_banking
-                    Controller.official_version = Initializing.official_version
 
                 # Determines what state to switch to when out of combat.
                 elif self.__state == BotState.CONTROLLER:
                     self.__state = Controller.controller()
-                    self.__map_coords = Controller.map_coords
-                    self.__data_map = Controller.data_map
 
                 # Handles detection and attacking of monsters.
                 elif self.__state == BotState.HUNTING:
-                    Hunting.data_monsters = self.__data_monsters
-                    Hunting.map_coords = self.__map_coords
-                    self.__state, Controller.map_searched = Hunting.hunting()
+                    self.__state = Hunting.hunting()
 
                 # Handles combat preparation.
                 elif self.__state == BotState.PREPARING:
-                    Preparing.map_coords = self.__map_coords
-                    Preparing.data_map = self.__data_map
                     self.__state = Preparing.preparing()
 
                 # Handles combat.
                 elif self.__state == BotState.FIGHTING:
-                    Fighting.map_coords = self.__map_coords
-                    Fighting.data_map = self.__data_map
-                    Fighting.cell_coords = Preparing.cell_coords
-                    Fighting.cell_color = Preparing.cell_color
-                    Fighting.cell_select_failed = Preparing.cell_select_failed
                     self.__state = Fighting.fighting()
                             
                 # Handles map changing.
                 elif self.__state == BotState.MOVING:
-                    Moving.map_coords = self.__map_coords
-                    Moving.data_map = self.__data_map
-                    self.__state, Controller.map_searched = Moving.moving()
+                    self.__state = Moving.moving()
 
                 # Handles banking.
                 elif self.__state == BotState.BANKING:
-                    Banking.map_coords = self.__map_coords
-                    Banking.data_map = self.__data_map
                     self.__state = Banking.banking()
 
         except:

@@ -9,6 +9,7 @@ import pyautogui
 
 import data
 import detection as dtc
+import pop_up as pu
 import window_capture as wc
 
 
@@ -282,16 +283,27 @@ class Combat:
 
         """
         if color == "red":
-            circle = data.images.Combat.red_circle
+            circles = [
+                    data.images.Combat.red_circle_1,
+                    data.images.Combat.red_circle_2,
+                    data.images.Combat.red_circle_3,
+                    data.images.Combat.red_circle_4,
+                    data.images.Combat.red_circle_5,
+                    data.images.Combat.red_circle_6
+                ]
         else:
-            circle = data.images.Combat.blue_circle
+            circles = [
+                    data.images.Combat.blue_circle
+                ]
+
+        pu.PopUp.close_right_click_menu()
 
         sc_for_circles = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
         _, coords = dtc.Detection.detect_objects(
-                [circle, circle], 
+                circles, 
                 data.images.Combat.path,
                 sc_for_circles,
-                threshold=0.73
+                threshold=0.6
             )
 
         if len(coords) > 0:
@@ -424,7 +436,7 @@ class Combat:
         
         """
         start_time = time.time()
-        timeout_time = 2
+        timeout_time = 5
         while True:
 
             orange_pixel = pyautogui.pixelMatchesColor(
@@ -484,19 +496,19 @@ class Combat:
         pyautogui.moveTo(spell_coordinates[0], 
                          spell_coordinates[1], 
                          duration=0.15)
-        time.sleep(0.15)
+        time.sleep(0.65)
         pyautogui.click()
         pyautogui.moveTo(cast_coordinates[0], 
                          cast_coordinates[1], 
                          duration=0.15)
-        time.sleep(0.15)
+        time.sleep(0.65)
         pyautogui.click()
         # Moving mouse off of character so that his information
         # doesn't block spell bar. If omitted, may mess up spell
         # detection in 'Bot.__fighting_cast_spells()'.
         pyautogui.moveTo(574, 749)
         # Giving time for spell animation to finish.
-        time.sleep(0.65)
+        time.sleep(1)
 
     @staticmethod
     def hide_models():

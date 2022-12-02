@@ -38,6 +38,9 @@ class Banking:
             - Change 'BotState' to 'MOVING'.
 
         """
+        cls.map_coords = state.Controller.map_coords
+        cls.data_map = state.Controller.data_map
+
         while True:
 
             if not cls.__recall_potion_used:

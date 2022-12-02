@@ -19,6 +19,7 @@ class Controller:
     data_map = None
     data_hunting = None
     data_banking = None
+    data_monsters = None
     official_version = None
     fight_counter = 0
 
@@ -29,7 +30,6 @@ class Controller:
     @classmethod
     def controller(cls):
         """Set bot state according to situation."""
-
         if cls.official_version:
             pu.PopUp.close_right_click_menu()
             if not state.Initializing.in_group():
