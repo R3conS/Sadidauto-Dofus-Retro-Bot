@@ -28,32 +28,51 @@ class Hunting:
     @classmethod
     def hunting(cls):
         """'HUNTING' state logic."""
-        cls.map_coords = state.Controller.map_coords
-        cls.data_monsters = state.Controller.data_monsters
-
         log.info(f"Hunting on map ({cls.map_coords}) ... ")
 
         chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 4)
+        start_time = time.time()
+        timeout = 90
 
-        for chunk_number, chunk in chunks.items():
+        while time.time() - start_time < timeout:
 
-            _, obj_coords = cls.__search(cls.data_monsters, chunk)
+            for chunk_number, chunk in chunks.items():
 
-            if len(obj_coords) > 0:
+                log.debug(f"Searching chunk: {chunk_number} ... ")
+                _, obj_coords = cls.__search(cls.data_monsters, chunk)
 
-                attack = cls.__attack(obj_coords)
+                if len(obj_coords) > 0:
 
-                if attack == "success":
-                    cls.__state = BotState.PREPARING
-                    return cls.__state
+                    attack = cls.__attack(obj_coords)
 
-                elif attack == "map_change":
+                    if attack == "success":
+                        cls.__state = BotState.PREPARING
+                        return cls.__state
+
+                    elif attack == "map_change":
+                        cls.__state = BotState.CONTROLLER
+                        return cls.__state
+
+                    elif attack == "sword":
+                        log.debug(f"Breaking out of search loop to start from "
+                                  "chunk 0 ... ")
+                        break
+
+                    elif attack == "right_click_menu":
+                        log.debug(f"Breaking out of search loop to start from "
+                                  "chunk 0 ... ")
+                        break
+
+                # If all chunks have been searched through.
+                if chunk_number + 1 == len(chunks.keys()):
+                    log.info(f"Map ({cls.map_coords}) is clear!")
+                    state.Controller.map_searched = True
                     cls.__state = BotState.CONTROLLER
                     return cls.__state
-                
-            if chunk_number + 1 == len(chunks.keys()):
-                log.info(f"Map ({cls.map_coords}) is clear!")
-                state.Controller.map_searched = True
+
+        else:
+            log.error(f"Timed out in 'hunting()'!")
+            if state.Moving.emergency_teleport():
                 cls.__state = BotState.CONTROLLER
                 return cls.__state
 
@@ -76,7 +95,7 @@ class Hunting:
         
         """
         wait_after_attacking = 6
-        attempts_allowed = 1
+        attempts_allowed = 3
         attempts_total = 0
 
         if len(monster_coords) < attempts_allowed:
@@ -91,8 +110,8 @@ class Hunting:
 
             # Checking if monster was attacked by other player.
             if cls.__check_sword((x, y)):
-                log.info(f"Monster at {x, y} was attacked by someone else!")
-                log.info(f"Failed to attack monster at: {x, y}!")
+                log.info(f"Failed to attack monster at {x, y} because it was "
+                         "attacked by someone else!")
                 return "sword"
 
             log.info(f"Attacking monster at: {x, y} ... ")
@@ -100,9 +119,10 @@ class Hunting:
             time.sleep(0.25)
             pyag.click(button="right")
 
+            # Checking if monster moved.
             if cls.__check_right_click_menu():
-                log.info(f"Monster at {x, y} moved!")
-                log.info(f"Failed to attack monster at: {x, y}!")
+                log.info(f"Failed to attack monster at {x, y} because it "
+                         "moved!")
                 return "right_click_menu"
             
             attack_time = time.time()
@@ -240,7 +260,7 @@ class Hunting:
         sc = wc.WindowCapture.gamewindow_capture()
         rects = dtc.Detection.find(sc, 
                                    data.images.Interface.right_click_menu,
-                                   threshold=0.7)
+                                   threshold=0.6)
         if len(rects) > 0:
             return True
         else:
@@ -267,12 +287,12 @@ class Hunting:
         """
         path = data.images.Combat.path
         swords = [data.images.Combat.a_sword, data.images.Combat.m_sword]
-        sc = wc.WindowCapture.area_around_mouse_capture(85, coordinates)
+        sc = wc.WindowCapture.area_around_mouse_capture(60, coordinates)
         img_data = dtc.Detection.generate_image_data(swords, path)
         _, coords = dtc.Detection.detect_objects_with_masks(
                 img_data,
                 swords,
                 sc,
-                threshold=0.967
+                threshold=0.958
             )
         return coords

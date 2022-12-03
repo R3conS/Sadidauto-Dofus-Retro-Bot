@@ -19,7 +19,6 @@ class Controller:
     data_map = None
     data_hunting = None
     data_banking = None
-    data_monsters = None
     official_version = None
     fight_counter = 0
 
@@ -100,3 +99,4 @@ class Controller:
         state.Fighting.map_coords = data
         state.Moving.map_coords = data
         state.Preparing.map_coords = data
+        state.Hunting.map_coords = data

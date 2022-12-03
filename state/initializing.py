@@ -117,15 +117,16 @@ class Initializing:
             state.Controller.data_hunting = hunting
             state.Controller.data_banking = \
                     data.scripts.astrub_forest.Banking.data
-            state.Controller.data_monsters = dtc.Detection.generate_image_data(
+            state.Controller.official_version = cls.official_version
+
+            state.Hunting.data_monsters = dtc.Detection.generate_image_data(
                     data.images.monster.AstrubForest.img_list,
                     data.images.monster.AstrubForest.img_path
                 )
-            # state.Controller.data_monsters = dtc.Detection.generate_image_data(
+            # state.Hunting.data_monsters = dtc.Detection.generate_image_data(
             #         image_list=["test_1.png"],
             #         image_path="data\\images\\test\\monster_images\\"
             #     )
-            state.Controller.official_version = cls.official_version
 
             cbt.Combat.data_spell_cast = data.scripts.astrub_forest.Cast.data
             cbt.Combat.data_movement = data.scripts.astrub_forest.Movement.data
