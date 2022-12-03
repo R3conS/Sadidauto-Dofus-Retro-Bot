@@ -24,6 +24,7 @@ class Controller:
 
     # Private class attributes.
     __state = None
+    __character_overloaded = None
     __pod_limit = 90
 
     @classmethod

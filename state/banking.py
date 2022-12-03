@@ -41,12 +41,17 @@ class Banking:
 
         while True:
 
-            if not cls.__recall_potion_used:
+            if not cls.__recall_potion_used and cls.map_coords == "4,-19":
+                cls.__recall_potion_used = True
+                cls.__state = BotState.CONTROLLER
+                return cls.__state
+
+            elif not cls.__recall_potion_used:
                 if bank.Bank.recall_potion() == "available":
-                    cls.use_recall_potion(cls.data_map)
-                    cls.__recall_potion_used = True
-                else:
-                    cls.__recall_potion_used = True
+                    cls.recall(cls.data_map)
+                cls.__recall_potion_used = True
+                cls.__state = BotState.CONTROLLER
+                return cls.__state
 
             elif cls.map_coords == "4,-16":
                 if cls.__astrub_bank():
@@ -59,9 +64,9 @@ class Banking:
                 return cls.__state
 
     @classmethod
-    def use_recall_potion(cls, database):
+    def recall(cls, database):
         """
-        Use 'Recall Potion'.
+        Use 'Recall Potion' and check if successfully teleported.
         
         Make sure that an appropriate Zaap is saved on character. 
         For example, when using 'Astrub Forest' script, Astrub's Zaap 

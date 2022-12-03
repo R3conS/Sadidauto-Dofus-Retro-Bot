@@ -64,7 +64,9 @@ class Moving:
         else:
             log.error(f"Failed to change maps in {attempts_allowed} "
                       "attempts!")
-            cls.__recovery_emergency_teleport()
+            if cls.emergency_teleport():
+                cls.__state = BotState.CONTROLLER
+                return cls.__state
 
     @classmethod
     def get_coordinates(cls, database):
@@ -93,7 +95,7 @@ class Moving:
         wait_before_detecting = 0.35
         # Loop control variables.
         start_time = time.time()
-        timeout = 30
+        timeout = 15
 
         while time.time() - start_time < timeout:
 
@@ -135,12 +137,12 @@ class Moving:
                 return coords
             else:
                 log.error(f"Map ({coords}) doesn't exist in database!")
-                cls.__recovery_emergency_teleport()
+                cls.emergency_teleport()
 
         else:
             log.error("Error in 'get_coordinates()'!")
             log.error(f"Exceeded detection limit of {timeout} second(s)!")
-            cls.__recovery_emergency_teleport()
+            cls.emergency_teleport()
 
     @classmethod
     def get_map_type(cls, database, map_coordinates):
@@ -301,22 +303,24 @@ class Moving:
             return False
 
     @classmethod
-    def __recovery_emergency_teleport(cls):
+    def emergency_teleport(cls):
         """Teleport using 'Recall Potion' when stuck somewhere."""
         pu.PopUp.deal()
 
-        if cls.__emergency_teleports >= 3:
+        if cls.__emergency_teleports >= 2:
             log.info(f"Emergency teleport limit exceeded!")
             log.info(f"Exiting ... ")
             wc.WindowCapture.on_exit_capture()
+
         elif bank.Bank.recall_potion() == "available":
             cls.__emergency_teleports += 1
-            log.debug(f"Emergency teleports: {cls.__emergency_teleports}")
-            if state.Banking.use_recall_potion(cls.data_map):
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
+
+            if state.Banking.recall(cls.data_map):
+                return True
             else:
                 log.info(f"Failed to use 'Recall Potion'!")
+
         else:
             wc.WindowCapture.on_exit_capture()
 
