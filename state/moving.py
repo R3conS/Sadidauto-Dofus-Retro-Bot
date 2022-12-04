@@ -183,12 +183,9 @@ class Moving:
             Screenshot of coordinates on the minimap.
 
         """
-        # Moving mouse over the red area on the minimap for the black 
-        # map tooltip to appear.
-        pyag.moveTo(517, 680)
         # Waiting makes overall performance better because of less
-        # screenshots. Also gives time for map tooltip to appear.
-        time.sleep(1)
+        # screenshots.
+        time.sleep(0.25)
         screenshot = wc.WindowCapture.custom_area_capture(
                 capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
@@ -196,9 +193,6 @@ class Moving:
                 scale_width=100,
                 scale_height=100
             )
-        # Moving mouse off the red area on the minimap in case a new 
-        # screenshot is required for another detection.
-        pyag.move(20, 0)
 
         return screenshot
 
@@ -226,13 +220,6 @@ class Moving:
             If map was changed successfully.
 
         """
-        # Time to wait for map to load after a successful map change. 
-        # Determines how long script will wait after character moves to 
-        # a new map. The lower the number, the higher the chance that on 
-        # a slower machine 'SEARCHING' state will act too fast & try to 
-        # search for monsters on a black "LOADING MAP" screen. This wait 
-        # time allows the black loading screen to disappear.
-        wait_map_loading = 2
         sc_minimap_needle = cls.screenshot_minimap()
         minimap_rects = dtc.Detection.find(sc_minimap,
                                            sc_minimap_needle,
@@ -240,9 +227,13 @@ class Moving:
 
         # If screenshots are different.
         if len(minimap_rects) <= 0:
-            time.sleep(wait_map_loading)
-            log.info("Map changed successfully!")
-            return True
+            if not cls.__wait_map_change():
+                log.info("Map changed successfully!")
+                return True
+            else:
+                log.error("Failed to detect end of loading screen, but map "
+                          "was still changed!")
+                return True
 
     @classmethod
     def __change_map(cls, database, map_coords):
@@ -413,3 +404,26 @@ class Moving:
             return False
 
         return True
+
+    @staticmethod
+    def __wait_map_change():
+        """Detect black pixels on specified coordinates."""
+        color = [0, 0, 0]
+        coords = [(529, 491), (531, 429), (364, 419), (691, 424)]
+        pixels = []
+        start_time = time.time()
+        timeout = 5
+
+        while time.time() - start_time < timeout:
+
+            for coord in coords:
+                px = pyag.pixelMatchesColor(coord[0], coord[1], color)
+                pixels.append(px)
+
+            if all(pixels):
+                return True
+            else:
+                return False
+
+        else:
+            return False
