@@ -37,12 +37,13 @@ class Moving:
         while attempts_total < attempts_allowed:
 
             if cls.__change_map(cls.data_map, cls.map_coords):
-                state.Controller.map_searched = False
-                cls.__state = BotState.CONTROLLER
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
                 # and good to go.
                 cls.__emergency_teleports = 0
+                state.Controller.map_searched = False
+                state.Controller.map_changed = True
+                cls.__state = BotState.CONTROLLER
                 return cls.__state
 
             else:

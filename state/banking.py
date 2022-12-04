@@ -84,6 +84,7 @@ class Banking:
 
             if cls.map_coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")
+                state.Controller.map_changed = True
                 return True
 
         else:

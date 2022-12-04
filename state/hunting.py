@@ -175,6 +175,7 @@ class Hunting:
                                    threshold=0.98)
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
+            state.Controller.map_changed = True
             return True
 
     @staticmethod
