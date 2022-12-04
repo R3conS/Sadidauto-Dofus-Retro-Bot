@@ -224,12 +224,15 @@ class Moving:
         minimap_rects = dtc.Detection.find(sc_minimap,
                                            sc_minimap_needle,
                                            threshold=0.99)
+        start_time = time.time()
+        timeout = 5
 
         # If screenshots are different.
         if len(minimap_rects) <= 0:
-            if not cls.__wait_map_change():
-                log.info("Map changed successfully!")
-                return True
+            while time.time() - start_time < timeout:
+                if not cls.__loading_screen():
+                    log.info("Map changed successfully!")
+                    return True
             else:
                 log.error("Failed to detect end of loading screen, but map "
                           "was still changed!")
@@ -406,24 +409,17 @@ class Moving:
         return True
 
     @staticmethod
-    def __wait_map_change():
+    def __loading_screen():
         """Detect black pixels on specified coordinates."""
         color = [0, 0, 0]
         coords = [(529, 491), (531, 429), (364, 419), (691, 424)]
         pixels = []
-        start_time = time.time()
-        timeout = 5
 
-        while time.time() - start_time < timeout:
+        for coord in coords:
+            px = pyag.pixelMatchesColor(coord[0], coord[1], color)
+            pixels.append(px)
 
-            for coord in coords:
-                px = pyag.pixelMatchesColor(coord[0], coord[1], color)
-                pixels.append(px)
-
-            if all(pixels):
-                return True
-            else:
-                return False
-
+        if all(pixels):
+            return True
         else:
             return False
