@@ -215,9 +215,12 @@ class Fighting:
                     else:
                         get_char_pos = False
 
-                cbt.Combat.cast_spell(spell, spell_coords, cast_coords)
-                cast_times += 1
-                break
+                if cbt.Combat.cast_spell(spell, spell_coords, cast_coords):
+                    cast_times += 1
+                    break
+                else:
+                    cast_times += 1
+                    break 
 
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")

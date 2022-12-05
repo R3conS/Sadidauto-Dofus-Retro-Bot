@@ -121,7 +121,7 @@ class Hunting:
             If failed to attack monster `attempts_allowed` times.
         
         """
-        wait_after_attacking = 6
+        wait_after_attacking = 9
         attempts_allowed = 3
         attempts_total = 0
 
