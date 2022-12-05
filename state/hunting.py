@@ -31,7 +31,7 @@ class Hunting:
         log.info(f"Hunting on map ({cls.map_coords}) ... ")
 
         # Chunks of monsters to search through.
-        chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 4)
+        chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 14)
         # Stores chunks of monsters on which character failed an attack
         # >= 'fails_allowed' times.
         forbidden_chunks = []
@@ -42,7 +42,7 @@ class Hunting:
         fails_allowed = 3
         # How many mmonster detections from a single chunk are allowed 
         # before considering the whole detection list 'False'.
-        allowed_detections = 6
+        allowed_detections = 9
         # Loop control variables.
         start_time = time.time()
         timeout = 90
@@ -130,10 +130,11 @@ class Hunting:
 
         for i in range(0, attempts_allowed):
 
-            pu.PopUp.deal()
-            scs_before_attack = state.Moving.screenshot_minimap()
-
             x, y = monster_coords[i]
+
+            # Taking a screenshot that is used later to determine
+            # whether map was accidentally changed during attack.
+            scs_before_attack = state.Moving.screenshot_minimap()
 
             # Checking if monster was attacked by other player.
             if cls.__check_sword((x, y)):
@@ -141,8 +142,12 @@ class Hunting:
                          "attacked by someone else!")
                 return "sword"
 
+            # Check if distrubed by another player before attacking.
+            if pu.PopUp.detect_offers():
+                pu.PopUp.deal()
+
             log.info(f"Attacking monster at: {x, y} ... ")
-            pyag.moveTo(x, y, duration=0.15)
+            pyag.moveTo(x, y)
             pyag.click(button="right")
 
             # Checking if monster moved.
@@ -172,6 +177,9 @@ class Hunting:
 
                 log.info(f"Failed to attack monster at: {x, y}!")
                 attempts_total += 1
+
+                # Dealing with any pop ups before continuing.
+                pu.PopUp.deal()
 
                 if cls.__accidental_map_change(scs_before_attack):
                     return "map_change"

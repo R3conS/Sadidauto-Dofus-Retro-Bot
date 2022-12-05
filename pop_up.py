@@ -105,7 +105,7 @@ class PopUp:
             # Closing accidental mouse right-click menus.
             cls.close_right_click_menu()
             # Detecting offers.
-            offers = cls.__detect_offers()
+            offers = cls.detect_offers()
 
             if offers and ignore_attempts <= ignore_attempts_allowed:
 
@@ -268,34 +268,9 @@ class PopUp:
         """Close right mouse click menu."""
         pyautogui.moveTo(929, 51)
         pyautogui.click(clicks=2)
-        time.sleep(0.1)
-
-    @classmethod
-    def __ignore_for_session(cls):
-        """Select 'Ignore for this session' during popup."""
-        log.info("Ignoring player ... ")
-
-        x, y = (466, 387)
-        start_time = time.time()
-        wait_time = 3
-
-        while time.time() - start_time < wait_time:
-
-            popup = cls.__detect_offers()
-
-            if popup:
-                pyautogui.moveTo(x, y, duration=0.15)
-                pyautogui.click()
-            else:
-                log.info("Added player to ignore!")
-                return True
-        
-        else:
-            log.error(f"Failed to add to ignore in {wait_time} seconds!")
-            return False
 
     @staticmethod
-    def __detect_offers():
+    def detect_offers():
         """Detect exchange, challenge offers & guild, group invites."""
         dark_gray = (81, 74, 60)
         light_gray = (213, 207, 170)
@@ -318,6 +293,30 @@ class PopUp:
         if counter == len(pixels):
             return True
         else:
+            return False
+
+    @classmethod
+    def __ignore_for_session(cls):
+        """Select 'Ignore for this session' during popup."""
+        log.info("Ignoring player ... ")
+
+        x, y = (466, 387)
+        start_time = time.time()
+        wait_time = 3
+
+        while time.time() - start_time < wait_time:
+
+            popup = cls.detect_offers()
+
+            if popup:
+                pyautogui.moveTo(x, y, duration=0.15)
+                pyautogui.click()
+            else:
+                log.info("Added player to ignore!")
+                return True
+        
+        else:
+            log.error(f"Failed to add to ignore in {wait_time} seconds!")
             return False
 
     @staticmethod

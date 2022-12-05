@@ -96,25 +96,25 @@ class Moving:
             If detected map doesn't exist in database.
 
         """
-        # Giving time for black tooltip that shows map coordinates to
-        # appear. Otherwise on a slower machine the program might take a
-        # screenshot too fast resulting in an image with no coordinates
-        # to detect.
-        wait_before_detecting = 0.35
+        # Taking screenshot of coordinate are to help determine if 
+        # map tooltip appears later in the script.
+        coord_area = cls.__screenshot_coordinate_area()
         # Loop control variables.
         start_time = time.time()
         timeout = 15
 
         while time.time() - start_time < timeout:
 
-            # Checking for offers/interfaces and closing them.
-            pu.PopUp.deal()
+            log.info(f"Getting map coordinates ... ")
 
-            # Get a screenshot of coordinates on minimap. Moving mouse
-            # over the red area on the minimap for the black map tooltip
-            # to appear.
+            # Moving mouse over the red area on the minimap for the 
+            # black map tooltip to appear.
             pyag.moveTo(517, 680)
-            time.sleep(wait_before_detecting)
+
+            # If map tooltip didn't appear - restart loop.
+            if not cls.__detect_map_tooltip(coord_area):
+                continue
+                
             screenshot = wc.WindowCapture.custom_area_capture(
                     capture_region=(525, 650, 45, 30),
                     conversion_code=cv.COLOR_RGB2GRAY,
@@ -139,6 +139,8 @@ class Moving:
                         if coords[index-1].isdigit():
                             coords = coords[:index] + "," + coords[index:]
             except IndexError:
+                # Dealing with any offers/interfaces before retrying.
+                pu.PopUp.deal()
                 continue
 
             if cls.__check_if_map_in_database(coords, database):
@@ -213,9 +215,6 @@ class Moving:
             Screenshot of coordinates on the minimap.
 
         """
-        # Waiting makes overall performance better because of less
-        # screenshots.
-        time.sleep(0.25)
         screenshot = wc.WindowCapture.custom_area_capture(
                 capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
@@ -223,7 +222,6 @@ class Moving:
                 scale_width=100,
                 scale_height=100
             )
-
         return screenshot
 
     @classmethod
@@ -318,6 +316,44 @@ class Moving:
         # Checking if map was changed.
         if cls.__detect_if_map_changed():
             return True
+        else:
+            return False
+
+    @classmethod
+    def __detect_map_tooltip(cls, screenshot_before):
+        """
+        Detect map tooltip on minimap.
+        
+        Parameters
+        ----------
+        screenshot_before : np.ndarray
+            Image to compare against. Prefferably taken with
+            '__screenshot_coordinate_area()'.
+
+        Returns
+        ----------
+        True : bool
+            If map tooltip detected.
+        False : bool
+            If failed to detect map tooltip.
+        
+        """
+        start_time = time.time()
+        timeout = 3
+
+        while time.time() - start_time < timeout:
+
+            screenshot_after = cls.__screenshot_coordinate_area()
+
+            rects = dtc.Detection.find(
+                    screenshot_before, 
+                    screenshot_after,
+                    threshold = 0.985
+                )
+
+            if len(rects) <= 0:
+                return True
+
         else:
             return False
 
@@ -425,3 +461,19 @@ class Moving:
             return True
         else:
             return False
+
+    @staticmethod
+    def __screenshot_coordinate_area():
+        """
+        Screenshot area where map tooltip has to appear when mouse
+        is hovered over red area on minimap.
+
+        """
+        screenshot = wc.WindowCapture.custom_area_capture(
+                capture_region=(525, 650, 45, 30),
+                conversion_code=cv.COLOR_RGB2GRAY,
+                interpolation_flag=cv.INTER_LINEAR,
+                scale_width=160,
+                scale_height=200
+            )
+        return screenshot
