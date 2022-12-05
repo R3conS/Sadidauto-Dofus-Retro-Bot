@@ -268,9 +268,9 @@ class Fighting:
                         return True
                     else:
                         log.info("Closing 'Fight Results' window ... ")
-                        pyag.moveTo(x=close_button[0][0],
-                                         y=close_button[0][1],
-                                         duration=0.15)
+                        pyag.moveTo(close_button[0][0],
+                                    close_button[0][1],
+                                    duration=0.15)
                         pyag.click()
                         # Moving mouse off the 'Close' button in case it 
                         # needs to be detected again.

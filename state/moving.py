@@ -348,7 +348,7 @@ class Moving:
             rects = dtc.Detection.find(
                     screenshot_before, 
                     screenshot_after,
-                    threshold = 0.985
+                    threshold = 0.99
                 )
 
             if len(rects) <= 0:
@@ -470,7 +470,7 @@ class Moving:
 
         """
         screenshot = wc.WindowCapture.custom_area_capture(
-                capture_region=(525, 650, 45, 30),
+                capture_region=(525, 650, 20, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
                 interpolation_flag=cv.INTER_LINEAR,
                 scale_width=160,
