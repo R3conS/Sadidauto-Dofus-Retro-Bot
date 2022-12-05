@@ -36,6 +36,24 @@ class Moving:
 
         while attempts_total < attempts_allowed:
 
+            if cls.map_coords == "1,-25":
+
+                if cls.__detect_lumberjack_ws_interior():
+                    log.info("Trying to exit the workshop ... ")
+                    pyag.keyDown('e')
+                    pyag.moveTo(667, 507)
+                    pyag.click()
+                    pyag.keyUp('e')
+                    
+                    if cls.__detect_if_map_changed():
+                        log.info("Successfuly exited the workshop!")
+                        cls.__state = BotState.CONTROLLER
+                        return cls.__state
+                    else:
+                        log.error(f"Failed to exit the workshop!")
+                        attempts_total += 1
+                        continue
+
             if cls.__change_map(cls.data_map, cls.map_coords):
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
@@ -45,20 +63,9 @@ class Moving:
                 state.Controller.map_changed = True
                 cls.__state = BotState.CONTROLLER
                 return cls.__state
-
             else:
-
                 pu.PopUp.deal()
-                attempts_total += 1
-
-                if cls.map_coords == "1,-25":
-                    if cls.__detect_lumberjack_ws_interior():
-                        pyag.keyDown('e')
-                        pyag.moveTo(667, 507)
-                        pyag.click()
-                        pyag.keyUp('e')
-                        time.sleep(3)
-                    
+                attempts_total += 1     
                 cls.map_coords = cls.get_coordinates(cls.data_map)
                 continue
 
@@ -135,6 +142,7 @@ class Moving:
                 continue
 
             if cls.__check_if_map_in_database(coords, database):
+                log.info(f"Character is currently on map ({coords})!")
                 return coords
             else:
                 log.error(f"Map ({coords}) doesn't exist in database!")
@@ -169,6 +177,28 @@ class Moving:
                     map_type = i_value["map_type"]
                     return map_type
 
+    @classmethod
+    def emergency_teleport(cls):
+        """Teleport using 'Recall Potion' when stuck somewhere."""
+        pu.PopUp.deal()
+
+        if cls.__emergency_teleports >= 2:
+            log.info(f"Emergency teleport limit exceeded!")
+            log.info(f"Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
+
+        elif bank.Bank.recall_potion() == "available":
+            cls.__emergency_teleports += 1
+            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
+
+            if state.Banking.recall(cls.data_map):
+                return True
+            else:
+                log.info(f"Failed to use 'Recall Potion'!")
+
+        else:
+            wc.WindowCapture.on_exit_capture()
+
     @staticmethod
     def screenshot_minimap():
         """
@@ -197,46 +227,47 @@ class Moving:
         return screenshot
 
     @classmethod
-    def __detect_if_map_changed(cls, sc_minimap):
-        """
-        Check if map was changed successfully.
+    def __detect_if_map_changed(cls):
+        """Check if map was changed successfully."""
+        # How long to keep checking if map was changed.
+        wait_map_change = 10
+        if cls.__loading_screen(wait_map_change):
+            log.info(f"Map changed successfully!")
+            return True
+        else:
+            log.error(f"Failed to change maps!")
+            return False
 
-        Logic
-        ----------
-        - Take screenshot of minimap.
-        - Compare `sc_minimap` against locally taken screenshot of 
-        minimap.
-        - If images are different, means map changed succesfully:
-            - Return `True`.
-
-        Parameters
-        ----------
-        sc_minimap : np.ndarray
-            Screenshot of minimap.
-
-        Returns
-        ----------
-        True : bool
-            If map was changed successfully.
-
-        """
-        sc_minimap_needle = cls.screenshot_minimap()
-        minimap_rects = dtc.Detection.find(sc_minimap,
-                                           sc_minimap_needle,
-                                           threshold=0.99)
+    @classmethod
+    def __loading_screen(cls, wait_time):
+        """Detect beginning and end of 'Loading Map' screen."""
         start_time = time.time()
-        timeout = 5
 
-        # If screenshots are different.
-        if len(minimap_rects) <= 0:
-            while time.time() - start_time < timeout:
-                if not cls.__loading_screen():
-                    log.info("Map changed successfully!")
-                    return True
+        while time.time() - start_time < wait_time:
+
+            if cls.__detect_black_pixels():
+                log.debug("'Loading Map' screen detected!'")
+
+                while time.time() - start_time < wait_time:
+
+                    if not cls.__detect_black_pixels():
+                        log.debug("Finished loading!")
+                        return True
+                    else:
+                        continue
+
+                else:
+                    log.error("Failed to detect end of 'Loading Map' screen "
+                              f"in {wait_time} second(s)!")
+                    return False
+
             else:
-                log.error("Failed to detect end of loading screen, but map "
-                          "was still changed!")
-                return True
+                continue
+
+        else:
+            log.error(f"Failed to detect 'Loading Map' screen in {wait_time} "
+                      "second(s)!")
+            return False
 
     @classmethod
     def __change_map(cls, database, map_coords):
@@ -268,8 +299,6 @@ class Moving:
             If map change was unsuccessful.
 
         """
-        # How long to keep checking if map was changed.
-        wait_change_map = 10
         # Time to wait before clicking on yellow 'sun' to change maps.
         # Must wait when moving in 'bottom' direction, because 'Dofus' 
         # GUI blocks the sun otherwise.
@@ -287,37 +316,10 @@ class Moving:
         pyag.keyUp('e')
 
         # Checking if map was changed.
-        start_time = time.time()
-        sc_mm = cls.screenshot_minimap()
-        
-        while time.time() - start_time < wait_change_map:
-            if cls.__detect_if_map_changed(sc_mm):
-                return True
+        if cls.__detect_if_map_changed():
+            return True
         else:
-            log.error("Failed to change maps!")
             return False
-
-    @classmethod
-    def emergency_teleport(cls):
-        """Teleport using 'Recall Potion' when stuck somewhere."""
-        pu.PopUp.deal()
-
-        if cls.__emergency_teleports >= 2:
-            log.info(f"Emergency teleport limit exceeded!")
-            log.info(f"Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
-
-        elif bank.Bank.recall_potion() == "available":
-            cls.__emergency_teleports += 1
-            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
-
-            if state.Banking.recall(cls.data_map):
-                return True
-            else:
-                log.info(f"Failed to use 'Recall Potion'!")
-
-        else:
-            wc.WindowCapture.on_exit_capture()
 
     @staticmethod
     def __detect_lumberjack_ws_interior():
@@ -409,7 +411,7 @@ class Moving:
         return True
 
     @staticmethod
-    def __loading_screen():
+    def __detect_black_pixels():
         """Detect black pixels on specified coordinates."""
         color = [0, 0, 0]
         coords = [(529, 491), (531, 429), (364, 419), (691, 424)]

@@ -30,7 +30,20 @@ class Hunting:
         """'HUNTING' state logic."""
         log.info(f"Hunting on map ({cls.map_coords}) ... ")
 
+        # Chunks of monsters to search through.
         chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 4)
+        # Stores chunks of monsters on which character failed an attack
+        # >= 'fails_allowed' times.
+        forbidden_chunks = []
+        # Counts how many times an attack on monster was failed.
+        fails_total = 0
+        # How many failed attempts to attack a monster on a specific
+        # 'chunk' are allowed.
+        fails_allowed = 3
+        # How many mmonster detections from a single chunk are allowed 
+        # before considering the whole detection list 'False'.
+        allowed_detections = 6
+        # Loop control variables.
         start_time = time.time()
         timeout = 90
 
@@ -38,8 +51,21 @@ class Hunting:
 
             for chunk_number, chunk in chunks.items():
 
+                if chunk_number in forbidden_chunks:
+                    if len(chunks) == len(forbidden_chunks):
+                        state.Controller.map_searched = True
+                        cls.__state = BotState.CONTROLLER
+                        return cls.__state
+                    else:
+                        continue
+
                 log.debug(f"Searching chunk: {chunk_number} ... ")
                 _, obj_coords = cls.__search(cls.data_monsters, chunk)
+
+                if len(obj_coords) > allowed_detections:
+                    log.debug(f"Too many detections, most likely false ... ")
+                    forbidden_chunks.append(chunk_number)
+                    continue
 
                 if len(obj_coords) > 0:
 
@@ -53,14 +79,15 @@ class Hunting:
                         cls.__state = BotState.CONTROLLER
                         return cls.__state
 
-                    elif attack == "sword":
-                        log.debug(f"Breaking out of search loop to start from "
-                                  "chunk 0 ... ")
-                        break
-
-                    elif attack == "right_click_menu":
-                        log.debug(f"Breaking out of search loop to start from "
-                                  "chunk 0 ... ")
+                    elif attack == "sword" or "right_click_menu":
+                        fails_total += 1
+                        if fails_total >= fails_allowed:
+                            log.debug("Too many failed attack attemps on chunk"
+                                      f" {chunk_number}!")
+                            log.debug(f"Adding {chunk_number} to forbidden "
+                                      "chunks!")
+                            forbidden_chunks.append(chunk_number)
+                            fails_total = 0
                         break
 
                 # If all chunks have been searched through.
@@ -116,7 +143,6 @@ class Hunting:
 
             log.info(f"Attacking monster at: {x, y} ... ")
             pyag.moveTo(x, y, duration=0.15)
-            time.sleep(0.25)
             pyag.click(button="right")
 
             # Checking if monster moved.
