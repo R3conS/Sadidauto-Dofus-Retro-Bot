@@ -126,7 +126,7 @@ class Moving:
             if not cls.__detect_map_tooltip(coord_area):
                 continue
             else:
-                log.info(f"Map tooltip detected!")
+                log.debug(f"Map tooltip detected!")
                 
             screenshot = wc.WindowCapture.custom_area_capture(
                     capture_region=(525, 650, 45, 30),
@@ -199,22 +199,55 @@ class Moving:
         """Teleport using 'Recall Potion' when stuck somewhere."""
         pu.PopUp.deal()
 
-        if cls.__emergency_teleports >= 2:
-            log.info(f"Emergency teleport limit exceeded!")
-            log.info(f"Exiting ... ")
+        if cls.__emergency_teleports >= 3:
+            log.critical(f"Emergency teleport limit exceeded!")
+            log.critical(f"Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-        elif bank.Bank.recall_potion() == "available":
+        elif state.Banking.recall_potion_available():
+
             cls.__emergency_teleports += 1
             log.info(f"Emergency teleports: {cls.__emergency_teleports}")
 
-            if state.Banking.recall(cls.data_map):
+            if state.Banking.recall():
+                log.info("Emergency teleport successful!")
                 return True
             else:
-                log.info(f"Failed to use 'Recall Potion'!")
+                log.error(f"Emergency teleport failed!")
 
         else:
             wc.WindowCapture.on_exit_capture()
+
+    @classmethod
+    def loading_screen(cls, wait_time):
+        """Detect beginning and end of 'Loading Map' screen."""
+        start_time = time.time()
+
+        while time.time() - start_time < wait_time:
+
+            if cls.__detect_black_pixels():
+                log.debug("'Loading Map' screen detected!'")
+
+                while time.time() - start_time < wait_time:
+
+                    if not cls.__detect_black_pixels():
+                        log.debug("Finished loading!")
+                        return True
+                    else:
+                        continue
+
+                else:
+                    log.error("Failed to detect end of 'Loading Map' screen "
+                              f"in {wait_time} second(s)!")
+                    return False
+
+            else:
+                continue
+
+        else:
+            log.error(f"Failed to detect 'Loading Map' screen in {wait_time} "
+                      "second(s)!")
+            return False
 
     @staticmethod
     def screenshot_minimap():
@@ -244,42 +277,11 @@ class Moving:
         """Check if map was changed successfully."""
         # How long to keep checking if map was changed.
         wait_map_change = 10
-        if cls.__loading_screen(wait_map_change):
+        if cls.loading_screen(wait_map_change):
             log.info(f"Map changed successfully!")
             return True
         else:
             log.error(f"Failed to change maps!")
-            return False
-
-    @classmethod
-    def __loading_screen(cls, wait_time):
-        """Detect beginning and end of 'Loading Map' screen."""
-        start_time = time.time()
-
-        while time.time() - start_time < wait_time:
-
-            if cls.__detect_black_pixels():
-                log.debug("'Loading Map' screen detected!'")
-
-                while time.time() - start_time < wait_time:
-
-                    if not cls.__detect_black_pixels():
-                        log.debug("Finished loading!")
-                        return True
-                    else:
-                        continue
-
-                else:
-                    log.error("Failed to detect end of 'Loading Map' screen "
-                              f"in {wait_time} second(s)!")
-                    return False
-
-            else:
-                continue
-
-        else:
-            log.error(f"Failed to detect 'Loading Map' screen in {wait_time} "
-                      "second(s)!")
             return False
 
     @classmethod

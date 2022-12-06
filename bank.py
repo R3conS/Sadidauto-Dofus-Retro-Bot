@@ -12,6 +12,7 @@ import pyautogui
 import data
 import detection as dtc
 import pop_up as pu
+import state
 import window_capture as wc
 
 
@@ -42,10 +43,6 @@ class Bank:
         Close bank interface.
     inside_or_outside()
         Check if character is inside or outside Astrub bank.
-    recall_potion()
-        Check if 'Recall Potion' is available or not.
-    use_recall_potion()
-        Double click 'Recall Potion' in 'Items' bar.
 
     """
 
@@ -230,38 +227,6 @@ class Bank:
             return True
         else:
             return False
-
-    @staticmethod
-    def recall_potion():
-        """
-        Check if 'Recall Potion' is available or not.
-        
-        Make sure the potion is in first slot of second 'Item' row.
-
-        """
-        log.info("Checking if 'Recall Potion' is available ... ")
-        color = (120, 151, 154)
-        px = pyautogui.pixelMatchesColor(664, 725, color, tolerance=20)
-        if px:
-            log.info("'Recall Potion' is available!")
-            return "available"
-        else:
-            log.info("'Recall Potion' is not available!")
-            return "unavailable"
-
-    @staticmethod
-    def use_recall_potion():
-        """
-        Double click 'Recall Potion' in 'Items' bar.
-        
-        Make sure the potion is in first slot of second 'Items' row.
-
-        """
-        log.info("Using 'Recall Potion' ... ")
-        pyautogui.moveTo(664, 725, duration=0.15)
-        pyautogui.click(clicks=2, interval=0.1)
-        pyautogui.moveTo(929, 51)
-        time.sleep(3)
 
     @classmethod
     def __banker_detect_npc(cls):
