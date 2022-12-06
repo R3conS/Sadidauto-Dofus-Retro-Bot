@@ -26,7 +26,7 @@ class Controller:
     # Private class attributes.
     __state = None
     __character_overloaded = None
-    __pod_limit = 90
+    __pod_limit = 88
     __map_type = None
 
     @classmethod
@@ -35,7 +35,7 @@ class Controller:
         if cls.official_version:
             cls.__get_group_status()
 
-        if cls.fight_counter % 6 == 0:
+        if cls.fight_counter % 11 == 0:
             cls.__character_overloaded = cls.__get_pod_status()
 
         if cls.__character_overloaded:

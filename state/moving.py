@@ -99,9 +99,12 @@ class Moving:
         # Taking screenshot of coordinate are to help determine if 
         # map tooltip appears later in the script.
         coord_area = cls.__screenshot_coordinate_area()
+        # Stores if coordinate detection failed first time. Sometimes
+        # happens when Dofus is laggy. Especially in crowded areas.
+        detection_failed = False
         # Loop control variables.
         start_time = time.time()
-        timeout = 15
+        timeout = 20
 
         while time.time() - start_time < timeout:
 
@@ -111,9 +114,19 @@ class Moving:
             # black map tooltip to appear.
             pyag.moveTo(517, 680)
 
+            # If detection failed first time, then sleep for a second
+            # to allow time for map tooltip to appear. Usually first
+            # time detection fails when Dofus is laggy.
+            if detection_failed:
+                log.debug("Sleeping 1 second before detection to allow map " 
+                          "tooltip to appear ... ")
+                time.sleep(1)
+
             # If map tooltip didn't appear - restart loop.
             if not cls.__detect_map_tooltip(coord_area):
                 continue
+            else:
+                log.info(f"Map tooltip detected!")
                 
             screenshot = wc.WindowCapture.custom_area_capture(
                     capture_region=(525, 650, 45, 30),
@@ -139,8 +152,10 @@ class Moving:
                         if coords[index-1].isdigit():
                             coords = coords[:index] + "," + coords[index:]
             except IndexError:
+                log.error(f"Coordinate detection failed!")
                 # Dealing with any offers/interfaces before retrying.
                 pu.PopUp.deal()
+                detection_failed = True
                 continue
 
             if cls.__check_if_map_in_database(coords, database):
