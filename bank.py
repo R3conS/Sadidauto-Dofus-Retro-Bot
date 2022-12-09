@@ -12,7 +12,6 @@ import pyautogui
 import data
 import detection as dtc
 import pop_up as pu
-import state
 import window_capture as wc
 
 

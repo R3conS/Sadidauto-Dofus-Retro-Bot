@@ -124,6 +124,8 @@ class Moving:
 
             # If map tooltip didn't appear - restart loop.
             if not cls.__detect_map_tooltip(coord_area):
+                if pu.PopUp.detect_offers():
+                    pu.PopUp.deal()
                 continue
             else:
                 log.debug(f"Map tooltip detected!")
