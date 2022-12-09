@@ -79,7 +79,11 @@ class Hunting:
                         cls.__state = BotState.CONTROLLER
                         return cls.__state
 
-                    elif attack == "sword" or "right_click_menu":
+                    elif attack == "fail":
+                        forbidden_chunks.append(chunk_number)
+                        break
+
+                    elif attack == "sword" or attack == "right_click_menu":
                         fails_total += 1
                         if fails_total >= fails_allowed:
                             log.debug("Too many failed attack attemps on chunk"
@@ -122,7 +126,7 @@ class Hunting:
         
         """
         wait_after_attacking = 9
-        attempts_allowed = 3
+        attempts_allowed = 2
         attempts_total = 0
 
         if len(monster_coords) < attempts_allowed:
@@ -184,7 +188,7 @@ class Hunting:
                 if cls.__accidental_map_change(scs_before_attack):
                     return "map_change"
 
-                if (attempts_allowed == attempts_total):
+                if attempts_allowed == attempts_total:
                     return "fail"
 
     @classmethod
