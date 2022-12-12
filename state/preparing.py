@@ -401,7 +401,7 @@ class Preparing:
         """Click ready to start combat."""
         # Time to wait after clicking ready. How long to keep chacking 
         # if combat was started successfully.
-        wait_combat_start = 8
+        wait_combat_start = 9
         # 'Ready' button state.
         ready_button_clicked = False
         # Controls if clicking 'Ready' first time. Will click twice

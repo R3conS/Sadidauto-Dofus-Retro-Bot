@@ -5,6 +5,8 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 import time
 
+import pyautogui as pyag
+
 from .botstate_enum import BotState
 import bank
 import pop_up as pu
@@ -47,8 +49,11 @@ class Banking:
                 return cls.__state
 
             elif not cls.__recall_potion_used:
-                if bank.Bank.recall_potion() == "available":
-                    cls.recall(cls.data_map)
+                if cls.recall_potion_available():
+                    if cls.recall():
+                        log.info("Successfully recalled during banking state!")
+                    else:
+                        log.error("Failed to recall during banking state!")
                 cls.__recall_potion_used = True
                 cls.__state = BotState.CONTROLLER
                 return cls.__state
@@ -64,9 +69,9 @@ class Banking:
                 return cls.__state
 
     @classmethod
-    def recall(cls, database):
+    def recall(cls):
         """
-        Use 'Recall Potion' and check if successfully teleported.
+        Recall by using 'Recall Potion'.
         
         Make sure that an appropriate Zaap is saved on character. 
         For example, when using 'Astrub Forest' script, Astrub's Zaap 
@@ -74,21 +79,70 @@ class Banking:
 
         """
         use_time = time.time()
-        timeout = 15
+        timeout = 10
 
         while time.time() - use_time < timeout:
 
             pu.PopUp.deal()
-            bank.Bank.use_recall_potion()
-            cls.map_coords = state.Moving.get_coordinates(database)
 
-            if cls.map_coords == "4,-19":
+            if cls.__use_recall_potion():
+                log.info("Successfully recalled to save point!")
+                state.Controller.map_changed = True
+                return True
+            else:
+                continue
+
+        else:
+            log.error(f"Timed out in 'recall()!")
+            return False
+
+    @staticmethod
+    def recall_potion_available():
+        """
+        Check if 'Recall Potion' is available or not.
+        
+        Make sure the potion is in first slot of second 'Item' row.
+
+        """
+        log.info("Checking if 'Recall Potion' is available ... ")
+
+        color = (120, 151, 154)
+        px = pyag.pixelMatchesColor(664, 725, color, tolerance=20)
+
+        if px:
+            log.info("'Recall Potion' is available!")
+            return True
+        else:
+            log.info("'Recall Potion' is not available!")
+            return False
+
+    @classmethod
+    def __use_recall_potion(cls):
+        """
+        Double click 'Recall Potion' in 'Items' bar.
+        
+        Make sure the potion is in first slot of second 'Items' row.
+
+        """
+        log.info("Using 'Recall Potion' ... ")
+
+        pyag.moveTo(664, 725, duration=0.15)
+        pyag.click(clicks=2, interval=0.1)
+
+        if state.Moving.loading_screen(3):
+            log.info("Successfully used 'Recall Potion'!")
+            return True
+
+        else:
+            coords = state.Moving.get_coordinates(cls.data_map)
+
+            if coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")
                 return True
 
-        else:
-            log.error(f"Failed to use 'Recall Potion' in {timeout} seconds!")
-            return False
+            else:
+                log.error(f"Failed to use 'Recall Potion'!")
+                return False
 
     @classmethod
     def __astrub_bank(cls):

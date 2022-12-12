@@ -316,6 +316,80 @@ class Combat:
         else:
             return None
 
+    @classmethod
+    def cast_spell(cls, spell, spell_coordinates, cast_coordinates):
+        """
+        Cast spell.
+        
+        Parameters
+        ----------
+        spell : str
+            Name of `spell`.
+        spell_coordinates : Tuple[int, int]
+            (x, y) coordinates of `spell` in spellbar.
+        cast_coordinates : Tuple[int, int]
+            (x, y) coordinates of where to click to cast `spell`.
+        
+        """
+        # Formatting spell name.
+        if "." in spell:
+            spell = spell.split(".")
+            spell = spell[0]
+            if "\\" in spell:
+                spell = spell[::-1]
+                spell = spell.split("\\")
+                spell = spell[0][::-1]
+                spell = spell.replace("_", " ")
+                spell = spell.title()
+
+        # Icons that appear when spell is selected and mouse is hovered 
+        # over the character, map tiles etc.
+        s_spell_icons = {
+            "Earthquake": data.images.Combat.Spell.Sadida.s_earthquake,
+            "Poisoned Wind": data.images.Combat.Spell.Sadida.s_poisoned_wind,
+            "Sylvan Power": data.images.Combat.Spell.Sadida.s_sylvan_power
+        }
+
+        # Selecting spell.
+        pyag.moveTo(spell_coordinates[0], spell_coordinates[1])
+        if cls.__detect_orange_spell_border(spell_coordinates):
+            log.info(f"Selecting spell: '{spell}' ... ")
+            pyag.click()
+        else:
+            log.error("Failed to detect orange spell border! "
+                      f"Clicking on spell '{spell}' icon anyway ... ")
+            pyag.moveTo(spell_coordinates[0], spell_coordinates[1])
+            pyag.click()
+
+        
+        # Screenshotting AP area. Later used to help determine if spell
+        # animation has ended.
+        ap_area_before_casting = cls.__screenshot_ap_area()
+
+        # Moving mouse to cast coordinates and casting spell.
+        pyag.moveTo(cast_coordinates[0], cast_coordinates[1])
+        if cls.__detect_spell_icon(s_spell_icons[spell], cast_coordinates):
+            log.info(f"Casting spell: '{spell}' ... ") 
+            pyag.click()
+        else:
+            log.error("Failed to detect selected spell icon! "
+                      f"Clicking on cast coordinates anyway ... ")
+            pyag.moveTo(cast_coordinates[0], cast_coordinates[1])
+            pyag.click()
+
+        # Moving mouse off of character so that his information
+        # doesn't block spell bar. If omitted, may mess up spell
+        # detection in 'FIGHTING' state '__cast_spells()'.
+        pyag.moveTo(574, 749)
+
+        # Giving time for spell animation to finish.
+        if cls.__spell_animation_ended(ap_area_before_casting):
+            log.info(f"Successfully cast '{spell}'!")
+            return True
+        else:
+            log.error("Failed to detect if spell animation ended!")
+            return False
+
     @staticmethod
     def get_spell_status(spell, threshold=0.85):
         """
@@ -455,48 +529,6 @@ class Combat:
         pyag.click()
 
     @staticmethod
-    def cast_spell(spell, spell_coordinates, cast_coordinates):
-        """
-        Cast spell.
-        
-        Parameters
-        ----------
-        spell : str
-            Name of `spell`.
-        spell_coordinates : Tuple[int, int]
-            (x, y) coordinates of `spell` in spellbar.
-        cast_coordinates : Tuple[int, int]
-            (x, y) coordinates of where to click to cast `spell`.
-        
-        """
-        # Formatting spell name.
-        if "." in spell:
-            spell = spell.split(".")
-            spell = spell[0]
-            if "\\" in spell:
-                spell = spell[::-1]
-                spell = spell.split("\\")
-                spell = spell[0][::-1]
-                spell = spell.replace("_", " ")
-                spell = spell.title()
-
-        log.info(f"Casting spell: '{spell}' ... ")
-        # Selecting spell.
-        pyag.moveTo(spell_coordinates[0], spell_coordinates[1], duration=0.15)
-        time.sleep(0.25)
-        pyag.click()
-        # Moving mouse to cast coordinates.
-        pyag.moveTo(cast_coordinates[0], cast_coordinates[1], duration=0.15)
-        time.sleep(0.75)
-        pyag.click()
-        # Moving mouse off of character so that his information
-        # doesn't block spell bar. If omitted, may mess up spell
-        # detection in 'Bot.__fighting_cast_spells()'.
-        pyag.moveTo(574, 749)
-        # Giving time for spell animation to finish.
-        time.sleep(1)
-
-    @staticmethod
     def hide_models():
         """
         Hide player and monster models.
@@ -572,3 +604,130 @@ class Combat:
         else:
             log.error("Failed to shrink 'Turn Bar'!")
             return False
+
+    @classmethod
+    def __spell_animation_ended(cls, screenshot_before):
+        """
+        Detect if spell animation has ended.
+
+        Compares screenshot of AP area taken before casting spell and
+        after casting spell.
+        
+        Parameters
+        ----------
+        screenshot_before : np.ndarray
+            Screenshot to compare against.
+
+        Returns
+        ----------
+        True : bool
+            If spell animation has ended.
+        False : bool
+            If failed to detect end of spell animation.
+        
+        """
+        start_time = time.time()
+        timeout = 3
+
+        while time.time() - start_time < timeout:
+
+            screenshot_after = cls.__screenshot_ap_area()
+            rects = dtc.Detection.find(screenshot_before, 
+                                       screenshot_after,
+                                       threshold=0.98)
+
+            if len(rects) <= 0:
+                return True
+            
+        else:
+            return False
+
+    @staticmethod
+    def __detect_orange_spell_border(coordinates):
+        """
+        Detect orange spell border around spell icon in spell bar.
+        
+        Parameters
+        ----------
+        coordinates : Tuple[int, int]
+            Coordinates of spell in spell bar to detect border around.
+
+        Returns
+        ----------
+        True : bool
+            If border detected.
+        False : bool
+            If border not detected.
+        
+        """
+        start_time = time.time()
+        timeout = 3
+
+        while time.time() - start_time < timeout:
+
+            path = data.images.Combat.path
+            spell_border = [data.images.Combat.spell_border]
+            img_data = dtc.Detection.generate_image_data(spell_border, path)
+
+            screenshot = wc.WindowCapture.area_around_mouse_capture(
+                    20,
+                    coordinates
+                )
+
+            rects, _ = dtc.Detection.detect_objects_with_masks(
+                    img_data, 
+                    spell_border,
+                    screenshot,
+                    threshold=0.95
+                )
+
+            if len(rects) > 0:
+                return True
+
+        else:
+            return False
+
+    @staticmethod
+    def __detect_spell_icon(spell, cast_coordinates):
+        """
+        Detect spell icon when hovered over cast coordinates.
+        
+        Parameters
+        ----------
+        spell : str
+            Path to spell icon image.
+        cast_coordinates : Tuple[int, int]
+            Coordinates to detect around.
+
+        Returns
+        ----------
+        True : bool
+            If icon was found.
+        False : bool
+            If icon was not found.
+        
+        """
+        start_time = time.time()
+        timeout = 3
+
+        while time.time() - start_time < timeout:
+
+            screenshot = wc.WindowCapture.area_around_mouse_capture(
+                    65,
+                    cast_coordinates
+                )
+
+            rects = dtc.Detection.find(screenshot, spell, threshold=0.85)
+
+            if len(rects) > 0:
+                return True
+
+        else:
+            return False
+
+    @staticmethod
+    def __screenshot_ap_area():
+        """Screenshot AP area and return image."""
+        region = (449, 605, 36, 34)
+        screenshot = wc.WindowCapture.custom_area_capture(region)
+        return screenshot

@@ -36,28 +36,36 @@ class Moving:
 
         while attempts_total < attempts_allowed:
 
+            if cls.map_coords == "1,-25":
+
+                if cls.__detect_lumberjack_ws_interior():
+                    log.info("Trying to exit the workshop ... ")
+                    pyag.keyDown('e')
+                    pyag.moveTo(667, 507)
+                    pyag.click()
+                    pyag.keyUp('e')
+                    
+                    if cls.__detect_if_map_changed():
+                        log.info("Successfuly exited the workshop!")
+                        cls.__state = BotState.CONTROLLER
+                        return cls.__state
+                    else:
+                        log.error(f"Failed to exit the workshop!")
+                        attempts_total += 1
+                        continue
+
             if cls.__change_map(cls.data_map, cls.map_coords):
-                state.Controller.map_searched = False
-                cls.__state = BotState.CONTROLLER
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
                 # and good to go.
                 cls.__emergency_teleports = 0
+                state.Controller.map_searched = False
+                state.Controller.map_changed = True
+                cls.__state = BotState.CONTROLLER
                 return cls.__state
-
             else:
-
                 pu.PopUp.deal()
-                attempts_total += 1
-
-                if cls.map_coords == "1,-25":
-                    if cls.__detect_lumberjack_ws_interior():
-                        pyag.keyDown('e')
-                        pyag.moveTo(667, 507)
-                        pyag.click()
-                        pyag.keyUp('e')
-                        time.sleep(3)
-                    
+                attempts_total += 1     
                 cls.map_coords = cls.get_coordinates(cls.data_map)
                 continue
 
@@ -88,25 +96,40 @@ class Moving:
             If detected map doesn't exist in database.
 
         """
-        # Giving time for black tooltip that shows map coordinates to
-        # appear. Otherwise on a slower machine the program might take a
-        # screenshot too fast resulting in an image with no coordinates
-        # to detect.
-        wait_before_detecting = 0.35
+        # Taking screenshot of coordinate are to help determine if 
+        # map tooltip appears later in the script.
+        coord_area = cls.__screenshot_coordinate_area()
+        # Stores if coordinate detection failed first time. Sometimes
+        # happens when Dofus is laggy. Especially in crowded areas.
+        detection_failed = False
         # Loop control variables.
         start_time = time.time()
-        timeout = 15
+        timeout = 20
 
         while time.time() - start_time < timeout:
 
-            # Checking for offers/interfaces and closing them.
-            pu.PopUp.deal()
+            log.info(f"Getting map coordinates ... ")
 
-            # Get a screenshot of coordinates on minimap. Moving mouse
-            # over the red area on the minimap for the black map tooltip
-            # to appear.
+            # Moving mouse over the red area on the minimap for the 
+            # black map tooltip to appear.
             pyag.moveTo(517, 680)
-            time.sleep(wait_before_detecting)
+
+            # If detection failed first time, then sleep for a second
+            # to allow time for map tooltip to appear. Usually first
+            # time detection fails when Dofus is laggy.
+            if detection_failed:
+                log.debug("Sleeping 1 second before detection to allow map " 
+                          "tooltip to appear ... ")
+                time.sleep(1)
+
+            # If map tooltip didn't appear - restart loop.
+            if not cls.__detect_map_tooltip(coord_area):
+                if pu.PopUp.detect_offers():
+                    pu.PopUp.deal()
+                continue
+            else:
+                log.debug(f"Map tooltip detected!")
+                
             screenshot = wc.WindowCapture.custom_area_capture(
                     capture_region=(525, 650, 45, 30),
                     conversion_code=cv.COLOR_RGB2GRAY,
@@ -131,9 +154,14 @@ class Moving:
                         if coords[index-1].isdigit():
                             coords = coords[:index] + "," + coords[index:]
             except IndexError:
+                log.error(f"Coordinate detection failed!")
+                # Dealing with any offers/interfaces before retrying.
+                pu.PopUp.deal()
+                detection_failed = True
                 continue
 
             if cls.__check_if_map_in_database(coords, database):
+                log.info(f"Character is currently on map ({coords})!")
                 return coords
             else:
                 log.error(f"Map ({coords}) doesn't exist in database!")
@@ -168,6 +196,61 @@ class Moving:
                     map_type = i_value["map_type"]
                     return map_type
 
+    @classmethod
+    def emergency_teleport(cls):
+        """Teleport using 'Recall Potion' when stuck somewhere."""
+        pu.PopUp.deal()
+
+        if cls.__emergency_teleports >= 3:
+            log.critical(f"Emergency teleport limit exceeded!")
+            log.critical(f"Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
+
+        elif state.Banking.recall_potion_available():
+
+            cls.__emergency_teleports += 1
+            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
+
+            if state.Banking.recall():
+                log.info("Emergency teleport successful!")
+                return True
+            else:
+                log.error(f"Emergency teleport failed!")
+
+        else:
+            wc.WindowCapture.on_exit_capture()
+
+    @classmethod
+    def loading_screen(cls, wait_time):
+        """Detect beginning and end of 'Loading Map' screen."""
+        start_time = time.time()
+
+        while time.time() - start_time < wait_time:
+
+            if cls.__detect_black_pixels():
+                log.debug("'Loading Map' screen detected!'")
+
+                while time.time() - start_time < wait_time:
+
+                    if not cls.__detect_black_pixels():
+                        log.debug("Finished loading!")
+                        return True
+                    else:
+                        continue
+
+                else:
+                    log.error("Failed to detect end of 'Loading Map' screen "
+                              f"in {wait_time} second(s)!")
+                    return False
+
+            else:
+                continue
+
+        else:
+            log.error(f"Failed to detect 'Loading Map' screen in {wait_time} "
+                      "second(s)!")
+            return False
+
     @staticmethod
     def screenshot_minimap():
         """
@@ -182,12 +265,6 @@ class Moving:
             Screenshot of coordinates on the minimap.
 
         """
-        # Moving mouse over the red area on the minimap for the black 
-        # map tooltip to appear.
-        pyag.moveTo(517, 680)
-        # Waiting makes overall performance better because of less
-        # screenshots. Also gives time for map tooltip to appear.
-        time.sleep(1)
         screenshot = wc.WindowCapture.custom_area_capture(
                 capture_region=(525, 650, 45, 30),
                 conversion_code=cv.COLOR_RGB2GRAY,
@@ -195,53 +272,19 @@ class Moving:
                 scale_width=100,
                 scale_height=100
             )
-        # Moving mouse off the red area on the minimap in case a new 
-        # screenshot is required for another detection.
-        pyag.move(20, 0)
-
         return screenshot
 
     @classmethod
-    def __detect_if_map_changed(cls, sc_minimap):
-        """
-        Check if map was changed successfully.
-
-        Logic
-        ----------
-        - Take screenshot of minimap.
-        - Compare `sc_minimap` against locally taken screenshot of 
-        minimap.
-        - If images are different, means map changed succesfully:
-            - Return `True`.
-
-        Parameters
-        ----------
-        sc_minimap : np.ndarray
-            Screenshot of minimap.
-
-        Returns
-        ----------
-        True : bool
-            If map was changed successfully.
-
-        """
-        # Time to wait for map to load after a successful map change. 
-        # Determines how long script will wait after character moves to 
-        # a new map. The lower the number, the higher the chance that on 
-        # a slower machine 'SEARCHING' state will act too fast & try to 
-        # search for monsters on a black "LOADING MAP" screen. This wait 
-        # time allows the black loading screen to disappear.
-        wait_map_loading = 2
-        sc_minimap_needle = cls.screenshot_minimap()
-        minimap_rects = dtc.Detection.find(sc_minimap,
-                                           sc_minimap_needle,
-                                           threshold=0.99)
-
-        # If screenshots are different.
-        if len(minimap_rects) <= 0:
-            time.sleep(wait_map_loading)
-            log.info("Map changed successfully!")
+    def __detect_if_map_changed(cls):
+        """Check if map was changed successfully."""
+        # How long to keep checking if map was changed.
+        wait_map_change = 10
+        if cls.loading_screen(wait_map_change):
+            log.info(f"Map changed successfully!")
             return True
+        else:
+            log.error(f"Failed to change maps!")
+            return False
 
     @classmethod
     def __change_map(cls, database, map_coords):
@@ -273,8 +316,6 @@ class Moving:
             If map change was unsuccessful.
 
         """
-        # How long to keep checking if map was changed.
-        wait_change_map = 10
         # Time to wait before clicking on yellow 'sun' to change maps.
         # Must wait when moving in 'bottom' direction, because 'Dofus' 
         # GUI blocks the sun otherwise.
@@ -292,37 +333,48 @@ class Moving:
         pyag.keyUp('e')
 
         # Checking if map was changed.
-        start_time = time.time()
-        sc_mm = cls.screenshot_minimap()
-        
-        while time.time() - start_time < wait_change_map:
-            if cls.__detect_if_map_changed(sc_mm):
-                return True
+        if cls.__detect_if_map_changed():
+            return True
         else:
-            log.error("Failed to change maps!")
             return False
 
     @classmethod
-    def emergency_teleport(cls):
-        """Teleport using 'Recall Potion' when stuck somewhere."""
-        pu.PopUp.deal()
+    def __detect_map_tooltip(cls, screenshot_before):
+        """
+        Detect map tooltip on minimap.
+        
+        Parameters
+        ----------
+        screenshot_before : np.ndarray
+            Image to compare against. Prefferably taken with
+            '__screenshot_coordinate_area()'.
 
-        if cls.__emergency_teleports >= 2:
-            log.info(f"Emergency teleport limit exceeded!")
-            log.info(f"Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+        Returns
+        ----------
+        True : bool
+            If map tooltip detected.
+        False : bool
+            If failed to detect map tooltip.
+        
+        """
+        start_time = time.time()
+        timeout = 3
 
-        elif bank.Bank.recall_potion() == "available":
-            cls.__emergency_teleports += 1
-            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
+        while time.time() - start_time < timeout:
 
-            if state.Banking.recall(cls.data_map):
+            screenshot_after = cls.__screenshot_coordinate_area()
+
+            rects = dtc.Detection.find(
+                    screenshot_before, 
+                    screenshot_after,
+                    threshold = 0.99
+                )
+
+            if len(rects) <= 0:
                 return True
-            else:
-                log.info(f"Failed to use 'Recall Potion'!")
 
         else:
-            wc.WindowCapture.on_exit_capture()
+            return False
 
     @staticmethod
     def __detect_lumberjack_ws_interior():
@@ -412,3 +464,35 @@ class Moving:
             return False
 
         return True
+
+    @staticmethod
+    def __detect_black_pixels():
+        """Detect black pixels on specified coordinates."""
+        color = [0, 0, 0]
+        coords = [(529, 491), (531, 429), (364, 419), (691, 424)]
+        pixels = []
+
+        for coord in coords:
+            px = pyag.pixelMatchesColor(coord[0], coord[1], color)
+            pixels.append(px)
+
+        if all(pixels):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def __screenshot_coordinate_area():
+        """
+        Screenshot area where map tooltip has to appear when mouse
+        is hovered over red area on minimap.
+
+        """
+        screenshot = wc.WindowCapture.custom_area_capture(
+                capture_region=(525, 650, 20, 30),
+                conversion_code=cv.COLOR_RGB2GRAY,
+                interpolation_flag=cv.INTER_LINEAR,
+                scale_width=160,
+                scale_height=200
+            )
+        return screenshot

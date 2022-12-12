@@ -39,7 +39,7 @@ class Fighting:
         character_moved = False
         models_hidden = False
         start_time = time.time()
-        timeout = 300
+        timeout = 420
 
         while time.time() - start_time < timeout:
 
@@ -169,7 +169,7 @@ class Fighting:
                 cls.__failed_to_move = False
                 return True
 
-            if cast_times >= 5:
+            if cast_times >= 2:
                 log.debug(f"Setting first turn to 'False' due to too many "
                           "failed attempts to cast spells ... ")
                 first_turn = False
@@ -192,7 +192,6 @@ class Fighting:
                         cast_coords = cbt.Combat.get_char_position()
                         if cast_coords is None:
                             log.debug(f"cast_coords={cast_coords} ... ")
-                            log.debug("Using 'close_right_click_menu()' ... ")
                             log.debug("Continuing ... ")
                             continue
                         else:
@@ -215,9 +214,11 @@ class Fighting:
                     else:
                         get_char_pos = False
 
-                cbt.Combat.cast_spell(spell, spell_coords, cast_coords)
-                cast_times += 1
-                break
+                if cbt.Combat.cast_spell(spell, spell_coords, cast_coords):
+                    break
+                else:
+                    cast_times += 1
+                    break 
 
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")
@@ -265,9 +266,9 @@ class Fighting:
                         return True
                     else:
                         log.info("Closing 'Fight Results' window ... ")
-                        pyag.moveTo(x=close_button[0][0],
-                                         y=close_button[0][1],
-                                         duration=0.15)
+                        pyag.moveTo(close_button[0][0],
+                                    close_button[0][1],
+                                    duration=0.15)
                         pyag.click()
                         # Moving mouse off the 'Close' button in case it 
                         # needs to be detected again.
