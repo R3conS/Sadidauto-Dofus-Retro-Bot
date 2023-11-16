@@ -1,6 +1,4 @@
 # Ignored files and folders
-
-
 venv/*
 __pycache__/*
 *.pyc

@@ -2,7 +2,7 @@
 
 class AstrubForest:
     """Astrub Forest images."""
-    img_path = "data\\images\\monster\\astrub_forest\\"
+    img_path = "oflex_bot_dofus\\data\\images\\monster\\astrub_forest\\"
     img_list = [
         "Boar_BL_1.png", "Boar_BR_1.png", "Boar_TL_1.png", "Boar_TR_1.png",
         "Pres_BL_1.png", "Pres_BR_1.png", "Pres_TL_1.png", "Pres_TR_1.png",

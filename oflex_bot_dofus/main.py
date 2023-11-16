@@ -22,10 +22,15 @@ def exit_with_hotkey():
 
 def main():
 
-    args = clp.Parser.parse_command_line()
-    bot = Bot(script=args.script,
-              character_name=args.character_name,
-              official_version=args.official_version)
+    # args = clp.Parser.parse_command_line()
+    # bot = Bot(script=args.script,
+    #           character_name=args.character_name,
+    #           official_version=args.official_version)
+    bot = Bot(
+        script="af_anticlock",
+        character_name="Juni",
+        official_version=False
+    )  
     bot.Bot_Thread_start()
     exit_with_hotkey()
 

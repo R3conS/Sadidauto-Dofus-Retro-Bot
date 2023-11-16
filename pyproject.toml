@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "oflex-bot-dofus-retro"
+name = "oflex-bot-dofus"
 version = "1.0.0"
 description = ""
 authors = ["ephell"]
@@ -8,15 +8,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "3.10.6"
-bpyutils = "0.5.7"
-h5py = "3.7.0"
-keyboard = "0.13.5"
-mypy = "0.971"
-paddleocr = "2.6.0.1"
-paddlepaddle = "2.4.0"
-PyAutoGUI = "0.9.53"
-pynput = "1.7.6"
-virtualenv = "20.17.1"
+keyboard = "^0.13.5"
+paddleocr = "^2.7.0.3"
+paddlepaddle = "^2.5.2"
+pynput = "^1.7.6"
+pyautogui = "^0.9.54"
 
 [build-system]
 requires = ["poetry-core"]
