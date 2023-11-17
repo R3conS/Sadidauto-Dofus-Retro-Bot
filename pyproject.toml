@@ -9,10 +9,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.10.6"
 keyboard = "^0.13.5"
-paddleocr = "^2.7.0.3"
-paddlepaddle = "^2.5.2"
+paddleocr = "2.6.0.1"
+paddlepaddle = "2.3.2"
 pynput = "^1.7.6"
 pyautogui = "^0.9.54"
+numpy = "1.23.3"
 
 [build-system]
 requires = ["poetry-core"]
