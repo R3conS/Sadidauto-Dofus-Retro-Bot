@@ -2,7 +2,7 @@
 
 class Bank:
     """Bank images."""
-    path = "oflex_bot_dofus\\data\\images\\bank\\"
+    path = "src\\data\\images\\bank\\"
     empty_bank_slot = path + "empty_bank_slot.jpg"
     tab_equipment = path + "tab_equipment.jpg"
     tab_resources = path + "tab_resources.jpg"

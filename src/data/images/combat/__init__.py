@@ -2,7 +2,7 @@
 
 class Combat:
     """Combat images."""
-    path = "oflex_bot_dofus\\data\\images\\combat\\"
+    path = "src\\data\\images\\combat\\"
     red_circle_1 = "red_circle_1.png"
     red_circle_2 = "red_circle_2.png"
     red_circle_3 = "red_circle_3.png"
@@ -19,7 +19,7 @@ class Combat:
         
         class Sadida:
             """Sadida spells."""
-            path = "oflex_bot_dofus\\data\\images\\combat\\"
+            path = "src\\data\\images\\combat\\"
             earthquake = path + "earthquake.jpg"
             poisoned_wind = path + "poisoned_wind.jpg"
             sylvan_power = path + "sylvan_power.jpg"
