@@ -1,7 +1,7 @@
 """Provides banking functionality."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import time
 import random

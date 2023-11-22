@@ -1,7 +1,7 @@
 """Logic related to 'CONTROLLER' bot state."""
 
 from logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from .botstate_enum import BotState
 import bank
