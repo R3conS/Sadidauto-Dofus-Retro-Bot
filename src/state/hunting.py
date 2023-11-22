@@ -50,7 +50,7 @@ class Hunting:
 
                 if chunk_number in forbidden_chunks:
                     if len(chunks) == len(forbidden_chunks):
-                        self.__controller.map_searched = True
+                        self.__controller.set_was_map_searched(True)
                         self.__state = BotState.CONTROLLER
                         return self.__state
                     else:
@@ -94,7 +94,7 @@ class Hunting:
                 # If all chunks have been searched through.
                 if chunk_number + 1 == len(chunks.keys()):
                     log.info(f"Map ({self.map_coords}) is clear!")
-                    self.__controller.map_searched = True
+                    self.__controller.set_was_map_searched(True)
                     self.__state = BotState.CONTROLLER
                     return self.__state
 
@@ -209,7 +209,7 @@ class Hunting:
                                    threshold=0.98)
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
-            self.__controller.map_changed = True
+            self.__controller.was_map_changed = True
             return True
 
     @staticmethod

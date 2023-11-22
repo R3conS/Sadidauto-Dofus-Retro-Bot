@@ -54,8 +54,8 @@ class Moving:
                 # successful map change. Means character is not stuck
                 # and good to go.
                 self.__emergency_teleports = 0
-                self.__controller.map_searched = False
-                self.__controller.map_changed = True
+                self.__controller.set_was_map_searched(False)
+                self.__controller.set_was_map_changed(True)
                 self.__state = BotState.CONTROLLER
                 return self.__state
             else:

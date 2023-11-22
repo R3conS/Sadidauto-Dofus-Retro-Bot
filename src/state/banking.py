@@ -61,6 +61,7 @@ class Banking:
             elif self.map_coords == "4,-16":
                 if self.__astrub_bank():
                     self.__recall_potion_used = False
+                    self.__controller.set_overloaded(False)
                     self.__state = BotState.CONTROLLER
                     return self.__state
 
@@ -86,7 +87,7 @@ class Banking:
 
             if self.__use_recall_potion():
                 log.info("Successfully recalled to save point!")
-                self.__controller.map_changed = True
+                self.__controller.set_was_map_changed(True)
                 return True
             else:
                 continue
@@ -127,12 +128,12 @@ class Banking:
         pyag.moveTo(664, 725, duration=0.15)
         pyag.click(clicks=2, interval=0.1)
 
-        if state.Moving.loading_screen(3):
+        if self.__controller.moving.loading_screen(3):
             log.info("Successfully used 'Recall Potion'!")
             return True
 
         else:
-            coords = state.Moving.get_coordinates(self.data_map)
+            coords = self.__controller.moving.get_coordinates(self.data_map)
 
             if coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")
@@ -177,7 +178,6 @@ class Banking:
 
             elif character_inside_bank and items_deposited:
                 if bank.Bank.exit_bank():
-                    self.__controller.fight_counter = 0
                     return True
                 else:
                     attempts_total += 1

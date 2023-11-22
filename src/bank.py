@@ -237,7 +237,7 @@ class Bank:
 
         while time.time() - start_time < wait_time:
 
-            screenshot = wc.wc.WindowCapture.gamewindow_capture()
+            screenshot = wc.WindowCapture.gamewindow_capture()
             rectangles, coordinates = dtc.Detection.detect_objects(
                     cls.img_list,
                     cls.img_path,
