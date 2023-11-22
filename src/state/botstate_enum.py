@@ -1,0 +1,11 @@
+class BotState:
+    """Bot states enum."""
+
+    INITIALIZING = "INITIALIZING"
+    CONTROLLER = "CONTROLLER"
+    HUNTING = "HUNTING"
+    PREPARING = "PREPARING"
+    FIGHTING = "FIGHTING"
+    MOVING = "MOVING"
+    BANKING = "BANKING"
+    

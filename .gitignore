@@ -1,17 +1,6 @@
-# Ignored files and folders
-
-
-venv/*
-__pycache__/*
-*.pyc
-mouse_position.py
-mouse_click_tools.py
-mouse_gotopos.py
-test.py
-*test_monster_images
-*test_images
-*test
-.vscode
-uninstall.txt
+venv/
+.venv/
+.vscode/
+__pycache__/
+m-tst.py
 logs
-oFlex-Git.lnk

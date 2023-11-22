@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "oflex-bot-dofus"
+version = "1.0.0"
+description = ""
+authors = ["ephell"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "3.10.6"
+keyboard = "^0.13.5"
+paddleocr = "2.6.0.1"
+paddlepaddle = "2.3.2"
+pynput = "^1.7.6"
+pyautogui = "^0.9.54"
+numpy = "1.23.3"
+tesserocr = { file = "tessdata\\tesserocr-2.6.0-cp310-cp310-win_amd64.whl" }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
