@@ -10,7 +10,7 @@ import pyautogui as pyag
 from .botstate_enum import BotState
 import data
 import detection as dtc
-import pop_up as pu
+from pop_up import PopUp
 import state
 import window_capture as wc
 
@@ -147,12 +147,13 @@ class Hunting:
                 return "sword"
 
             # Check if distrubed by another player before attacking.
-            if pu.PopUp.detect_offers():
-                pu.PopUp.deal()
+            if PopUp.detect_offers():
+                PopUp.deal()
 
             log.info(f"Attacking monster at: {x, y} ... ")
             pyag.moveTo(x, y)
-            pyag.click(button="right")
+            # pyag.click(button="right")
+            pyag.click(button="left")
 
             # Checking if monster moved.
             if cls.__check_right_click_menu():
@@ -183,7 +184,7 @@ class Hunting:
                 attempts_total += 1
 
                 # Dealing with any pop ups before continuing.
-                pu.PopUp.deal()
+                PopUp.deal()
 
                 if cls.__accidental_map_change(scs_before_attack):
                     return "map_change"
@@ -276,7 +277,7 @@ class Hunting:
         """
         # Moving mouse of the screen so it doesn't hightlight mobs
         # by accident causing them to be undetectable.
-        pu.PopUp.close_right_click_menu()
+        PopUp.close_right_click_menu()
 
         screenshot = wc.WindowCapture.gamewindow_capture()
         obj_rects, obj_coords = dtc.Detection.detect_objects_with_masks(

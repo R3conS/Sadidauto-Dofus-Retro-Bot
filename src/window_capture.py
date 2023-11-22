@@ -6,12 +6,13 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 import datetime
 import os
 from typing import Tuple
+from time import time, sleep
 
 import cv2 as cv
 import numpy as np
 import pyautogui
 
-from game_window import GameWindow
+import pop_up as pu
 
 
 class WindowCapture:
@@ -82,7 +83,7 @@ class WindowCapture:
         width = bottomright_x - topleft_x
         height = bottomright_y - topleft_y
         # Declaring the screenshot region.
-        region = (topleft_x, topleft_y, width, height)
+        region = (int(topleft_x), int(topleft_y), int(width), int(height))
         # Taking the screenshot.
         screenshot = pyautogui.screenshot(region=region)
         if not convert:
@@ -219,5 +220,31 @@ class WindowCapture:
         log.info(f"Saved: '{os.path.join(images_folder_path, image_name)}'!")
 
         if exit_dofus:
-            #GameWindow.logout()
+            # WindowCapture.__logout()
             os._exit(1)
+
+    @staticmethod
+    def __logout():
+        log.info("Logging out ... ")
+        start_time = time()
+        timeout = 15
+        while time() - start_time < timeout:
+            pu.PopUp.deal()
+            # Opening 'Main Menu'.
+            pyautogui.press("esc")
+            sleep(0.5)
+            if pu.PopUp.detect_interfaces() == "main_menu":
+                pyautogui.moveTo(468, 318, duration=0.15)
+                pyautogui.click()
+                sleep(0.5)
+                if pu.PopUp.detect_interfaces() == "caution":
+                    pyautogui.moveTo(381, 371, duration=0.15)
+                    pyautogui.click()
+                    sleep(2.5)
+                    if pu.PopUp.detect_interfaces() == "login_screen":
+                        log.info("Logged out successfully!")
+                        break
+        else:
+            log.error(f"Failed to log out! Closing 'Dofus.exe' ...")
+            pyautogui.moveTo(910, 15, duration=0.15)
+            pyautogui.click()

@@ -9,7 +9,7 @@ import pyautogui as pyag
 
 import data
 import detection as dtc
-import pop_up as pu
+from pop_up import PopUp
 import window_capture as wc
 
 
@@ -289,7 +289,7 @@ class Combat:
                     data.images.Combat.blue_circle
                 ]
 
-        pu.PopUp.close_right_click_menu()
+        PopUp.close_right_click_menu()
 
         sc_for_circles = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
         _, coords = dtc.Detection.detect_objects(

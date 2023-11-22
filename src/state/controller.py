@@ -5,7 +5,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True)
 
 from .botstate_enum import BotState
 import bank
-import pop_up as pu
+from pop_up import PopUp
 import state
 import window_capture as wc
 
@@ -20,7 +20,6 @@ class Controller:
     data_map = None
     data_hunting = None
     data_banking = None
-    official_version = None
     fight_counter = 0
 
     # Private class attributes.
@@ -32,9 +31,6 @@ class Controller:
     @classmethod
     def controller(cls):
         """'CONTROLLER' state logic."""
-        if cls.official_version:
-            cls.__get_group_status()
-
         if cls.fight_counter % 11 == 0:
             cls.__character_overloaded = cls.__get_pod_status()
 
@@ -105,15 +101,6 @@ class Controller:
             overloaded = False
 
         return overloaded
-
-    @staticmethod
-    def __get_group_status():
-        """Check if character is in group."""
-        pu.PopUp.close_right_click_menu()
-        if not state.Initializing.in_group():
-            log.critical("Character is not in group!")
-            log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
 
     @staticmethod
     def __load_data_map(data):

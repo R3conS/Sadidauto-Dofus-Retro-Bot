@@ -50,7 +50,7 @@ class Bank:
     img_list = None
     img_path = None
     # Stores whether on official Dofus servers or not.
-    official_version = None
+    official_version = False
 
     @classmethod
     def get_pods_percentage(cls):
@@ -237,7 +237,7 @@ class Bank:
 
         while time.time() - start_time < wait_time:
 
-            screenshot = wc.WindowCapture.gamewindow_capture()
+            screenshot = wc.wc.WindowCapture.gamewindow_capture()
             rectangles, coordinates = dtc.Detection.detect_objects(
                     cls.img_list,
                     cls.img_path,

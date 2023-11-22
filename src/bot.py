@@ -37,11 +37,12 @@ class Bot:
     __Bot_Thread_stopped = False
     __Bot_Thread_thread = None
 
-    def __init__(self,
-                 script: str,
-                 character_name: str,
-                 official_version: bool,
-                 bot_state: str = BotState.INITIALIZING):
+    def __init__(
+            self,
+            script: str,
+            character_name: str,
+            bot_state: str = BotState.INITIALIZING
+        ):
         """
         Constructor
 
@@ -53,9 +54,6 @@ class Bot:
             'af_west'.
         character_name : str
             Character's nickname.
-        official_version : bool, optional
-            Controls whether on official or private 'Dofus Retro' 
-            servers. Official = `True`.
         bot_state : str, optional
             Current state of bot. Defaults to: `BotState.INITIALIZING`.
 
@@ -63,7 +61,6 @@ class Bot:
         self.__state = bot_state
         Initializing.script = script
         Initializing.character_name = character_name
-        Initializing.official_version = official_version
 
     def __Bot_Thread_run(self):
         """Execute this code while bot thread is alive."""

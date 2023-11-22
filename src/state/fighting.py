@@ -11,7 +11,7 @@ from .botstate_enum import BotState
 import combat as cbt
 import data
 import detection as dtc
-import pop_up as pu
+from pop_up import PopUp
 import state
 import window_capture as wc
 
@@ -275,7 +275,7 @@ class Fighting:
                         pyag.move(100, 0)
 
                         # Checking for offers/interfaces and closing them.
-                        pu.PopUp.deal()
+                        PopUp.deal()
 
                 else:
                     log.critical("Couldn't close 'Fight Results' window in "

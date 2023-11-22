@@ -9,7 +9,8 @@ import pyautogui
 
 import data
 import detection
-import window_capture
+import window_capture as wc
+
 
 class PopUp:
     """
@@ -191,7 +192,7 @@ class PopUp:
             log.critical("Failed to deal with pop-ups/interfaces in "
                          f"{attempts_allowed} attempts!")
             log.critical("Exiting ... ")
-            window_capture.WindowCapture.on_exit_capture()
+            wc.WindowCapture.on_exit_capture()
 
     @classmethod
     def interface(cls, interface, action):
@@ -371,7 +372,7 @@ class PopUp:
 
     @staticmethod
     def __interface_login_screen():
-        sc = window_capture.WindowCapture.gamewindow_capture()
+        sc = wc.WindowCapture.gamewindow_capture()
         rects = detection.Detection.find(sc,
                                          data.images.Interface.dofus_logo,
                                          threshold=0.95)
