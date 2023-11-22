@@ -1,7 +1,7 @@
 class Banking:
     """Pathing to Astrub Bank."""
     
-    data = [
+    map_data = [
         {"4,-16"  : {}},
         {"4,-17"  : {"bottom" : (433, 580)}},
         {"4,-18"  : {"bottom" : (367, 580)}},

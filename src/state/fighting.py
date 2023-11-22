@@ -1,5 +1,3 @@
-"""Logic related to 'FIGHTING' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -12,27 +10,28 @@ import combat as cbt
 import data
 import detection as dtc
 from pop_up import PopUp
-import state
 import window_capture as wc
 
 
 class Fighting:
-    """Holds various 'FIGHTING' state methods."""
 
-    # Public class attributes.
     map_coords = None
     data_map = None
     cell_coords = None
     cell_color = None
     cell_select_failed = False
 
-    # Private class attributes.
     __state = None
     __failed_to_move = False
     __total_fights = 0
 
-    @classmethod
-    def fighting(cls):
+    def __init__(self, controller):
+        self.__controller = controller
+        cbt.Combat.data_spell_cast = data.scripts.astrub_forest.Cast.data
+        cbt.Combat.data_movement = data.scripts.astrub_forest.Movement.data
+        cbt.Combat.character_name = self.__controller.character_name
+
+    def fighting(self):
         """'FIGHTING' state logic."""
         first_turn = True
         tbar_shrunk = False
@@ -54,28 +53,28 @@ class Fighting:
                         models_hidden = True
 
                 if not character_moved:
-                    if cls.__move_character():
+                    if self.__move_character():
                         character_moved = True
 
                 if character_moved and first_turn:
-                    if cls.__cast_spells(first_turn=True):
+                    if self.__cast_spells(first_turn=True):
                         if cbt.Combat.turn_pass():
                             log.info("Waiting for turn ... ")
                             first_turn = False
                             continue
 
                 elif character_moved and not first_turn:
-                    if cls.__cast_spells(first_turn=False):
+                    if self.__cast_spells(first_turn=False):
                         if cbt.Combat.turn_pass():
                             log.info("Waiting for turn ... ")
                             continue
 
-            elif cls.__detect_end_of_fight():
-                state.Controller.fight_counter += 1
-                cls.__total_fights += 1
-                cls.__state = BotState.CONTROLLER
-                log.info(f"Total fights: {cls.__total_fights} ... ")
-                return cls.__state
+            elif self.__detect_end_of_fight():
+                self.__controller.fight_counter += 1
+                self.__total_fights += 1
+                self.__state = BotState.CONTROLLER
+                log.info(f"Total fights: {self.__total_fights} ... ")
+                return self.__state
 
         else:
             log.critical(f"Failed to complete fight actions in {timeout} "
@@ -84,30 +83,29 @@ class Fighting:
             log.critical("Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-    @classmethod
-    def __move_character(cls):
+    def __move_character(self):
         """Move character."""
         attempts = 0
         attempts_allowed = 3
 
         while attempts < attempts_allowed:
 
-            if cls.cell_select_failed:
+            if self.cell_select_failed:
                 log.debug("Getting cell coords and color in 'fighting' ... ")
                 # Giving time for 'Illustration to signal your turn' 
                 # to disappear.
                 time.sleep(3)
-                cls.cell_coords, cls.cell_color = \
-                    cls.__get_cell_coords_and_color(
-                            cls.data_map,
-                            cls.map_coords
+                self.cell_coords, self.cell_color = \
+                    self.__get_cell_coords_and_color(
+                            self.data_map,
+                            self.map_coords
                         )
-                cls.cell_select_failed = False
+                self.cell_select_failed = False
 
             move_coords = cbt.Combat.get_movement_coordinates(
-                    cls.map_coords,
-                    cls.cell_color,
-                    cls.cell_coords,
+                    self.map_coords,
+                    self.cell_color,
+                    self.cell_coords,
                 )
 
             if cbt.Combat.get_if_char_on_correct_cell(move_coords):
@@ -132,13 +130,12 @@ class Fighting:
                     attempts += 1
 
         else:
-            cls.__failed_to_move = True
+            self.__failed_to_move = True
             log.error(f"Failed to move character in {attempts} attempts!")
-            log.debug(f"'self.__failed_to_move' = {cls.__failed_to_move}")
+            log.debug(f"'self.__failed_to_move' = {self.__failed_to_move}")
             return True
 
-    @classmethod
-    def __cast_spells(cls, first_turn):
+    def __cast_spells(self, first_turn):
         """
         Cast spells.
         
@@ -166,7 +163,7 @@ class Fighting:
 
             if len(available_spells) <= 0:
                 log.info("No spells available!")
-                cls.__failed_to_move = False
+                self.__failed_to_move = False
                 return True
 
             if cast_times >= 2:
@@ -186,7 +183,7 @@ class Fighting:
                     break
 
                 if first_turn:
-                    if cls.__failed_to_move and get_char_pos:
+                    if self.__failed_to_move and get_char_pos:
                         log.debug(f"Getting 'cast_coords' after failing "
                                   "to move ... ")
                         cast_coords = cbt.Combat.get_char_position()
@@ -197,12 +194,12 @@ class Fighting:
                         else:
                             get_char_pos = False
                     
-                    elif not cls.__failed_to_move:
+                    elif not self.__failed_to_move:
                         cast_coords = cbt.Combat.get_spell_cast_coordinates(
                                 spell,
-                                cls.map_coords,
-                                cls.cell_color,
-                                cls.cell_coords
+                                self.map_coords,
+                                self.cell_color,
+                                self.cell_coords
                             )
 
                 elif not first_turn and get_char_pos:
@@ -225,8 +222,7 @@ class Fighting:
             log.critical("Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-    @classmethod
-    def __detect_end_of_fight(cls):
+    def __detect_end_of_fight(self):
         """
         Detect 'Fight Results' window and close it.
         
@@ -244,7 +240,7 @@ class Fighting:
         while True:
 
             # Detecting 'Fight Results' window.
-            close_button = cls.__detect_results_window()
+            close_button = self.__detect_results_window()
 
             if len(close_button) <= 0:
                 return False
@@ -258,7 +254,7 @@ class Fighting:
                 while time.time() - start_time < timeout_time:
 
                     # Closing 'Fight Results' window.
-                    close_button = cls.__detect_results_window()
+                    close_button = self.__detect_results_window()
                     
                     if len(close_button) <= 0:
                         log.info("Successfully closed 'Fight Results' "
@@ -306,8 +302,7 @@ class Fighting:
 
         return close_button
 
-    @staticmethod
-    def __get_cell_coords_and_color(database, map_coords):
+    def __get_cell_coords_and_color(self, database, map_coords):
         """
         Get starting cell color and coords.
 
@@ -353,8 +348,10 @@ class Fighting:
                 break
 
         # Getting the color of starting cell.
-        color = state.Preparing.get_start_cell_color(map_coords,
-                                                     database,
-                                                     char_coords)
+        color = self.__controller.preparing.get_start_cell_color(
+            map_coords,
+            database,
+            char_coords
+        )
 
         return char_coords, color

@@ -1,120 +1,161 @@
-"""Logic related to 'CONTROLLER' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from .botstate_enum import BotState
+import os
+
+import pygetwindow as gw
+
 import bank
-from pop_up import PopUp
-import state
 import window_capture as wc
+from pop_up import PopUp
+import data
+import detection as dtc
+
+from state.botstate_enum import BotState
+from state.hunting import Hunting
+from state.preparing import Preparing
+from state.fighting import Fighting
+from state.moving import Moving
+from state.banking import Banking
 
 
 class Controller:
-    """Holds various 'CONTROLLER' state methods."""
 
-    # Public class attributes.
+    __window_suffixes = ["Dofus Retro", "Abrak"]
+    __window_size = (950, 785)
+    __window_pos = (-8, 0)
+    __valid_scripts = [
+        "af_anticlock", 
+        "af_clockwise", 
+        "af_north", 
+        "af_east", 
+        "af_south", 
+        "af_west"
+    ]
+    __pod_limit = 88
+    __map_type = None
+    __fight_limit = 10 # Before checking pods
+
     map_searched = False
     map_changed = False
     map_coords = None
     data_map = None
-    data_hunting = None
-    data_banking = None
+    hunting_map_data = None
+    banking_map_data = None
     fight_counter = 0
 
-    # Private class attributes.
-    __state = None
-    __character_overloaded = None
-    __pod_limit = 88
-    __map_type = None
+    def __init__(self, script: str, character_name: str):
+        self.__script = script
+        self.character_name = character_name
+        if not self.__is_script_valid(self.__script):
+            log.critical(f"Invalid script name '{self.__script}'! Exiting ... ")
+            os._exit(1)
+        self.__prepare_game_window()
+        self.__verify_character_name()
+        self.__initialize_states()
+        self.__set_script_map_data()
 
-    @classmethod
-    def controller(cls):
-        """'CONTROLLER' state logic."""
-        if cls.fight_counter % 11 == 0:
-            cls.__character_overloaded = cls.__get_pod_status()
+    def controller(self):
+        if self.fight_counter % self.__fight_limit == 0 and self.__is_overloaded():
+            log.info("Character is overloaded! Switching to 'BANKING' state ... ")
+            return self.__overloaded()
+        log.info("Character is not overloaded! Continuing ... ")
+        return self.__not_overloaded()
 
-        if cls.__character_overloaded:
-            cls.__state = cls.__overloaded()
-            return cls.__state
+    def __is_script_valid(self, script_to_check):
+        for script in self.__valid_scripts:
+            if script == script_to_check:
+                return True
+        return False
 
-        elif not cls.__character_overloaded:
-            cls.__state = cls.__not_overloaded()
-            return cls.__state
+    def __prepare_game_window(self):
+        log.info("Attempting to prepare Dofus window ... ")
+        if bool(gw.getWindowsWithTitle(self.character_name)):
+            for w in gw.getWindowsWithTitle(self.character_name):
+                if any(suffix in w.title for suffix in self.__window_suffixes):
+                    w.restore()
+                    w.activate()
+                    w.resizeTo(*self.__window_size)
+                    w.moveTo(*self.__window_pos)
+                    log.info(f"Successfully prepared '{w.title}' Dofus window!")
+                    return
+        log.critical(f"Failed to detect Dofus window for '{self.character_name}'! Exiting ...")
+        os._exit(1)
 
-    @classmethod
-    def __overloaded(cls):
-        """Execute this code when character is overloaded."""
-        cls.data_map = cls.data_banking
-        cls.__load_data_map(cls.data_map)
-        cls.map_coords = state.Moving.get_coordinates(cls.data_map)
-        cls.__load_map_coords(cls.map_coords)
-        botstate = BotState.BANKING
-        return botstate
-
-    @classmethod
-    def __not_overloaded(cls):
-        """Execute this code when character is not overloaded."""
-        if cls.map_changed or cls.map_coords is None:
-            cls.data_map = cls.data_hunting
-            cls.__load_data_map(cls.data_map)
-            cls.map_coords = state.Moving.get_coordinates(cls.data_map)
-            cls.__load_map_coords(cls.map_coords)
-            cls.__map_type = state.Moving.get_map_type(cls.data_map,
-                                                       cls.map_coords)
-            cls.map_changed = False
-
-        if cls.__map_type == "fightable":
-
-            if cls.map_searched == False:
-                botstate = BotState.HUNTING
-                return botstate
-
-            elif cls.map_searched == True:
-                botstate = BotState.MOVING
-                return botstate
-
-        elif cls.__map_type == "traversable":
-            botstate = BotState.MOVING
-            return botstate
-
+    def __verify_character_name(self):
+        log.info("Verifying character's name ... ")
+        attempts_allowed = 3
+        attempts_total = 0
+        while attempts_total < attempts_allowed:
+            PopUp.deal()
+            if PopUp.interface("characteristics", "open"):
+                sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
+                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
+                if self.character_name == r_and_t[0][1]:
+                    PopUp.interface("characteristics", "close")
+                    return True
+                else:
+                    log.critical("Invalid character name! Exiting ... ")
+                    os._exit(1)
+            else:
+                attempts_total += 1
         else:
-            log.critical(f"Invalid map type '{cls.__map_type}' for map "
-                         f"'{cls.map_coords}'!")
-            log.critical(f"Exiting ... ")
+            log.critical(
+                f"Failed to open characteristics interface {attempts_allowed} times!"
+                "Exiting ..."
+            )
             wc.WindowCapture.on_exit_capture()
 
-    @classmethod
-    def __get_pod_status(cls):
-        """Check if character is overlaoded or not."""
-        # Incrementing by '1' instantly so bot doesn't check pods
-        # everytime 'controller()' is called.
-        cls.fight_counter += 1
-        # Getting pods percentage.
-        pods_percentage = bank.Bank.get_pods_percentage()
+    def __initialize_states(self):
+        self.hunting = Hunting(self)
+        self.preparing = Preparing(self)
+        self.fighting = Fighting(self)
+        self.moving = Moving(self)
+        self.banking = Banking(self)
 
-        if pods_percentage >= cls.__pod_limit:
-            log.info("Overloaded! Going to bank ... ")
-            overloaded = True
+    def __set_script_map_data(self):
+        self.hunting_map_data = data.scripts.astrub_forest.Hunting.map_data[self.__script]
+        self.banking_map_data = data.scripts.astrub_forest.Banking.map_data
+
+    def __overloaded(self):
+        self.fight_counter += 1 # To avoid checking pods each map when running to bank
+        self.__load_data_map(self.banking_map_data)
+        self.__load_map_coords(self.moving.get_coordinates(self.banking_map_data))
+        return BotState.BANKING
+
+    def __not_overloaded(self):
+        if self.map_changed or self.map_coords is None:
+            self.__load_data_map(self.hunting_map_data)
+            self.map_coords = self.moving.get_coordinates(self.hunting_map_data)
+            self.__load_map_coords(self.map_coords)
+            self.__map_type = self.moving.get_map_type(self.hunting_map_data, self.map_coords)
+            self.map_changed = False
+
+        if self.__map_type == "fightable":
+            if self.map_searched == False:
+                return BotState.HUNTING
+            elif self.map_searched == True:
+                return BotState.MOVING
+        elif self.__map_type == "traversable":
+            return BotState.MOVING
         else:
-            log.info("Not overloaded!")
-            overloaded = False
+            log.critical(f"Invalid map type '{self.__map_type}' for map "
+                         f"'{self.map_coords}'! Exiting ... ")
+            wc.WindowCapture.on_exit_capture()
 
-        return overloaded
+    def __is_overloaded(self):
+        log.info("Checking if character is overloaded ... ")
+        return bank.Bank.get_pods_percentage() >= self.__pod_limit
 
-    @staticmethod
-    def __load_data_map(data):
-        """Load map data to other bot states."""
-        state.Banking.data_map = data
-        state.Fighting.data_map = data
-        state.Moving.data_map = data
-        state.Preparing.data_map = data
+    def __load_data_map(self, data):
+        self.banking.data_map = data
+        self.fighting.data_map = data
+        self.moving.data_map = data
+        self.preparing.data_map = data
 
-    @staticmethod
-    def __load_map_coords(data):
-        """Load map coords to other bot states."""
-        state.Banking.map_coords = data
-        state.Fighting.map_coords = data
-        state.Moving.map_coords = data
-        state.Preparing.map_coords = data
-        state.Hunting.map_coords = data
+    def __load_map_coords(self, data):
+        self.banking.map_coords = data
+        self.fighting.map_coords = data
+        self.moving.map_coords = data
+        self.preparing.map_coords = data
+        self.hunting.map_coords = data

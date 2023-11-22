@@ -6,9 +6,9 @@ import os
 class Logger:
     
     # Creating master 'log' folder if it's missing.
-    __LOGS_DIR = os.path.join(os.getcwd(), "logs")
-    if not os.path.exists(__LOGS_DIR):
-        os.mkdir(__LOGS_DIR)
+    LOGS_DIR_PATH = os.path.join(os.getcwd(), "logs")
+    if not os.path.exists(LOGS_DIR_PATH):
+        os.mkdir(LOGS_DIR_PATH)
 
     # Logging levels.
     NOTSET = logging.NOTSET
@@ -127,7 +127,7 @@ class Logger:
 
     @classmethod
     def __create_file_handler(cls, logger_name):
-        folder_path = os.path.join(cls.__LOGS_DIR, logger_name)
+        folder_path = os.path.join(cls.LOGS_DIR_PATH, logger_name)
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
 

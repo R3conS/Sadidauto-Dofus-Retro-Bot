@@ -1,5 +1,3 @@
-"""Logic related to 'HUNTING' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -11,27 +9,26 @@ from .botstate_enum import BotState
 import data
 import detection as dtc
 from pop_up import PopUp
-import state
 import window_capture as wc
 
 
 class Hunting:
-    """Holds various 'HUNTING' state methods."""
 
-    # Public class attributes.
     map_coords = None
-    data_monsters = None
-
-    # Private class attributes.
     __state = None
 
-    @classmethod
-    def hunting(cls):
-        """'HUNTING' state logic."""
-        log.info(f"Hunting on map ({cls.map_coords}) ... ")
+    def __init__(self, controller):
+        self.__controller = controller
+        self.__data_monsters = dtc.Detection.generate_image_data(
+            data.images.monster.AstrubForest.img_list,
+            data.images.monster.AstrubForest.img_path
+        )
+
+    def hunting(self):
+        log.info(f"Hunting on map ({self.map_coords}) ... ")
 
         # Chunks of monsters to search through.
-        chunks = cls.__chunkate_data(list(cls.data_monsters.keys()), 14)
+        chunks = self.__chunkate_data(list(self.__data_monsters.keys()), 14)
         # Stores chunks of monsters on which character failed an attack
         # >= 'fails_allowed' times.
         forbidden_chunks = []
@@ -53,14 +50,14 @@ class Hunting:
 
                 if chunk_number in forbidden_chunks:
                     if len(chunks) == len(forbidden_chunks):
-                        state.Controller.map_searched = True
-                        cls.__state = BotState.CONTROLLER
-                        return cls.__state
+                        self.__controller.map_searched = True
+                        self.__state = BotState.CONTROLLER
+                        return self.__state
                     else:
                         continue
 
                 log.debug(f"Searching chunk: {chunk_number} ... ")
-                _, obj_coords = cls.__search(cls.data_monsters, chunk)
+                _, obj_coords = self.__search(self.__data_monsters, chunk)
 
                 if len(obj_coords) > allowed_detections:
                     log.debug(f"Too many detections, most likely false ... ")
@@ -69,15 +66,15 @@ class Hunting:
 
                 if len(obj_coords) > 0:
 
-                    attack = cls.__attack(obj_coords)
+                    attack = self.__attack(obj_coords)
 
                     if attack == "success":
-                        cls.__state = BotState.PREPARING
-                        return cls.__state
+                        self.__state = BotState.PREPARING
+                        return self.__state
 
                     elif attack == "map_change":
-                        cls.__state = BotState.CONTROLLER
-                        return cls.__state
+                        self.__state = BotState.CONTROLLER
+                        return self.__state
 
                     elif attack == "fail":
                         forbidden_chunks.append(chunk_number)
@@ -96,19 +93,18 @@ class Hunting:
 
                 # If all chunks have been searched through.
                 if chunk_number + 1 == len(chunks.keys()):
-                    log.info(f"Map ({cls.map_coords}) is clear!")
-                    state.Controller.map_searched = True
-                    cls.__state = BotState.CONTROLLER
-                    return cls.__state
+                    log.info(f"Map ({self.map_coords}) is clear!")
+                    self.__controller.map_searched = True
+                    self.__state = BotState.CONTROLLER
+                    return self.__state
 
         else:
             log.error(f"Timed out in 'hunting()'!")
-            if state.Moving.emergency_teleport():
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+            if self.__controller.moving.emergency_teleport():
+                self.__state = BotState.CONTROLLER
+                return self.__state
 
-    @classmethod
-    def __attack(cls, monster_coords):
+    def __attack(self, monster_coords):
         """
         Attack monsters.
 
@@ -138,10 +134,10 @@ class Hunting:
 
             # Taking a screenshot that is used later to determine
             # whether map was accidentally changed during attack.
-            scs_before_attack = state.Moving.screenshot_minimap()
+            scs_before_attack = self.__controller.moving.screenshot_minimap()
 
             # Checking if monster was attacked by other player.
-            if cls.__check_sword((x, y)):
+            if self.__check_sword((x, y)):
                 log.info(f"Failed to attack monster at {x, y} because it was "
                          "attacked by someone else!")
                 return "sword"
@@ -156,7 +152,7 @@ class Hunting:
             pyag.click(button="left")
 
             # Checking if monster moved.
-            if cls.__check_right_click_menu():
+            if self.__check_right_click_menu():
                 log.info(f"Failed to attack monster at {x, y} because it "
                          "moved!")
                 return "right_click_menu"
@@ -186,14 +182,13 @@ class Hunting:
                 # Dealing with any pop ups before continuing.
                 PopUp.deal()
 
-                if cls.__accidental_map_change(scs_before_attack):
+                if self.__accidental_map_change(scs_before_attack):
                     return "map_change"
 
                 if attempts_allowed == attempts_total:
                     return "fail"
 
-    @classmethod
-    def __accidental_map_change(cls, sc_before_attack):
+    def __accidental_map_change(self, sc_before_attack):
         """
         Check if map was changed accidentally during an attack.
 
@@ -208,13 +203,13 @@ class Hunting:
             If map was changed.
         
         """
-        sc_after_attack = state.Moving.screenshot_minimap()
+        sc_after_attack = self.__controller.moving.screenshot_minimap()
         rects = dtc.Detection.find(sc_before_attack,
                                    sc_after_attack,
                                    threshold=0.98)
         if len(rects) <= 0:
             log.info("Map was changed accidentally during an attack!")
-            state.Controller.map_changed = True
+            self.__controller.map_changed = True
             return True
 
     @staticmethod

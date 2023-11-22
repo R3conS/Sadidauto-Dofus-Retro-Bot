@@ -11,9 +11,9 @@ from cmd_line_parser import Parser
 
 def exit_with_hotkey():
     def exit():
-        log.info("Exit hotkey '<ctrl>+<alt>+q' pressed! Exiting ... ")
+        log.info("Exit hotkey '<ctrl>+<alt>+w' pressed! Exiting ... ")
         os._exit(1)
-    with keyboard.GlobalHotKeys({"<ctrl>+<alt>+q": exit}) as h:
+    with keyboard.GlobalHotKeys({"<ctrl>+<alt>+w": exit}) as h:
         h.join()
 
 

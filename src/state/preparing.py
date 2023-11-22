@@ -1,5 +1,3 @@
-"""Logic related to 'PREPARING' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -10,7 +8,6 @@ import pyautogui as pyag
 from .botstate_enum import BotState
 import data
 import detection as dtc
-import state
 import window_capture as wc
 
 
@@ -27,8 +24,10 @@ class Preparing:
     __cell_coords = None
     __cell_color = None
 
-    @classmethod
-    def preparing(cls):
+    def __init__(self, controller):
+        self.__controller = controller
+
+    def preparing(self):
         """'PREPARING' state logic."""
         # Stores whether to check for dummy cells. Always checks on
         # first iteration of loop.
@@ -43,23 +42,23 @@ class Preparing:
 
         while time.time() - start_time < allowed_time:
 
-            if not cls.__tactical_mode:
-                if cls.__enable_tactical_mode():
-                    cls.__tactical_mode = True
+            if not self.__tactical_mode:
+                if self.__enable_tactical_mode():
+                    self.__tactical_mode = True
 
-            if cls.__tactical_mode:
+            if self.__tactical_mode:
 
                 if check_for_dummy_cells:
 
                     check_for_dummy_cells = False
-                    if cls.__check_dummy_cells(cls.map_coords, cls.data_map):
-                        cls.__select_dummy_cells()
+                    if self.__check_dummy_cells(self.map_coords, self.data_map):
+                        self.__select_dummy_cells()
 
                 else:
 
-                    if cls.__select_starting_cell():
-                        cls.__state = BotState.FIGHTING
-                        return cls.__state
+                    if self.__select_starting_cell():
+                        self.__state = BotState.FIGHTING
+                        return self.__state
                     else:
                         continue
 
@@ -69,8 +68,7 @@ class Preparing:
             log.critical("Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-    @classmethod
-    def get_start_cell_color(cls, map_coords, database, start_cell_coords):
+    def get_start_cell_color(self, map_coords, database, start_cell_coords):
         """
         Get combat start cell color.
 
@@ -89,7 +87,7 @@ class Preparing:
             Color of starting cell.
 
         """
-        cells_list = cls.__get_cells_from_database(map_coords, database)
+        cells_list = self.__get_cells_from_database(map_coords, database)
         index = cells_list.index(start_cell_coords)
 
         if index <= 1:
@@ -97,8 +95,7 @@ class Preparing:
         elif index >= 2:
             return "blue"
 
-    @classmethod
-    def __move_char_to_cell(cls, cell_coordinates_list):
+    def __move_char_to_cell(self, cell_coordinates_list):
         """
         Move character to cell.
 
@@ -128,14 +125,13 @@ class Preparing:
             pyag.moveTo(cell[0], cell[1])
             pyag.click()
             time.sleep(wait_after_move_char)
-            if cls.__check_if_char_moved(cell):
-                cls.__cell_coords = cell
-                state.Fighting.cell_coords = cls.__cell_coords
+            if self.__check_if_char_moved(cell):
+                self.__cell_coords = cell
+                self.__controller.fighting.cell_coords = self.__cell_coords
                 return True
         return False
 
-    @classmethod
-    def __select_starting_cell(cls):
+    def __select_starting_cell(self):
         """Select starting cell and start combat."""
         log.info(f"Trying to move character to starting cell ... ")
 
@@ -146,48 +142,47 @@ class Preparing:
 
         while time.time() - start_time < timeout:
 
-            cells = cls.__get_cells_from_database(cls.map_coords, cls.data_map)
-            e_cells = cls.__get_empty_cells(cells)
+            cells = self.__get_cells_from_database(self.map_coords, self.data_map)
+            e_cells = self.__get_empty_cells(cells)
 
             if len(e_cells) <= 0:
-                cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+                self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                 continue
 
-            if cls.__move_char_to_cell(e_cells):
+            if self.__move_char_to_cell(e_cells):
 
-                cls.__cell_color = cls.get_start_cell_color(cls.map_coords,
-                                                            cls.data_map,
-                                                            cls.__cell_coords)
-                state.Fighting.cell_color = cls.__cell_color
+                self.__cell_color = self.get_start_cell_color(self.map_coords,
+                                                            self.data_map,
+                                                            self.__cell_coords)
+                self.__controller.fighting.cell_color = self.__cell_color
 
-                if cls.__start_combat():
+                if self.__start_combat():
                     log.info(f"Successfully selected starting cell!")
                     return "combat_start"
 
             else:
 
                 if failed_attempts < attempts_allowed:
-                    cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+                    self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                     failed_attempts += 1
                     continue
 
                 else:
                     log.error("Cell selection failed!")
                     log.info("Trying to start combat ... ")
-                    if cls.__start_combat():
-                        state.Fighting.cell_select_failed = True
+                    if self.__start_combat():
+                        self.__controller.fighting.cell_select_failed = True
                         return "selection_fail"
 
         else:
             log.error(f"Timed out in '__select_starting_cell()'!")
             log.error("Cell selection failed!")
             log.info("Trying to start combat ... ")
-            if cls.__start_combat():
-                state.Fighting.cell_select_failed = True
+            if self.__start_combat():
+                self.__controller.fighting.cell_select_failed = True
                 return "selection_fail"
 
-    @classmethod
-    def __select_dummy_cells(cls):
+    def __select_dummy_cells(self):
         """
         Select dummy cell to make starting cells visible.
         
@@ -205,21 +200,21 @@ class Preparing:
 
         while time.time() - start_time < timeout:
 
-            cells = cls.__get_dummy_cells(cls.map_coords, cls.data_map)
-            e_cells = cls.__get_empty_cells(cells)
+            cells = self.__get_dummy_cells(self.map_coords, self.data_map)
+            e_cells = self.__get_empty_cells(cells)
 
             if len(e_cells) <= 0:
-                cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+                self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                 continue
 
-            if cls.__move_char_to_cell(e_cells):
+            if self.__move_char_to_cell(e_cells):
                 log.info("Successfully moved character to dummy cell!")
                 return True
 
             else:
 
                 if failed_attempts < attempts_allowed:
-                    cls.map_coords = state.Moving.get_coordinates(cls.data_map)
+                    self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                     failed_attempts += 1
                     continue
                 else:

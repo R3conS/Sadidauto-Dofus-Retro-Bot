@@ -1,5 +1,3 @@
-"""Logic related to 'MOVING' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -10,74 +8,70 @@ import cv2 as cv
 import pyautogui as pyag
 
 from .botstate_enum import BotState
-import bank
 import detection as dtc
 from pop_up import PopUp
-import state
 import window_capture as wc
 
 
 class Moving:
-    """Holds various 'MOVING' state methods."""
 
-    # Public class attributes.
     map_coords = None
     data_map = None
 
-    # Private class attributes.
     __state = None
     __emergency_teleports = 0
 
-    @classmethod
-    def moving(cls):
+    def __init__(self, controller):
+        self.__controller = controller
+
+    def moving(self):
         """'MOVING' state logic."""
         attempts_total = 0
         attempts_allowed = 3
 
         while attempts_total < attempts_allowed:
 
-            if cls.map_coords == "1,-25":
+            if self.map_coords == "1,-25":
 
-                if cls.__detect_lumberjack_ws_interior():
+                if self.__detect_lumberjack_ws_interior():
                     log.info("Trying to exit the workshop ... ")
                     pyag.keyDown('e')
                     pyag.moveTo(667, 507)
                     pyag.click()
                     pyag.keyUp('e')
                     
-                    if cls.__detect_if_map_changed():
+                    if self.__detect_if_map_changed():
                         log.info("Successfuly exited the workshop!")
-                        cls.__state = BotState.CONTROLLER
-                        return cls.__state
+                        self.__state = BotState.CONTROLLER
+                        return self.__state
                     else:
                         log.error(f"Failed to exit the workshop!")
                         attempts_total += 1
                         continue
 
-            if cls.__change_map(cls.data_map, cls.map_coords):
+            if self.__change_map(self.data_map, self.map_coords):
                 # Resetting emergency teleport count to 0 after a
                 # successful map change. Means character is not stuck
                 # and good to go.
-                cls.__emergency_teleports = 0
-                state.Controller.map_searched = False
-                state.Controller.map_changed = True
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+                self.__emergency_teleports = 0
+                self.__controller.map_searched = False
+                self.__controller.map_changed = True
+                self.__state = BotState.CONTROLLER
+                return self.__state
             else:
                 PopUp.deal()
                 attempts_total += 1     
-                cls.map_coords = cls.get_coordinates(cls.data_map)
+                self.map_coords = self.get_coordinates(self.data_map)
                 continue
 
         else:
             log.error(f"Failed to change maps in {attempts_allowed} "
                       "attempts!")
-            if cls.emergency_teleport():
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+            if self.emergency_teleport():
+                self.__state = BotState.CONTROLLER
+                return self.__state
 
-    @classmethod
-    def get_coordinates(cls, database):
+    def get_coordinates(self, database):
         """
         Get current map's coordinates.
 
@@ -98,7 +92,7 @@ class Moving:
         """
         # Taking screenshot of coordinate are to help determine if 
         # map tooltip appears later in the script.
-        coord_area = cls.__screenshot_coordinate_area()
+        coord_area = self.__screenshot_coordinate_area()
         # Stores if coordinate detection failed first time. Sometimes
         # happens when Dofus is laggy. Especially in crowded areas.
         detection_failed = False
@@ -123,7 +117,7 @@ class Moving:
                 time.sleep(1)
 
             # If map tooltip didn't appear - restart loop.
-            if not cls.__detect_map_tooltip(coord_area):
+            if not self.__detect_map_tooltip(coord_area):
                 if PopUp.detect_offers():
                     PopUp.deal()
                 continue
@@ -160,20 +154,19 @@ class Moving:
                 detection_failed = True
                 continue
 
-            if cls.__check_if_map_in_database(coords, database):
+            if self.__check_if_map_in_database(coords, database):
                 log.info(f"Character is currently on map ({coords})!")
                 return coords
             else:
                 log.error(f"Map ({coords}) doesn't exist in database!")
-                cls.emergency_teleport()
+                self.emergency_teleport()
 
         else:
             log.error("Error in 'get_coordinates()'!")
             log.error(f"Exceeded detection limit of {timeout} second(s)!")
-            cls.emergency_teleport()
+            self.emergency_teleport()
 
-    @classmethod
-    def get_map_type(cls, database, map_coordinates):
+    def get_map_type(self, database, map_coordinates):
         """
         Get current map's type.
         
@@ -196,22 +189,21 @@ class Moving:
                     map_type = i_value["map_type"]
                     return map_type
 
-    @classmethod
-    def emergency_teleport(cls):
+    def emergency_teleport(self):
         """Teleport using 'Recall Potion' when stuck somewhere."""
         PopUp.deal()
 
-        if cls.__emergency_teleports >= 3:
+        if self.__emergency_teleports >= 3:
             log.critical(f"Emergency teleport limit exceeded!")
             log.critical(f"Exiting ... ")
             wc.WindowCapture.on_exit_capture()
 
-        elif state.Banking.recall_potion_available():
+        elif self.__controller.banking.recall_potion_available():
 
-            cls.__emergency_teleports += 1
-            log.info(f"Emergency teleports: {cls.__emergency_teleports}")
+            self.__emergency_teleports += 1
+            log.info(f"Emergency teleports: {self.__emergency_teleports}")
 
-            if state.Banking.recall():
+            if self.__controller.banking.recall():
                 log.info("Emergency teleport successful!")
                 return True
             else:
@@ -220,19 +212,18 @@ class Moving:
         else:
             wc.WindowCapture.on_exit_capture()
 
-    @classmethod
-    def loading_screen(cls, wait_time):
+    def loading_screen(self, wait_time):
         """Detect beginning and end of 'Loading Map' screen."""
         start_time = time.time()
 
         while time.time() - start_time < wait_time:
 
-            if cls.__detect_black_pixels():
+            if self.__detect_black_pixels():
                 log.debug("'Loading Map' screen detected!'")
 
                 while time.time() - start_time < wait_time:
 
-                    if not cls.__detect_black_pixels():
+                    if not self.__detect_black_pixels():
                         log.debug("Finished loading!")
                         return True
                     else:
@@ -274,20 +265,18 @@ class Moving:
             )
         return screenshot
 
-    @classmethod
-    def __detect_if_map_changed(cls):
+    def __detect_if_map_changed(self):
         """Check if map was changed successfully."""
         # How long to keep checking if map was changed.
         wait_map_change = 10
-        if cls.loading_screen(wait_map_change):
+        if self.loading_screen(wait_map_change):
             log.info(f"Map changed successfully!")
             return True
         else:
             log.error(f"Failed to change maps!")
             return False
 
-    @classmethod
-    def __change_map(cls, database, map_coords):
+    def __change_map(self, database, map_coords):
         """
         Change maps.
 
@@ -323,7 +312,7 @@ class Moving:
 
         # Changing maps.
         PopUp.close_right_click_menu()
-        coords, choice = cls.__get_move_coords(database, map_coords)
+        coords, choice = self.__get_move_coords(database, map_coords)
         log.info(f"Clicking on: {coords[0], coords[1]} to move {choice} ... ")
         pyag.keyDown('e')
         pyag.moveTo(coords[0], coords[1])
@@ -333,13 +322,12 @@ class Moving:
         pyag.keyUp('e')
 
         # Checking if map was changed.
-        if cls.__detect_if_map_changed():
+        if self.__detect_if_map_changed():
             return True
         else:
             return False
 
-    @classmethod
-    def __detect_map_tooltip(cls, screenshot_before):
+    def __detect_map_tooltip(self, screenshot_before):
         """
         Detect map tooltip on minimap.
         
@@ -362,7 +350,7 @@ class Moving:
 
         while time.time() - start_time < timeout:
 
-            screenshot_after = cls.__screenshot_coordinate_area()
+            screenshot_after = self.__screenshot_coordinate_area()
 
             rects = dtc.Detection.find(
                     screenshot_before, 

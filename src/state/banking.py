@@ -1,5 +1,3 @@
-"""Logic related to 'BANKING' bot state."""
-
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -11,22 +9,24 @@ from .botstate_enum import BotState
 import bank
 from pop_up import PopUp
 import state
+import data
 import window_capture as wc
 
 
 class Banking:
-    """Holds various 'BANKING' state methods."""
 
-    # Public class attributes.
     map_coords = None
     data_map = None
 
-    # Private class attributes.
     __state = None
     __recall_potion_used = False
 
-    @classmethod
-    def banking(cls):
+    def __init__(self, controller):
+        self.__controller = controller
+        bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
+        bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
+
+    def banking(self):
         """
         Banking logic.
 
@@ -43,33 +43,32 @@ class Banking:
 
         while True:
 
-            if not cls.__recall_potion_used and cls.map_coords == "4,-19":
-                cls.__recall_potion_used = True
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+            if not self.__recall_potion_used and self.map_coords == "4,-19":
+                self.__recall_potion_used = True
+                self.__state = BotState.CONTROLLER
+                return self.__state
 
-            elif not cls.__recall_potion_used:
-                if cls.recall_potion_available():
-                    if cls.recall():
+            elif not self.__recall_potion_used:
+                if self.recall_potion_available():
+                    if self.recall():
                         log.info("Successfully recalled during banking state!")
                     else:
                         log.error("Failed to recall during banking state!")
-                cls.__recall_potion_used = True
-                cls.__state = BotState.CONTROLLER
-                return cls.__state
+                self.__recall_potion_used = True
+                self.__state = BotState.CONTROLLER
+                return self.__state
 
-            elif cls.map_coords == "4,-16":
-                if cls.__astrub_bank():
-                    cls.__recall_potion_used = False
-                    cls.__state = BotState.CONTROLLER
-                    return cls.__state
+            elif self.map_coords == "4,-16":
+                if self.__astrub_bank():
+                    self.__recall_potion_used = False
+                    self.__state = BotState.CONTROLLER
+                    return self.__state
 
             else:
-                cls.__state = BotState.MOVING
-                return cls.__state
+                self.__state = BotState.MOVING
+                return self.__state
 
-    @classmethod
-    def recall(cls):
+    def recall(self):
         """
         Recall by using 'Recall Potion'.
         
@@ -85,9 +84,9 @@ class Banking:
 
             PopUp.deal()
 
-            if cls.__use_recall_potion():
+            if self.__use_recall_potion():
                 log.info("Successfully recalled to save point!")
-                state.Controller.map_changed = True
+                self.__controller.map_changed = True
                 return True
             else:
                 continue
@@ -116,8 +115,7 @@ class Banking:
             log.info("'Recall Potion' is not available!")
             return False
 
-    @classmethod
-    def __use_recall_potion(cls):
+    def __use_recall_potion(self):
         """
         Double click 'Recall Potion' in 'Items' bar.
         
@@ -134,7 +132,7 @@ class Banking:
             return True
 
         else:
-            coords = state.Moving.get_coordinates(cls.data_map)
+            coords = state.Moving.get_coordinates(self.data_map)
 
             if coords == "4,-19":
                 log.info("Successfully used 'Recall Potion'!")
@@ -144,8 +142,7 @@ class Banking:
                 log.error(f"Failed to use 'Recall Potion'!")
                 return False
 
-    @classmethod
-    def __astrub_bank(cls):
+    def __astrub_bank(self):
         """
         'Astrub Bank' banking logic.
         
@@ -180,7 +177,7 @@ class Banking:
 
             elif character_inside_bank and items_deposited:
                 if bank.Bank.exit_bank():
-                    state.Controller.fight_counter = 0
+                    self.__controller.fight_counter = 0
                     return True
                 else:
                     attempts_total += 1

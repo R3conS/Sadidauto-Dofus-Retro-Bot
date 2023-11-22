@@ -198,23 +198,12 @@ class WindowCapture:
         program can't continue to run.
 
         """
-        # Creating folder for image storage if it's missing.
-        current_work_dir = os.getcwd()
-        master_log_folder_name = Logger.master_log_folder
-        images_folder = "on_exit_images"
-        images_folder_path = os.path.join(current_work_dir, 
-                                          master_log_folder_name,
-                                          images_folder)
-        master_log_folder = os.listdir(os.path.join(current_work_dir,
-                                                    master_log_folder_name))
-        if images_folder not in master_log_folder:
+        images_folder_name = "on_exit_images"
+        images_folder_path = os.path.join(Logger.LOGS_DIR_PATH, images_folder_name)
+        if images_folder_name not in os.listdir(Logger.LOGS_DIR_PATH):
             os.mkdir(images_folder_path)
 
-        # Generating image file name.
-        now = datetime.datetime.now()
-        image_name = now.strftime("[%Y-%m-%d] Captured - %Hh %Mm %Ss") + ".jpg"
-
-        # Capturing screen.
+        image_name = datetime.datetime.now().strftime("[%Y-%m-%d] Captured - %Hh %Mm %Ss") + ".jpg"
         log.info("Taking a screenshot for debug ... ")
         pyautogui.screenshot(os.path.join(images_folder_path, image_name))
         log.info(f"Saved: '{os.path.join(images_folder_path, image_name)}'!")
