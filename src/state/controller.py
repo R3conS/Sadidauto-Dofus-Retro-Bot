@@ -96,27 +96,25 @@ class Controller:
 
     def __verify_character_name(self):
         log.info("Verifying character's name ... ")
-        attempts_allowed = 3
-        attempts_total = 0
-        while attempts_total < attempts_allowed:
-            Interfaces.open_characteristics()
-            if Interfaces.is_characteristics_open():
-                sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
-                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
-                if self.character_name == r_and_t[0][1]:
-                    Interfaces.close_characteristics()
-                    return True
-                else:
-                    log.critical("Invalid character name! Exiting ... ")
-                    os._exit(1)
+        Interfaces.open_characteristics()
+        if Interfaces.is_characteristics_open():
+            sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
+            r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
+            if self.character_name == r_and_t[0][1]:
+                Interfaces.close_characteristics()
+                if Interfaces.is_characteristics_closed():
+                    log.info("Successfully verified character's name!")
+                    return
             else:
-                attempts_total += 1
+                log.critical("Invalid character name! Exiting ... ")
+                os._exit(1)
         else:
             log.critical(
-                f"Failed to open characteristics interface {attempts_allowed} times!"
-                "Exiting ..."
+                "Failed to verify character's name because 'Characteristics' "
+                "interface is not open! Exiting ... "
             )
             wc.WindowCapture.on_exit_capture()
+            os._exit(1)
 
     def __initialize_states(self):
         self.hunting = Hunting(self)
