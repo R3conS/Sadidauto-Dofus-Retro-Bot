@@ -8,38 +8,10 @@ from pyautogui import moveTo, click, pixelMatchesColor
 import data
 import detection
 import window_capture as wc
+from src.tesserocr.ocr import get_text_from_image
 
 
 class Interfaces:
-
-    @staticmethod
-    def open_characteristics():
-        log.info("Opening 'Characteristics' interface ... ")
-        moveTo(613, 622)
-        click()
-    
-    @staticmethod
-    def close_characteristics():
-        log.info("Closing 'Characteristics' interface ... ")
-        moveTo(613, 622)
-        click()
-
-    @staticmethod
-    def open_inventory():
-        log.info("Opening 'Inventory' interface ... ")
-        moveTo(690, 622)
-        click()
-
-    @staticmethod
-    def close_inventory():
-        log.info("Closing 'Inventory' interface ... ")
-        moveTo(690, 622)
-        click()
-
-    @staticmethod
-    def close_right_click_menu():
-        moveTo(929, 51)
-        click(clicks=2)
 
     def __with_timeout(interface: str, state: str, timeout_seconds: int = 3):
         """
@@ -60,6 +32,18 @@ class Interfaces:
         return is_action_successful
 
     @staticmethod
+    def open_characteristics():
+        log.info("Opening 'Characteristics' interface ... ")
+        moveTo(613, 622)
+        click()
+    
+    @staticmethod
+    def close_characteristics():
+        log.info("Closing 'Characteristics' interface ... ")
+        moveTo(613, 622)
+        click()
+
+    @staticmethod
     @__with_timeout("characteristics", "open")
     def is_characteristics_open():
         return all((
@@ -74,6 +58,18 @@ class Interfaces:
             pixelMatchesColor(902, 117, (81, 74, 60)),
             pixelMatchesColor(870, 331, (81, 74, 60))
         ))
+
+    @staticmethod
+    def open_inventory():
+        log.info("Opening 'Inventory' interface ... ")
+        moveTo(690, 622)
+        click()
+
+    @staticmethod
+    def close_inventory():
+        log.info("Closing 'Inventory' interface ... ")
+        moveTo(690, 622)
+        click()
 
     @staticmethod
     @__with_timeout("inventory", "open")
@@ -206,3 +202,35 @@ class Interfaces:
             data.images.Interface.dofus_logo,
             threshold=0.95
         )) > 0
+
+    @staticmethod
+    def close_right_click_menu():
+        moveTo(929, 51)
+        click(clicks=2)
+
+    @staticmethod
+    def is_right_click_menu_open():
+        screenshot = wc.WindowCapture.gamewindow_capture(convert=False)
+        text = get_text_from_image(
+            image=screenshot,
+            convert_to_grayscale=True,
+            resize_to=(screenshot.width+1000, screenshot.height+400),
+            binarization_threshold_value=175
+        )
+        keywords = ["Flash", "Options", "Zoom", "Display"]
+        detected_keywords = [keyword for keyword in keywords if keyword in text]
+        return len(detected_keywords) == len(keywords)
+    
+    @staticmethod
+    @__with_timeout("right click menu", "closed")
+    def is_right_click_menu_closed():
+        screenshot = wc.WindowCapture.gamewindow_capture(convert=False)
+        text = get_text_from_image(
+            image=screenshot,
+            convert_to_grayscale=True,
+            resize_to=(screenshot.width+1000, screenshot.height+400),
+            binarization_threshold_value=175
+        )
+        keywords = ["Flash", "Options", "Zoom", "Display"]
+        detected_keywords = [keyword for keyword in keywords if keyword in text]
+        return not len(detected_keywords) == len(keywords)
