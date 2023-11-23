@@ -94,7 +94,6 @@ class Interfaces:
         ))
 
     @staticmethod
-    @__with_timeout("offer/invite", "open")
     def is_offer_or_invite_open():
         """Exchange, challenge offers & guild, group invites."""
         return all((

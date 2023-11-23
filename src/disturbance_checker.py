@@ -20,9 +20,11 @@ class DisturbanceChecker(threading.Thread):
     def run(self):
         log.info("Disturbance checker started!")
         while True:
-            if Interfaces.is_open_offer_or_invite():
-                log.info("Offer or invite detected! Ignoring ... ")
+            if Interfaces.is_offer_or_invite_open():
+                log.info("Offer or invite from another player detected!")
                 self.__ignore_for_session()
+                if Interfaces.is_offer_or_invite_closed():
+                    log.info("Successfully ignored player!")
             sleep(self.__check_interval)
 
     def __ignore_for_session(self):
