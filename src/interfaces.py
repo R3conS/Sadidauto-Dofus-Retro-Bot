@@ -43,7 +43,7 @@ class Interfaces:
 
     def __with_timeout(interface: str, state: str, timeout_seconds: int = 3):
         """
-        Decorator. Allows to check if the interface state is `True` (open/closed)
+        Decorator. Allows to check if the interface state is open/closed
         within the specified interval of time.
         """
         def is_action_successful(decorated_method):
@@ -118,7 +118,6 @@ class Interfaces:
         ))
 
     @staticmethod
-    @__with_timeout("information", "open")
     def is_information_open():
         """E.g. appears after a level up."""
         return all((
