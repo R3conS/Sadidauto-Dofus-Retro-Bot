@@ -9,7 +9,7 @@ import pyautogui as pyag
 
 from .botstate_enum import BotState
 import detection as dtc
-from pop_up import PopUp
+from interfaces import Interfaces
 import window_capture as wc
 
 
@@ -59,7 +59,6 @@ class Moving:
                 self.__state = BotState.CONTROLLER
                 return self.__state
             else:
-                PopUp.deal()
                 attempts_total += 1     
                 self.map_coords = self.get_coordinates(self.data_map)
                 continue
@@ -118,8 +117,6 @@ class Moving:
 
             # If map tooltip didn't appear - restart loop.
             if not self.__detect_map_tooltip(coord_area):
-                if PopUp.detect_offers():
-                    PopUp.deal()
                 continue
             else:
                 log.debug(f"Map tooltip detected!")
@@ -149,8 +146,6 @@ class Moving:
                             coords = coords[:index] + "," + coords[index:]
             except IndexError:
                 log.error(f"Coordinate detection failed!")
-                # Dealing with any offers/interfaces before retrying.
-                PopUp.deal()
                 detection_failed = True
                 continue
 
@@ -191,8 +186,6 @@ class Moving:
 
     def emergency_teleport(self):
         """Teleport using 'Recall Potion' when stuck somewhere."""
-        PopUp.deal()
-
         if self.__emergency_teleports >= 3:
             log.critical(f"Emergency teleport limit exceeded!")
             log.critical(f"Exiting ... ")
@@ -311,7 +304,7 @@ class Moving:
         wait_bottom_click = 0.5
 
         # Changing maps.
-        PopUp.close_right_click_menu()
+        Interfaces.close_right_click_menu()
         coords, choice = self.__get_move_coords(database, map_coords)
         log.info(f"Clicking on: {coords[0], coords[1]} to move {choice} ... ")
         pyag.keyDown('e')

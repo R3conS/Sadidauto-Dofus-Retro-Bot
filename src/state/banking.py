@@ -7,7 +7,7 @@ import pyautogui as pyag
 
 from .botstate_enum import BotState
 import bank
-from pop_up import PopUp
+from interfaces import Interfaces
 import state
 import data
 import window_capture as wc
@@ -82,8 +82,6 @@ class Banking:
         timeout = 10
 
         while time.time() - use_time < timeout:
-
-            PopUp.deal()
 
             if self.__use_recall_potion():
                 log.info("Successfully recalled to save point!")
@@ -167,7 +165,6 @@ class Banking:
 
         while attempts_total < attempts_allowed:
 
-            PopUp.deal()
             character_inside_bank = bank.Bank.inside_or_outside()
 
             if not character_inside_bank:
@@ -189,7 +186,6 @@ class Banking:
                 timeout = 60
 
                 while time.time() - start_time < timeout:
-                    PopUp.deal()
                     if bank.Bank.open_bank_vault():
                         if bank.Bank.deposit_items():
                             if bank.Bank.close_bank_vault():

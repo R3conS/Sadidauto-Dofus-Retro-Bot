@@ -11,7 +11,7 @@ import pyautogui
 
 import data
 import detection as dtc
-import pop_up as pu
+import interfaces as itf
 import window_capture as wc
 
 
@@ -61,11 +61,9 @@ class Bank:
 
         while time.time() - start_time < timeout:
 
-            # Checking for offers/interfaces and closing them.
-            pu.PopUp.deal()
-
             if cls.__inventory() == "closed":
-                if not pu.PopUp.interface("inventory", "open"):
+                itf.Interfaces.open_inventory()
+                if not itf.Interfaces.is_inventory_open():
                     continue
 
             pods_percentage = cls.__calculate_pods()
@@ -80,7 +78,8 @@ class Bank:
                 continue
 
             if cls.__inventory() == "opened":
-                if not pu.PopUp.interface("inventory", "close"):
+                itf.Interfaces.close_inventory()
+                if not itf.Interfaces.is_inventory_closed():
                     continue
 
             return pods_percentage

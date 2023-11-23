@@ -12,7 +12,7 @@ import cv2 as cv
 import numpy as np
 import pyautogui
 
-import pop_up as pu
+import interfaces as itf
 
 
 class WindowCapture:
@@ -218,19 +218,18 @@ class WindowCapture:
         start_time = time()
         timeout = 15
         while time() - start_time < timeout:
-            pu.PopUp.deal()
             # Opening 'Main Menu'.
             pyautogui.press("esc")
             sleep(0.5)
-            if pu.PopUp.detect_interfaces() == "main_menu":
+            if itf.Interfaces.detect_interfaces() == "main_menu":
                 pyautogui.moveTo(468, 318, duration=0.15)
                 pyautogui.click()
                 sleep(0.5)
-                if pu.PopUp.detect_interfaces() == "caution":
+                if itf.Interfaces.detect_interfaces() == "caution":
                     pyautogui.moveTo(381, 371, duration=0.15)
                     pyautogui.click()
                     sleep(2.5)
-                    if pu.PopUp.detect_interfaces() == "login_screen":
+                    if itf.Interfaces.detect_interfaces() == "login_screen":
                         log.info("Logged out successfully!")
                         break
         else:

@@ -9,7 +9,7 @@ from .botstate_enum import BotState
 import combat as cbt
 import data
 import detection as dtc
-from pop_up import PopUp
+from interfaces import Interfaces
 import window_capture as wc
 
 
@@ -269,9 +269,6 @@ class Fighting:
                         # Moving mouse off the 'Close' button in case it 
                         # needs to be detected again.
                         pyag.move(100, 0)
-
-                        # Checking for offers/interfaces and closing them.
-                        PopUp.deal()
 
                 else:
                     log.critical("Couldn't close 'Fight Results' window in "

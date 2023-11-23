@@ -8,7 +8,7 @@ import pygetwindow as gw
 import bank
 import data
 import detection as dtc
-from pop_up import PopUp
+from interfaces import Interfaces
 import window_capture as wc
 from state.botstate_enum import BotState
 from state.hunting import Hunting
@@ -99,12 +99,12 @@ class Controller:
         attempts_allowed = 3
         attempts_total = 0
         while attempts_total < attempts_allowed:
-            PopUp.deal()
-            if PopUp.interface("characteristics", "open"):
+            Interfaces.open_characteristics()
+            if Interfaces.is_characteristics_open():
                 sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
                 r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
                 if self.character_name == r_and_t[0][1]:
-                    PopUp.interface("characteristics", "close")
+                    Interfaces.close_characteristics()
                     return True
                 else:
                     log.critical("Invalid character name! Exiting ... ")
