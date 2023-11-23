@@ -4,7 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import threading
 from time import sleep
 
-from pyautogui import moveTo, click, press
+from pyautogui import moveTo, click
 
 from interfaces import Interfaces
 

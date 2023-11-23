@@ -5,6 +5,7 @@ import threading
 
 from state.botstate_enum import BotState
 from state.controller import Controller
+from disturbance_checker import DisturbanceChecker
 import window_capture as wc
 
 
@@ -14,6 +15,8 @@ class Bot(threading.Thread):
         super().__init__()
         self.daemon = True
         self.controller = Controller(script, character_name)
+        self.disturbance_checker = DisturbanceChecker()
+        self.disturbance_checker.start()
         self.hunting = self.controller.hunting
         self.preparing = self.controller.preparing
         self.fighting = self.controller.fighting
