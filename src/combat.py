@@ -114,7 +114,7 @@ class Combat:
             log.info("Passing turn ... ")
             pyag.moveTo(616, 726, duration=0.15)
             pyag.click()
-            # Moving mouse off 'pass turn' button.
+            # MapChanger mouse off 'pass turn' button.
             pyag.move(0, 30)
             # Giving time for "Illustration to signal your turn" to 
             # disappear. Otherwise when character passes quickly at 
@@ -309,7 +309,7 @@ class Combat:
                 _, _, text = dtc.Detection.detect_text_from_image(sc)
 
                 if cls.character_name in text:
-                    # Moving mouse off char. so spell bar is visible.
+                    # MapChanger mouse off char. so spell bar is visible.
                     pyag.moveTo(929, 51)
                     return coord
 
@@ -366,7 +366,7 @@ class Combat:
         # animation has ended.
         ap_area_before_casting = cls.__screenshot_ap_area()
 
-        # Moving mouse to cast coordinates and casting spell.
+        # MapChanger mouse to cast coordinates and casting spell.
         pyag.moveTo(cast_coordinates[0], cast_coordinates[1])
         if cls.__detect_spell_icon(s_spell_icons[spell], cast_coordinates):
             log.info(f"Casting spell: '{spell}' ... ") 
@@ -377,7 +377,7 @@ class Combat:
             pyag.moveTo(cast_coordinates[0], cast_coordinates[1])
             pyag.click()
 
-        # Moving mouse off of character so that his information
+        # MapChanger mouse off of character so that his information
         # doesn't block spell bar. If omitted, may mess up spell
         # detection in 'FIGHTING' state '__cast_spells()'.
         pyag.moveTo(574, 749)

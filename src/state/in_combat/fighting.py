@@ -110,13 +110,13 @@ class Fighting:
 
             if cbt.Combat.get_if_char_on_correct_cell(move_coords):
                 log.info("Character is standing on correct cell!")
-                # Moving mouse cursor off character so that spell bar
+                # MapChanger mouse cursor off character so that spell bar
                 # is visible and ready for detection.
                 pyag.moveTo(x=609, y=752)
                 return True
 
             else:
-                log.info("Moving character ... ")
+                log.info("MapChanger character ... ")
                 cbt.Combat.move_character(move_coords)
 
                 start_time = time.time()
@@ -266,7 +266,7 @@ class Fighting:
                                     close_button[0][1],
                                     duration=0.15)
                         pyag.click()
-                        # Moving mouse off the 'Close' button in case it 
+                        # MapChanger mouse off the 'Close' button in case it 
                         # needs to be detected again.
                         pyag.move(100, 0)
 

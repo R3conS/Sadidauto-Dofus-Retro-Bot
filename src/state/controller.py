@@ -3,34 +3,20 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import os
 
-import pygetwindow as gw
-
 import bank
 import data
-import detection as dtc
-from interfaces import Interfaces
+
 import window_capture as wc
 from state.botstate_enum import BotState
 from state.hunting import Hunting
 from state.preparing import Preparing
 from state.fighting import Fighting
-from state.moving import Moving
+from state.moving import MapChanger
 from state.banking import Banking
 
 
 class Controller:
 
-    __window_suffixes = ["Dofus Retro", "Abrak"]
-    __window_size = (950, 785)
-    __window_pos = (-8, 0)
-    __valid_scripts = [
-        "af_anticlock", 
-        "af_clockwise", 
-        "af_north", 
-        "af_east", 
-        "af_south", 
-        "af_west"
-    ]
     __pod_limit = 88
     __map_type = None
     __fight_limit = 10 # Before checking pods
@@ -43,14 +29,10 @@ class Controller:
     fight_counter = 0 # True total fights counter is in fighting.py
     is_character_overloaded = False
 
-    def __init__(self, script: str, character_name: str):
-        self.__script = script
-        self.character_name = character_name
+    def __init__(self):
         if not self.__is_script_valid(self.__script):
             log.critical(f"Invalid script name '{self.__script}'! Exiting ... ")
             os._exit(1)
-        self.__prepare_game_window()
-        self.__verify_character_name()
         self.__initialize_states()
         self.__load_map_data()
 
@@ -74,53 +56,11 @@ class Controller:
     def set_was_map_changed(self, was_map_changed):
         self.was_map_changed = was_map_changed
 
-    def __is_script_valid(self, script_to_check):
-        for script in self.__valid_scripts:
-            if script == script_to_check:
-                return True
-        return False
-
-    def __prepare_game_window(self):
-        log.info("Attempting to prepare Dofus window ... ")
-        if bool(gw.getWindowsWithTitle(self.character_name)):
-            for w in gw.getWindowsWithTitle(self.character_name):
-                if any(suffix in w.title for suffix in self.__window_suffixes):
-                    w.restore()
-                    w.activate()
-                    w.resizeTo(*self.__window_size)
-                    w.moveTo(*self.__window_pos)
-                    log.info(f"Successfully prepared '{w.title}' Dofus window!")
-                    return
-        log.critical(f"Failed to detect Dofus window for '{self.character_name}'! Exiting ...")
-        os._exit(1)
-
-    def __verify_character_name(self):
-        log.info("Verifying character's name ... ")
-        Interfaces.open_characteristics()
-        if Interfaces.is_characteristics_open():
-            sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
-            r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
-            if self.character_name == r_and_t[0][1]:
-                log.info("Successfully verified character's name!")
-                Interfaces.close_characteristics()
-                if not Interfaces.is_characteristics_open():
-                    return
-            else:
-                log.critical("Invalid character name! Exiting ... ")
-                os._exit(1)
-        else:
-            log.critical(
-                "Failed to verify character's name because 'Characteristics' "
-                "interface is not open! Exiting ... "
-            )
-            wc.WindowCapture.on_exit_capture()
-            os._exit(1)
-
     def __initialize_states(self):
         self.hunting = Hunting(self)
         self.preparing = Preparing(self)
         self.fighting = Fighting(self)
-        self.moving = Moving(self)
+        self.moving = MapChanger(self)
         self.banking = Banking(self)
 
     def __load_map_data(self):

@@ -5,30 +5,51 @@ import time
 
 import pyautogui as pyag
 
-from .botstate_enum import BotState
+from src.state.botstate_enum import BotState
 import data
 import detection as dtc
 from interfaces import Interfaces
 import window_capture as wc
+from .map_data.getter import Getter as MapDataGetter
 
 
-class Hunting:
+class Hunter:
 
     map_coords = None
     __state = None
 
-    def __init__(self, controller):
-        self.__controller = controller
-        self.__data_monsters = dtc.Detection.generate_image_data(
+    def __init__(self, finished_hunting_callback, script: str):
+        self.finished_hunting_callback = finished_hunting_callback
+        __map_data = MapDataGetter.get_data_object(script)
+        self.__movement_data = __map_data.get_movement_data()
+        self.__map_type_data = __map_data.get_map_type_data()
+        self.__monster_data = dtc.Detection.generate_image_data(
             data.images.monster.AstrubForest.img_list,
             data.images.monster.AstrubForest.img_path
         )
 
-    def hunting(self):
+    @staticmethod
+    def __detect_lumberjack_ws_interior():
+        """Detect if character is inside lumberjack's workshop."""
+        color = (0, 0, 0)
+        coordinates = [(49, 559), (48, 137), (782, 89), (820, 380), (731, 554)]
+
+        pixels = []
+        for coord in coordinates:
+            px = pyag.pixelMatchesColor(coord[0], coord[1], color)
+            pixels.append(px)
+
+        if all(pixels):
+            log.info("Character is inside 'Lumberjack's Workshop'!")
+            return True
+        else:
+            return False
+
+    def hunt(self):
         log.info(f"Hunting on map ({self.map_coords}) ... ")
 
         # Chunks of monsters to search through.
-        chunks = self.__chunkate_data(list(self.__data_monsters.keys()), 14)
+        chunks = self.__chunkate_data(list(self.__monster_data.keys()), 14)
         # Stores chunks of monsters on which character failed an attack
         # >= 'fails_allowed' times.
         forbidden_chunks = []
@@ -57,7 +78,7 @@ class Hunting:
                         continue
 
                 log.debug(f"Searching chunk: {chunk_number} ... ")
-                _, obj_coords = self.__search(self.__data_monsters, chunk)
+                _, obj_coords = self.__search(self.__monster_data, chunk)
 
                 if len(obj_coords) > allowed_detections:
                     log.debug(f"Too many detections, most likely false ... ")
@@ -263,7 +284,7 @@ class Hunting:
             Empty `list` if no matches found.
 
         """
-        # Moving mouse of the screen so it doesn't hightlight mobs
+        # MapChanger mouse of the screen so it doesn't hightlight mobs
         # by accident causing them to be undetectable.
         Interfaces.close_right_click_menu()
 

@@ -121,7 +121,7 @@ class Preparing:
         wait_after_move_char = 0.5
 
         for cell in cell_coordinates_list:
-            log.info(f"Moving character to cell: {cell} ... ")
+            log.info(f"MapChanger character to cell: {cell} ... ")
             pyag.moveTo(cell[0], cell[1])
             pyag.click()
             time.sleep(wait_after_move_char)
@@ -418,7 +418,7 @@ class Preparing:
                     pyag.click()
                 else:
                     pyag.click(clicks=2, interval=0.1)
-                # Moving the mouse off the 'Ready' button in case it 
+                # MapChanger the mouse off the 'Ready' button in case it 
                 # needs to be detected again.
                 pyag.move(0, 80)
                 click_time = time.time()

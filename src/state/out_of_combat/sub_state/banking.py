@@ -5,10 +5,8 @@ import time
 
 import pyautogui as pyag
 
-from .botstate_enum import BotState
+from src.state.botstate_enum import BotState
 import bank
-from interfaces import Interfaces
-import state
 import data
 import window_capture as wc
 
@@ -21,12 +19,13 @@ class Banking:
     __state = None
     __recall_potion_used = False
 
-    def __init__(self, controller):
+    def __init__(self, set_sub_state_callback, controller):
+        self.__set_sub_state_callback = set_sub_state_callback
         self.__controller = controller
         bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
         bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
 
-    def banking(self):
+    def bank(self):
         """
         Banking logic.
 
