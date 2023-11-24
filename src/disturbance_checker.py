@@ -8,7 +8,6 @@ from interfaces import Interfaces
 
 
 class DisturbanceChecker(threading.Thread):
-    """Detect and ignore offers and invites from other players."""
 
     def __init__(self):
         super().__init__()
@@ -21,13 +20,13 @@ class DisturbanceChecker(threading.Thread):
             if Interfaces.is_offer_or_invite_open():
                 log.info("Offer or invite from another player detected!")
                 Interfaces.close_offer_or_invite()
-                if not Interfaces.is_offer_or_invite_open():
+                if Interfaces.is_offer_or_invite_open():
                     # ToDo: Implement this when recovery state is implemented
                     pass
             if Interfaces.is_information_open():
                 log.info("'Information' interface detected!")
                 Interfaces.close_information()
-                if not Interfaces.is_information_open():
+                if Interfaces.is_information_open():
                     # ToDo: Implement this when recovery state is implemented
                     pass 
             sleep(self.__check_interval)

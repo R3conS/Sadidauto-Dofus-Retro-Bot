@@ -14,28 +14,21 @@ import window_capture as wc
 class Interfaces:
 
     def __handle_interface_action(decorated_method):
-        """Decorator."""
+        """Decorator to handle interface actions."""
         @wraps(decorated_method)
         def wrapper(*args, **kwargs):
-            decorated_method(*args, **kwargs) # Open or close interface
-            interface = decorated_method.__name__.split('_', 1)[1]
-            is_open_method = getattr(Interfaces, f"is_{interface}_open")
-            interface = interface.replace("_", " ").title()
-            action = decorated_method.__name__.split('_', 1)[0]
-            action = "clos" if action == "close" else "open"
+            decorated_method(*args, **kwargs)
+            method_name_parts = decorated_method.__name__.split('_', 1)
+            is_open_method = getattr(Interfaces, f"is_{method_name_parts[1]}_open")
+            action = "clos" if method_name_parts[0] == "close" else "open"
+            interface_name = method_name_parts[1].replace("_", " ").title()
             start_time = perf_counter()
             while perf_counter() - start_time <= 4:
-                if action == "open":
-                    if is_open_method():
-                        log.info(f"Successfully {action}ed '{interface}' interface!")
-                        return True
-                elif action == "clos":
-                    if not is_open_method():
-                        log.info(f"Successfully {action}ed '{interface}' interface!")
-                        return True
-            else:
-                log.error(f"Timed out while {action}ing '{interface}' interface!")
-                return False
+                if (action == "open" and is_open_method()) or (action == "clos" and not is_open_method()):
+                    log.info(f"Successfully {action}ed '{interface_name}' interface!")
+                    return True
+            log.error(f"Timed out while {action}ing '{interface_name}' interface!")
+            return False
         return wrapper
 
     @staticmethod
