@@ -101,9 +101,9 @@ class Controller:
             sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
             r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
             if self.character_name == r_and_t[0][1]:
+                log.info("Successfully verified character's name!")
                 Interfaces.close_characteristics()
-                if Interfaces.is_characteristics_closed():
-                    log.info("Successfully verified character's name!")
+                if not Interfaces.is_characteristics_open():
                     return
             else:
                 log.critical("Invalid character name! Exiting ... ")

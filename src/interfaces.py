@@ -1,6 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+from functools import wraps
 from time import perf_counter
 
 from pyautogui import moveTo, click, pixelMatchesColor
@@ -12,55 +13,79 @@ import window_capture as wc
 
 class Interfaces:
 
+    def __handle_interface_action(decorated_method):
+        """Decorator."""
+        @wraps(decorated_method)
+        def wrapper(*args, **kwargs):
+            decorated_method(*args, **kwargs) # Open or close interface
+            interface = decorated_method.__name__.split('_', 1)[1]
+            is_open_method = getattr(Interfaces, f"is_{interface}_open")
+            interface = interface.replace("_", " ").title()
+            action = decorated_method.__name__.split('_', 1)[0]
+            action = "clos" if action == "close" else "open"
+            start_time = perf_counter()
+            while perf_counter() - start_time <= 4:
+                if action == "open":
+                    if is_open_method():
+                        log.info(f"Successfully {action}ed '{interface}' interface!")
+                        return True
+                elif action == "clos":
+                    if not is_open_method():
+                        log.info(f"Successfully {action}ed '{interface}' interface!")
+                        return True
+            else:
+                log.error(f"Timed out while {action}ing '{interface}' interface!")
+                return False
+        return wrapper
+
     @staticmethod
+    @__handle_interface_action
     def open_characteristics():
         log.info("Opening 'Characteristics' interface ... ")
         moveTo(613, 622)
         click()
     
     @staticmethod
+    @__handle_interface_action
     def close_characteristics():
         log.info("Closing 'Characteristics' interface ... ")
         moveTo(613, 622)
         click()
 
     @staticmethod
+    @__handle_interface_action
     def open_inventory():
         log.info("Opening 'Inventory' interface ... ")
         moveTo(690, 622)
         click()
 
     @staticmethod
+    @__handle_interface_action
     def close_inventory():
         log.info("Closing 'Inventory' interface ... ")
         moveTo(690, 622)
         click()
 
     @staticmethod
+    @__handle_interface_action
     def close_right_click_menu():
+        log.info("Closing 'Right Click Menu' interface ... ")
         moveTo(929, 51)
         click(clicks=2)
 
     @staticmethod
-    def check_state(interface: str, state: str):
-        method_name = f"is_{interface}_open"
-        interface = interface.replace("_", " ")
-        if method_name in dir(Interfaces):
-            method = getattr(Interfaces, method_name)
-            start_time = perf_counter()
-            while perf_counter() - start_time <= 4:
-                if state == "open":
-                    if method():
-                        log.info(f"'{interface.title()}' interface is open.")
-                        return True
-                elif state == "closed":
-                    if not method():
-                        log.info(f"'{interface.title()}' interface is closed.")
-                        return True
-            else:
-                log.error(f"Timed out while checking if '{interface.title()}' interface is open.")
-                return False
-        raise ValueError(f"Interface '{interface}' does not exist.")
+    @__handle_interface_action
+    def close_offer_or_invite():
+        log.info("Ignoring player ... ")
+        moveTo(466, 387) # Move to 'Ignore for the session' button
+        click()
+
+    @staticmethod
+    @__handle_interface_action
+    def close_information():
+        log.info("Closing 'Information' interface ... ")
+        moveTo(468, 377)
+        click()
 
     @staticmethod
     def is_characteristics_open():

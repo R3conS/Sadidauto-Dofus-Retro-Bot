@@ -4,3 +4,4 @@ venv/
 __pycache__/
 m-tst.py
 logs
+tst.png

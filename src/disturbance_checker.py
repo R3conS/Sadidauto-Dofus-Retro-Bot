@@ -4,8 +4,6 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import threading
 from time import sleep
 
-from pyautogui import moveTo, click
-
 from interfaces import Interfaces
 
 
@@ -22,22 +20,14 @@ class DisturbanceChecker(threading.Thread):
         while True:
             if Interfaces.is_offer_or_invite_open():
                 log.info("Offer or invite from another player detected!")
-                self.__ignore_for_session()
-                if Interfaces.is_offer_or_invite_closed():
-                    log.info("Successfully ignored player!")
+                Interfaces.close_offer_or_invite()
+                if not Interfaces.is_offer_or_invite_open():
+                    # ToDo: Implement this when recovery state is implemented
+                    pass
             if Interfaces.is_information_open():
-                log.info("Information interface detected!")
-                self.__close_information_interface()
-                if Interfaces.is_information_closed():
-                    log.info("Successfully closed information interface!")
+                log.info("'Information' interface detected!")
+                Interfaces.close_information()
+                if not Interfaces.is_information_open():
+                    # ToDo: Implement this when recovery state is implemented
+                    pass 
             sleep(self.__check_interval)
-
-    def __ignore_for_session(self):
-        log.info("Ignoring player ... ")
-        moveTo(466, 387)
-        click()
-
-    def __close_information_interface(self):
-        log.info("Closing information interface ... ")
-        moveTo(468, 377)
-        click()

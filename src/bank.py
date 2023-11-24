@@ -79,7 +79,7 @@ class Bank:
 
             if cls.__inventory() == "opened":
                 itf.Interfaces.close_inventory()
-                if not itf.Interfaces.is_inventory_closed():
+                if itf.Interfaces.is_inventory_open():
                     continue
 
             return pods_percentage
