@@ -1,34 +1,56 @@
 import os
 os.environ["TESSDATA_PREFIX"] = "src\\tesserocr"
 
+import cv2
+import numpy as np
 from PIL import Image
 from tesserocr import PyTessBaseAPI
 
 
 def get_text_from_image(
-        image: Image,
-        convert_to_grayscale: bool = False,
+        image: np.ndarray,
+        to_grayscale: bool = False,
         resize_to: tuple = None,
-        binarization_threshold_value: int = None,
+        invert: bool = False,
+        binarize: int = None,
+        erode: int = None,
+        dilate: int = None,
     ):
-    if convert_to_grayscale:
-        image = __convert_image_to_grayscale(image)
+    if to_grayscale:
+        image = convert_to_grayscale(image)
     if resize_to is not None:
-        image = __resize_image(image, resize_to[0], resize_to[1])
-    if binarization_threshold_value is not None:
-        image = __binarize_image(image, binarization_threshold_value)
-    return __get_text_from_image(image)
+        image = resize_image(image, resize_to[0], resize_to[1])
+    if invert:
+        image = invert_image(image)
+    if binarize is not None:
+        image = binarize_image(image, binarize)
+    if erode is not None:
+        image = erode_image(image, erode)
+    if dilate is not None:
+        image = dilate_image(image, dilate)
+    return read_text(Image.fromarray(image))
 
-def __convert_image_to_grayscale(image: Image):
-    return image.convert("L")
+def convert_to_grayscale(image: np.ndarray):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-def __resize_image(image: Image, width, height):
-    return image.resize((width, height), Image.LANCZOS)
+def resize_image(image: np.ndarray, width: int, height: int, interpolation=cv2.INTER_LANCZOS4):
+    return cv2.resize(image, (width, height), interpolation)
 
-def __binarize_image(image: Image, threshold):
-    return image.point(lambda x: 255 if x > threshold else 0, '1')
+def invert_image(image: np.ndarray):
+    return cv2.bitwise_not(image)
 
-def __get_text_from_image(image: Image):
+def binarize_image(image: np.ndarray, threshold: int):
+    return cv2.threshold(image, threshold, 255, cv2.THRESH_BINARY)[1]
+
+def erode_image(image: np.ndarray, kernel_size: int):
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    return cv2.erode(image, kernel, iterations=1)
+
+def dilate_image(image: np.ndarray, kernel_size: int):
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    return cv2.dilate(image, kernel, iterations=1)
+
+def read_text(image: Image):
     with PyTessBaseAPI() as api:
         api.SetImage(image)
         return api.GetUTF8Text().strip()
