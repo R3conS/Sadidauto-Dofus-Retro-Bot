@@ -1,9 +1,8 @@
-"""Provides object detection functionality."""
-
 from typing import Tuple, Any, Union
+import os
 
 from paddleocr import PaddleOCR
-import cv2 as cv
+import cv2
 import numpy as np
 
 
@@ -38,7 +37,7 @@ class Detection:
                        objects_to_detect_path: str, 
                        haystack_image: np.ndarray | str, 
                        threshold: float = 0.6,
-                       match_method: int = cv.TM_CCOEFF_NORMED) \
+                       match_method: int = cv2.TM_CCOEFF_NORMED) \
                        -> Tuple[list[list[int]], list[Tuple[int, int]]]:
         """
         Detect multiple different 'needle' images on a 'haystack' image.
@@ -65,8 +64,8 @@ class Detection:
             Accuracy with which images will be searched for 
             (0.0 to 1.0). Defaults to 0.6.
         match_method : int, optional
-            Comparison method used by `cv.matchTemplate()`. Defaults to 
-            `cv.TM_CCOEFF_NORMED`.
+            Comparison method used by `cv2.matchTemplate()`. Defaults to 
+            `cv2.TM_CCOEFF_NORMED`.
 
         Returns
         ----------
@@ -82,9 +81,9 @@ class Detection:
 
         Raises
         ----------
-        (-215:Assertion failed) in function 'cv::matchTemplate'
+        (-215:Assertion failed) in function 'cv2::matchTemplate'
             If any `str` within `objects_to_detect_list` is incorrect.
-        (-215:Assertion failed) in function 'cv::matchTemplate'
+        (-215:Assertion failed) in function 'cv2::matchTemplate'
             If `objects_to_detect_path` is incorrect.
 
         """
@@ -115,7 +114,7 @@ class Detection:
         object_rectangles_converted = np.array(object_rectangles_converted)
 
         # Grouping all rectangles that are close-by.
-        object_rectangles_converted, weights = cv.groupRectangles(
+        object_rectangles_converted, weights = cv2.groupRectangles(
                                                 object_rectangles_converted, 
                                                 1, 
                                                 0.5)
@@ -133,7 +132,7 @@ class Detection:
                                   image_list,
                                   haystack_image,
                                   threshold=0.9837,
-                                  match_method=cv.TM_CCORR_NORMED):
+                                  match_method=cv2.TM_CCORR_NORMED):
         """
         Detect multiple different 'needle' images on a 'haystack' image.
 
@@ -152,8 +151,8 @@ class Detection:
         threshold : float, optional
             Detection threshold. Ranges from 0 to 1. Defaults to 0.9832.
         match_method : int, optional
-            Comparison method used by `cv.matchTemplate()`. Defaults to 
-            `cv.TM_CCORR_NORMED`.
+            Comparison method used by `cv2.matchTemplate()`. Defaults to 
+            `cv2.TM_CCORR_NORMED`.
 
         Returns
         ----------
@@ -192,7 +191,7 @@ class Detection:
         rects_list = np.array(rects_list)
 
         # Grouping all rectangles that are close-by.
-        rects_list, weights = cv.groupRectangles(rects_list, 1, 0.5)
+        rects_list, weights = cv2.groupRectangles(rects_list, 1, 0.5)
 
         # Creating a list containing center (x, y) coordinates of found
         # matches.
@@ -204,7 +203,7 @@ class Detection:
     def find(haystack_img: np.ndarray | str,
              needle_img: np.ndarray | str,
              threshold: float = 0.9,
-             match_method: int = cv.TM_CCOEFF_NORMED,
+             match_method: int = cv2.TM_CCOEFF_NORMED,
              mask: np.ndarray = None) \
              -> tuple | list[list[int]]:
         """
@@ -220,8 +219,8 @@ class Detection:
             Accuracy with which `needle_img` will be searched for 
             (0.0 to 1.0). Defaults to 0.9.
         match_method : int, optional
-            Comparison method used by `cv.matchTemplate()`. Defaults to 
-            `cv.TM_CCOEFF_NORMED`.
+            Comparison method used by `cv2.matchTemplate()`. Defaults to 
+            `cv2.TM_CCOEFF_NORMED`.
 
         Returns
         ----------
@@ -236,10 +235,10 @@ class Detection:
         Overload resolution failed
             If `haystack_img` or `needle_img` are not `np.ndarray` or 
             `str`.
-        (-215:Assertion failed) in function 'cv::matchTemplate'
+        (-215:Assertion failed) in function 'cv2::matchTemplate'
             If `haystack_img` or `needle_img` do not exist in the 
             specified `str` path.
-        (-215:Assertion failed) in function 'cv::matchTemplate'
+        (-215:Assertion failed) in function 'cv2::matchTemplate'
             If `haystack_img` and `needle_img` are read into memory
             differently.
             Example: `haystack_img` is 'BGR' and `needle_img` is 'GRAY'.
@@ -251,17 +250,17 @@ class Detection:
         # store them with the same variable name during conversion 
         # because 'mypy' throws a TypeError.
         if isinstance(haystack_img, str):
-            haystack = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
+            haystack = cv2.imread(haystack_img, cv2.IMREAD_UNCHANGED)
         else:
             haystack = haystack_img
 
         if isinstance(needle_img, str):
-            needle = cv.imread(needle_img, cv.IMREAD_UNCHANGED)
+            needle = cv2.imread(needle_img, cv2.IMREAD_UNCHANGED)
         else:
             needle = needle_img
 
         # Using matchTemplate to find 'needle' in 'haystack'.
-        result = cv.matchTemplate(haystack, 
+        result = cv2.matchTemplate(haystack, 
                                   needle,
                                   match_method,
                                   mask=mask)
@@ -273,23 +272,23 @@ class Detection:
 
         # Creating a list of rectangles that stores bounding box 
         # information of found matches [[topLeft_x, topLeft_y, w, h]].
-        # The list is later used in 'cv.groupRectangles()'.
+        # The list is later used in 'cv2.groupRectangles()'.
         rectangles = []
         for loc in locations:
             rect = [int(loc[0]), 
                     int(loc[1]), 
                     needle.shape[1], 
                     needle.shape[0]]
-            # Appending to the list twice because 'cv.groupRectangles()' 
+            # Appending to the list twice because 'cv2.groupRectangles()' 
             # requires at least two overlapping rectangles for it group
             # them together. If only appending once, 
-            # 'cv.groupRectangles()' will throw out any results 
+            # 'cv2.groupRectangles()' will throw out any results 
             # (even if they're correct) that do not overlap.
             rectangles.append(rect)
             rectangles.append(rect)
 
         # Grouping all rectangles that are close by.
-        rectangles, weights = cv.groupRectangles(rectangles, 1, 0.5)
+        rectangles, weights = cv2.groupRectangles(rectangles, 1, 0.5)
         
         return rectangles
 
@@ -364,7 +363,7 @@ class Detection:
         # Reading 'haystack_img' into memory if it was passed in as
         # a string.
         if isinstance(haystack_img, str):
-            haystack_img = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
+            haystack_img = cv2.imread(haystack_img, cv2.IMREAD_UNCHANGED)
 
         line_color = line_color
         line_thickness = line_thickness
@@ -374,7 +373,7 @@ class Detection:
             top_left = (x, y)
             bottom_right = (x + w, y + h)
             # Draw the box/rectangle.
-            cv.rectangle(haystack_img, 
+            cv2.rectangle(haystack_img, 
                          top_left, 
                          bottom_right, 
                          line_color, 
@@ -386,7 +385,7 @@ class Detection:
     def draw_markers(haystack_img: np.ndarray | str, 
                      coords: list[Tuple[int, int]],
                      marker_color: Tuple[int, int, int] = (0, 255, 0),
-                     marker_type: int = cv.MARKER_CROSS) \
+                     marker_type: int = cv2.MARKER_CROSS) \
                      -> Union[np.ndarray[Any, Any], str]:
         """
         Draw marker(s) on an image.
@@ -401,7 +400,7 @@ class Detection:
             Color to use for drawing. In 'BGR' format. Defaults to:
             (0, 255, 0).
         marker_type : int, optional
-            Type of marker(s) to draw. Defaults to `cv.MARKER_CROSS`.
+            Type of marker(s) to draw. Defaults to `cv2.MARKER_CROSS`.
 
         Returns
         ----------
@@ -417,14 +416,14 @@ class Detection:
         # Reading 'haystack_img' into memory if it was passed in as
         # a string.
         if isinstance(haystack_img, str):
-            haystack_img = cv.imread(haystack_img, cv.IMREAD_UNCHANGED)
+            haystack_img = cv2.imread(haystack_img, cv2.IMREAD_UNCHANGED)
 
         marker_color = marker_color
         marker_type = marker_type
 
         for (center_x, center_y) in coords:
             # Drawing markers on the center positions of found matches.
-            cv.drawMarker(haystack_img, 
+            cv2.drawMarker(haystack_img, 
                          (center_x, center_y), 
                           marker_color, 
                           marker_type)
@@ -475,18 +474,18 @@ class Detection:
         for image in image_list:
 
             needle = image_path + image
-            needle = cv.imread(needle, cv.IMREAD_UNCHANGED)
+            needle = cv2.imread(needle, cv2.IMREAD_UNCHANGED)
 
             # Extracting alpha channel (transparency) from original image.
             needle_mask = needle[:,:,3]
 
             # Merging extracted alpha channel three times to create a
             # 24 bit image (mask). Image is black & white.
-            needle_mask = cv.merge([needle_mask, needle_mask, needle_mask])
+            needle_mask = cv2.merge([needle_mask, needle_mask, needle_mask])
 
             # Extracting all channels (RGB) except alpha (transparency) from
             # original image to create a 24 bit image. Images must be the 
-            # same bit depth, otherwise 'cv.matchTemplate()' will throw 
+            # same bit depth, otherwise 'cv2.matchTemplate()' will throw 
             # an assertion error.
             needle_24bit = needle[:,:,0:3]
 
@@ -541,7 +540,7 @@ class Detection:
 
         """
         if isinstance(image_path, str):
-            image_path = cv.imread(image_path, cv.IMREAD_UNCHANGED)
+            image_path = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
 
         ocr = PaddleOCR(lang=lang,
                         use_angle_cls=use_angle_cls,
@@ -577,3 +576,95 @@ class Detection:
             r_and_t.append((rectangles[i], text[i]))
 
         return r_and_t, rectangles, text
+
+    @classmethod
+    def find_image(
+            cls,
+            haystack: np.ndarray | str,
+            needle: np.ndarray | str,
+            confidence: float = 1.0,
+            method: int = cv2.TM_SQDIFF,
+            mask: np.ndarray = None,
+            remove_alpha_channels: bool = True,
+        ):
+        # Make sure correct method is selected when mask is given
+        if mask is not None and method not in [cv2.TM_SQDIFF, cv2.TM_CCORR_NORMED]:
+            raise ValueError("Mask is allowed only with TM_SQDIFF and TM_CCORR_NORMED match methods.")
+        
+        # Read images if they are given as paths
+        if isinstance(haystack, str):
+            if not os.path.exists(haystack):
+                raise FileNotFoundError(f"Haystack image '{haystack}' does not exist.")
+            haystack = cv2.imread(haystack, cv2.IMREAD_UNCHANGED)
+        if isinstance(needle, str):
+            if not os.path.exists(needle):
+                raise FileNotFoundError(f"Needle image '{needle}' does not exist.")
+            needle = cv2.imread(needle, cv2.IMREAD_UNCHANGED)
+
+        # Remove alpha channels if needed
+        if remove_alpha_channels:
+            if cls.get_number_of_channels(haystack) == 4:
+                haystack = haystack[:, :, :3]
+            if cls.get_number_of_channels(needle) == 4:
+                needle = needle[:, :, :3]
+
+        # Make sure number of channels in both images is the same
+        h_channels = cls.get_number_of_channels(haystack)
+        n_channels = cls.get_number_of_channels(needle)
+        if h_channels != n_channels:
+            raise ValueError(
+                f"Number of channels in haystack and needle images do not match. "
+                f"Haystack = {h_channels}, needle = {n_channels}."
+            )
+        
+        # Get locations according to confidence level
+        result = cv2.matchTemplate(haystack, needle, method, mask=mask)
+        if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+            if method == cv2.TM_SQDIFF:
+                locations = np.where(result <= np.min(result))
+            else:
+                locations = np.where(result <= 1 - confidence)
+        else:
+            locations = np.where(result >= confidence)
+
+        # Get top-left coordinates of the best match
+        locations = list(zip(*locations[::-1]))  # Create a list of (x, y) tuples
+        if len(locations) > 0:
+            if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+                best_match_index = np.argmin([result[loc] for loc in locations])
+            else:
+                best_match_index = np.argmax([result[loc] for loc in locations])
+            return locations[best_match_index]
+        return None
+
+    @staticmethod
+    def create_mask(image: np.ndarray | str):
+        if isinstance(image, str):
+            image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
+        if Detection.get_number_of_channels(image) < 4:
+            raise ValueError("Provided image doesn't have an alpha channel.")
+        _, mask = cv2.threshold(image[..., 3], 127, 255, cv2.THRESH_BINARY)
+        return mask
+
+    @staticmethod
+    def get_number_of_channels(image: np.ndarray):
+        if len(image.shape) == 2:
+            return 1
+        return image.shape[-1]
+
+    @staticmethod
+    def draw_rectangle(
+        image_to_draw_on: np.ndarray, 
+        x_y_w_h: tuple[int, int, int, int], 
+        color: tuple[int, int, int] = (0, 255, 0),
+        thickness: int = 2,
+        line_type: int = cv2.LINE_4
+    ):
+        return cv2.rectangle(
+            image_to_draw_on,
+            (x_y_w_h[0], x_y_w_h[1]),
+            (x_y_w_h[2], x_y_w_h[3]),
+            color,
+            thickness,
+            line_type
+        )
