@@ -293,144 +293,6 @@ class Detection:
         return rectangles
 
     @staticmethod
-    def get_click_coords(rectangles: list[list[int]],
-                         region: Tuple[int, int, int, int] = (0, 0, 0, 0)) \
-                         -> list[Tuple[int, int]]:
-        """
-        Calculate center (x, y) coordinates of bounding box.
-
-        Parameters
-        ----------
-        rectangles : list[list[int]]
-            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
-            of bounding box.
-        region : Tuple[int, int, int, int], optional
-            Screen region (topLeft_x, topLeft_y, width, height) where
-            image found within `rectangles` was taken. Allows to 
-            calculate precise center coordinates of image on the whole 
-            screen. Defaults to (0, 0, 0, 0).
-        
-        Returns
-        ----------
-        coords : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates.
-
-        """
-        coords = []
-        for [x, y, w, h] in rectangles:
-            # Determining the center positions of found matches.
-            center_x = x + int(w/2) + region[0]
-            center_y = y + int(h/2) + region[1]
-            # Saving the center positions.
-            coords.append((center_x, center_y))
-
-        return coords
-
-    @staticmethod
-    def draw_rectangles(haystack_img: np.ndarray | str, 
-                        rectangles: list[list[int]],
-                        line_color: Tuple[int, int, int] = (0, 255, 0),
-                        line_thickness: int = 2) \
-                        -> Union[np.ndarray[Any, Any], str]:
-        """
-        Draw rectangle(s) on an image.
-
-        Parameters
-        ----------
-        haystack_img : np.ndarray or str
-            Image to draw on.
-        rectangles : list[list[int]]
-            2D `list` containing [[topLeft_x, topLeft_y, width, height]]
-            of bounding box.
-        line_color : Tuple[int, int, int], optional
-            Color to use for drawing. In 'BGR' format. Defaults to:
-            (0, 255, 0).
-        line_thickness : int, optional
-            Thickness of drawn line(s). Negative value results in a 
-            filled rectangle. Defaults to 2.
-
-        Returns
-        ----------
-        haystack_img : Union[np.ndarray[Any, Any], str]
-            Image as `np.ndarray`.
-
-        Raises
-        ----------
-        Can't open/read file: check file path/integrity
-            If path to `haystack_img` is incorrect.
-
-        """
-        # Reading 'haystack_img' into memory if it was passed in as
-        # a string.
-        if isinstance(haystack_img, str):
-            haystack_img = cv2.imread(haystack_img, cv2.IMREAD_UNCHANGED)
-
-        line_color = line_color
-        line_thickness = line_thickness
-
-        for [x, y, w, h] in rectangles:
-            # Determine the box positions.
-            top_left = (x, y)
-            bottom_right = (x + w, y + h)
-            # Draw the box/rectangle.
-            cv2.rectangle(haystack_img, 
-                         top_left, 
-                         bottom_right, 
-                         line_color, 
-                         line_thickness)
-
-        return haystack_img
-
-    @staticmethod
-    def draw_markers(haystack_img: np.ndarray | str, 
-                     coords: list[Tuple[int, int]],
-                     marker_color: Tuple[int, int, int] = (0, 255, 0),
-                     marker_type: int = cv2.MARKER_CROSS) \
-                     -> Union[np.ndarray[Any, Any], str]:
-        """
-        Draw marker(s) on an image.
-
-        Parameters
-        ----------
-        haystack_img : np.ndarray | str
-            Image to draw on.
-        coords : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates.
-        marker_color : Tuple[int, int, int], optional
-            Color to use for drawing. In 'BGR' format. Defaults to:
-            (0, 255, 0).
-        marker_type : int, optional
-            Type of marker(s) to draw. Defaults to `cv2.MARKER_CROSS`.
-
-        Returns
-        ----------
-        haystack_img : Union[np.ndarray[Any, Any], str]
-            Image as `np.ndarray`.
-
-        Raises
-        ----------
-        Can't open/read file: check file path/integrity
-            If path to `haystack_img` is incorrect.
-        
-        """
-        # Reading 'haystack_img' into memory if it was passed in as
-        # a string.
-        if isinstance(haystack_img, str):
-            haystack_img = cv2.imread(haystack_img, cv2.IMREAD_UNCHANGED)
-
-        marker_color = marker_color
-        marker_type = marker_type
-
-        for (center_x, center_y) in coords:
-            # Drawing markers on the center positions of found matches.
-            cv2.drawMarker(haystack_img, 
-                         (center_x, center_y), 
-                          marker_color, 
-                          marker_type)
-
-        return haystack_img
-
-    @staticmethod
     def generate_image_data(image_list, image_path):
         """
         Construct a dictionary.
@@ -653,6 +515,13 @@ class Detection:
         return image.shape[-1]
 
     @staticmethod
+    def get_rectangle_center_point(x_y_w_h: tuple[int, int, int, int]):
+        return (
+            int(x_y_w_h[0] + (x_y_w_h[2] / 2)),
+            int(x_y_w_h[1] + (x_y_w_h[3] / 2))
+        )
+
+    @staticmethod
     def draw_rectangle(
         image_to_draw_on: np.ndarray, 
         x_y_w_h: tuple[int, int, int, int], 
@@ -663,7 +532,7 @@ class Detection:
         return cv2.rectangle(
             image_to_draw_on,
             (x_y_w_h[0], x_y_w_h[1]),
-            (x_y_w_h[2], x_y_w_h[3]),
+            (x_y_w_h[0] + x_y_w_h[2], x_y_w_h[1] + x_y_w_h[3]),
             color,
             thickness,
             line_type
