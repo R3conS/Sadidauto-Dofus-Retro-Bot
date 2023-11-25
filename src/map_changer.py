@@ -23,7 +23,7 @@ class MapChanger:
             if MapChanger.__is_map_tooltip_visible():
                 break
         else:
-            log.error(f"Failed to detect map tooltip!")
+            log.error(f"Failed to detect map tooltip.")
             # ToDo: Link to recovery state.
             os._exit(1)
 
@@ -47,7 +47,7 @@ class MapChanger:
             log.info(f"Current map coordinates: {coords}.")
             return coords
         except IndexError:
-            log.error(f"Failed to read map coordinates from map tooltip!")
+            log.error(f"Failed to read map coordinates from map tooltip.")
             os._exit(1)
 
     @staticmethod
@@ -72,7 +72,7 @@ class MapChanger:
                 log.info(f"Loading screen detected.")
                 break
         else:
-            log.error(f"Failed to detect loading screen!")
+            log.error(f"Failed to detect loading screen.")
             return False
         
         start_time = perf_counter()
@@ -81,7 +81,7 @@ class MapChanger:
                 log.info(f"Loading screen finished.")
                 return True
         else:
-            log.error(f"Failed to detect end of loading screen!")
+            log.error(f"Failed to detect end of loading screen.")
             return False
 
     @staticmethod
@@ -104,7 +104,7 @@ class MapChanger:
         for contour in contours:
             _, _, w, h = cv2.boundingRect(contour)
             if w > 20 and h > 20:
-                log.info(f"Map tooltip is visible!")
+                log.info(f"Map tooltip is visible.")
                 return True
         return False
 

@@ -11,6 +11,7 @@ from time import time, sleep
 import cv2 as cv
 import numpy as np
 import pyautogui
+import pygetwindow as gw
 
 import interfaces as itf
 
@@ -33,52 +34,33 @@ class WindowCapture:
     """
 
     @staticmethod
-    def area_around_mouse_capture(midpoint: int,
-                                  pos: Tuple[int, int] = pyautogui.position(),
-                                  convert: bool = True):
-        """
-        Screenshot area around mouse cursor.
-
-        Parameters
-        ----------
-        midpoint : int
-            Midpoint of length and width value of screenshot area.
-            Screenshot area in pixels: (`midpoint`*2) * (`midpoint*2`).
-        pos : Tuple[int, int], optional
-            Center (x, y) coordinates of screenshot area. Defaults to
-            current coordinates of mouse cursor.
-        convert : bool, optional
-            Whether to convert image to `np.ndarray` or not. Defaults to 
-            `True`.
-
-        Returns
-        ----------
-        screenshot : np.ndarray
-            If `convert` is `True`, return `screenshot` of area around 
-            `pos`.
-        screenshot, region : Tuple[PIL.Image, Tuple[int, int, int, int]]
-            If `convert` is `False`, return `screenshot` as `PIL.Image` 
-            object and `region` where the `screenshot` was taken on 
-            screen as `tuple`.
-
-        Raises
-        ----------
-        ValueError
-            If `midpoint` < 0.
-        (-215:Assertion failed)
-            If `midpoint` == 0.
-
-        """
+    def area_around_mouse_capture(
+        midpoint: int,
+        pos: Tuple[int, int] = pyautogui.position(),
+        convert: bool = True,
+        max_bottom_right_x = None,
+        max_bottom_right_y = None
+    ):
         # Getting current (x, y) coordinates of mouse cursor.
         mouse_pos = pos
         center_x = mouse_pos[0]
         center_y = mouse_pos[1]
         # Calculating top left coordinates of capture area.
         topleft_x = center_x - midpoint
+        if topleft_x < 0:
+            topleft_x = 0
         topleft_y = center_y - midpoint
+        if topleft_y < 0:
+            topleft_y = 0
         # Calculating bottom right coordinates of capture area.
         bottomright_x = center_x + midpoint
+        if max_bottom_right_x is not None:
+            if bottomright_x > max_bottom_right_x:
+                bottomright_x = max_bottom_right_x
         bottomright_y = center_y + midpoint
+        if max_bottom_right_y is not None:
+            if bottomright_y > max_bottom_right_y:
+                bottomright_y = max_bottom_right_y
         # Calculating width and height of capture area.
         width = bottomright_x - topleft_x
         height = bottomright_y - topleft_y
@@ -236,3 +218,7 @@ class WindowCapture:
             log.error(f"Failed to log out! Closing 'Dofus.exe' ...")
             pyautogui.moveTo(910, 15, duration=0.15)
             pyautogui.click()
+
+    @staticmethod
+    def get_game_window_size():
+        return pyautogui.size()

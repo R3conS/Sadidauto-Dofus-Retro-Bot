@@ -14,7 +14,8 @@ from interfaces import Interfaces
 class Initializer:
 
     __window_suffixes = ["Dofus Retro", "Abrak"]
-    __window_size = (950, 785)
+    window_size = (950, 785)
+    window_title = None
     __window_pos = (-8, 0)
     __valid_scripts = [
         "af_anticlock", 
@@ -49,9 +50,10 @@ class Initializer:
                 if any(suffix in w.title for suffix in self.__window_suffixes):
                     w.restore()
                     w.activate()
-                    w.resizeTo(*self.__window_size)
+                    w.resizeTo(*self.window_size)
                     w.moveTo(*self.__window_pos)
                     log.info(f"Successfully prepared '{w.title}' Dofus window!")
+                    self.window_title = w.title
                     return
         log.critical(f"Failed to detect Dofus window for '{self.__character_name}'! Exiting ...")
         os._exit(1)

@@ -20,8 +20,13 @@ class Bot(threading.Thread):
         self.__stopped = False
         self.disturbance_checker = DisturbanceChecker()
         self.disturbance_checker.start()
-        self.initializer = Initializer(script, character_name, self.set_state)
-        self.ooc_controller = OOC_Controller(self.set_state)
+        initializer = Initializer(script, character_name, self.set_state)
+        self.ooc_controller = OOC_Controller(
+            self.set_state, 
+            script, 
+            initializer.window_title, 
+            initializer.window_size
+        )
         self.ic_controller = IC_Controller(self.set_state)
 
     def run(self):

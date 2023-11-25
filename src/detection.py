@@ -12,11 +12,11 @@ class Detection:
             cls,
             haystack: np.ndarray | str,
             needle: np.ndarray | str,
-            confidence: float = 1.0,
-            method: int = cv2.TM_SQDIFF,
+            confidence: float = 0.9,
+            method: int = cv2.TM_CCORR_NORMED,
             mask: np.ndarray = None,
             remove_alpha_channels: bool = True,
-        ):
+        ) -> tuple[int, int, int, int] | list:
         """Get location of the best match of needle image in haystack image."""
         # Make sure correct method is selected when mask is given
         if mask is not None and method not in [cv2.TM_SQDIFF, cv2.TM_CCORR_NORMED]:
@@ -65,23 +65,24 @@ class Detection:
                 best_match_index = np.argmin([result[loc[1], loc[0]] for loc in locations])
             else:
                 best_match_index = np.argmax([result[loc[1], loc[0]] for loc in locations])
-            return locations[best_match_index]
-        return None
+            return locations[best_match_index][0], locations[best_match_index][1], needle.shape[1], needle.shape[0]
+        return locations
 
     @classmethod
     def find_images(
             cls,
             haystack: np.ndarray | str,
             needles: list[np.ndarray | str],
-            confidence: float = 1.0,
+            confidence: float = 0.9837,
             method: int = cv2.TM_CCORR_NORMED,
             masks: list[np.ndarray] = None,
             remove_alpha_channels: bool = True,
-        ):
+        ) -> list[tuple[int, int, int, int]] | list:
         """Get locations of the best matches of needle images in haystack image.""" 
         # Make sure number of masks matches number of needles
-        if len(needles) != len(masks):
-            raise ValueError("Number of masks must match number of needles.")
+        if masks is not None:        
+            if len(needles) != len(masks):
+                raise ValueError("Number of masks must match number of needles.")
 
         # Read images if they are given as paths
         if isinstance(haystack, str):
@@ -101,12 +102,11 @@ class Detection:
                 needle=needle,
                 confidence=confidence,
                 method=method,
-                mask=masks[i],
+                mask=masks[i] if masks is not None else None,
                 remove_alpha_channels=remove_alpha_channels,
             )
-            if result is not None:
+            if len(result) > 0:
                 matches.append(result)
-
         return matches
 
     @staticmethod
@@ -170,6 +170,26 @@ class Detection:
             (x_y_w_h[0], x_y_w_h[1]),
             (x_y_w_h[0] + x_y_w_h[2], x_y_w_h[1] + x_y_w_h[3]),
             color,
+            thickness,
+            line_type
+        )
+
+    @staticmethod
+    def draw_marker(
+        image_to_draw_on: np.ndarray,
+        x_y: tuple[int, int],
+        color: tuple[int, int, int] = (0, 255, 0),
+        marker_type: int = cv2.MARKER_CROSS,
+        marker_size: int = 10,  
+        thickness: int = 2,
+        line_type: int = cv2.LINE_4
+    ):
+        return cv2.drawMarker(
+            image_to_draw_on,
+            x_y,
+            color,
+            marker_type,
+            marker_size,
             thickness,
             line_type
         )

@@ -8,9 +8,20 @@ class Controller:
     
     __pod_limit = 88
 
-    def __init__(self, set_bot_state_callback, script: str):
+    def __init__(
+            self, 
+            set_bot_state_callback: callable, 
+            script: str,
+            game_window_title: str,
+            game_window_size: tuple[int, int]
+        ):
         self.__set_bot_state_callback = set_bot_state_callback
-        self.__hunter = Hunter(self.__finished_hunting_callback, script)
+        self.__hunter = Hunter(
+            self.__finished_hunting_callback, 
+            script,
+            game_window_title,
+            game_window_size
+        )
         self.__banking = Banking(self.__finished_banking_callback)
 
     def run(self):

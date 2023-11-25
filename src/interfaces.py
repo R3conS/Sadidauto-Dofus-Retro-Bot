@@ -148,19 +148,19 @@ class Interfaces:
     @staticmethod
     def is_login_screen_open():
         return len(
-            detection.Detection.find(
+            detection.Detection.find_image(
                 wc.WindowCapture.gamewindow_capture(),
                 data.images.Interface.dofus_logo,
-                threshold=0.95
+                confidence=0.995
             )
         ) > 0
 
     @staticmethod
     def is_right_click_menu_open():
         return len(
-            detection.Detection.find(
+            detection.Detection.find_image(
                 wc.WindowCapture.gamewindow_capture(),
                 data.images.Interface.right_click_menu,
-                threshold=0.95
+                confidence=0.995
             )
         ) > 0
