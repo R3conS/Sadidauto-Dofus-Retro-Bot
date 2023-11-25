@@ -83,10 +83,10 @@ class Combat:
             if px_1 and px_2 and not px_3:
 
                 sc = wc.WindowCapture.custom_area_capture((170, 95, 200, 30))
-                r_and_t, _, _ = dtc.Detection.detect_text_from_image(sc)
+                text = dtc.Detection.get_text_from_image(sc)
 
-                if r_and_t:
-                    if r_and_t[0][1] == cls.character_name:
+                if len(text) > 0:
+                    if text[0] == cls.character_name:
                         log.info("Turn started!")
                         return True
             else:
@@ -306,7 +306,7 @@ class Combat:
                 pyag.moveTo(coord[0], coord[1], duration=0.15)
                 time.sleep(0.25)
                 sc = wc.WindowCapture.gamewindow_capture((597, 599, 215, 30))
-                _, _, text = dtc.Detection.detect_text_from_image(sc)
+                _, _, text = dtc.Detection.get_text_from_image(sc)
 
                 if cls.character_name in text:
                     # MapChanger mouse off char. so spell bar is visible.

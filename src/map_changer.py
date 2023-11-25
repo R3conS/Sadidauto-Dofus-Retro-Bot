@@ -34,9 +34,8 @@ class MapChanger:
                 scale_width=160,
                 scale_height=200
             )
-        r_and_t, _, _ = dtc.Detection.detect_text_from_image(screenshot)
         try:
-            coords = r_and_t[0][1]
+            coords = dtc.Detection.get_text_from_image(screenshot)[0]
             coords = coords.replace(".", ",")
             coords = coords.replace(" ", "")
             # Inserting ',' if it wasn't detected before second '-'.
