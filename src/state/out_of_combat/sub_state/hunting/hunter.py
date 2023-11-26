@@ -20,13 +20,15 @@ class Hunter:
             self, 
             finished_hunting_callback: callable, 
             script: str,
+            check_pods_every_x_fights: int,
             game_window_title: str,
             game_window_size: tuple[int, int]
         ):
         self.__finished_hunting_callback = finished_hunting_callback
+        self.__check_pods_every_x_fights = check_pods_every_x_fights
         self.__game_window_title = game_window_title
         self.__game_window_size = game_window_size
-        self.fight_counter = 0
+        self.__consecutive_fights_counter = 0
         # Map data
         map_data = MapDataGetter.get_data_object(script)
         self.__movement_data = map_data.get_movement_data()
@@ -36,6 +38,12 @@ class Hunter:
 
     def hunt(self):
         while True:
+            if self.__consecutive_fights_counter >= self.__check_pods_every_x_fights:
+                self.__consecutive_fights_counter = 0
+                # ToDo: Give control back to 'Out of Combat' state controller.
+                # self.__finished_hunting_callback()
+                return
+
             map_coords = MapChanger.get_current_map_coords()
             log.info(f"Hunting on map: {map_coords}.")
             if not self.__are_map_coords_valid(map_coords, self.__movement_data):
@@ -94,7 +102,7 @@ class Hunter:
                     continue
 
                 if self.__is_attack_successful():
-                    self.fight_counter += 1
+                    self.__consecutive_fights_counter += 1
                     return "started_combat"
                 else:
                     if map_coords != MapChanger.get_current_map_coords():

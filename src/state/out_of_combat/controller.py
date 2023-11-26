@@ -7,6 +7,7 @@ from .sub_state.banking.banking import Banker
 class Controller:
     
     __pod_limit = 88
+    __check_pods_every_x_fights = 5
 
     def __init__(
             self, 
@@ -19,6 +20,7 @@ class Controller:
         self.__hunter = Hunter(
             self.__finished_hunting_callback, 
             script,
+            self.__check_pods_every_x_fights,
             game_window_title,
             game_window_size
         )
