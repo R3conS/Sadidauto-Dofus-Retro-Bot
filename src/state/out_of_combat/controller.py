@@ -1,7 +1,7 @@
 from src.state.botstate_enum import BotState
 from src.bank import Bank
 from .sub_state.hunting.hunter import Hunter
-from .sub_state.banking import Banking
+from .sub_state.banking.banking import Banker
 
 
 class Controller:
@@ -22,7 +22,7 @@ class Controller:
             game_window_title,
             game_window_size
         )
-        self.__banking = Banking(self.__finished_banking_callback)
+        self.__banking = Banker(self.__finished_banking_callback)
 
     def run(self):
         sub_state = self.__determine_sub_state()

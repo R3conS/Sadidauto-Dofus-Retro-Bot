@@ -10,7 +10,7 @@ import pyautogui as pyag
 import detection as dtc
 from interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
-from src.map_changer import MapChanger
+from src.map_changer.map_changer import MapChanger
 import window_capture as wc
 
 
@@ -52,8 +52,8 @@ class Hunter:
                     # ToDo: Link to recovery state.
                     log.critical("Not implemented!")
 
-            # Change back to elif when implemented
             elif map_type == "fightable":
+                did_map_change_during_attack_attempt = False
                 for segment_index in range(len(self.__monster_detection_data[0])):
                     matches = self.__search_segment(segment_index, wc.WindowCapture.gamewindow_capture())
                     if len(matches) > 0:
@@ -75,14 +75,28 @@ class Hunter:
                             # ToDo: Return control back to 'Out of Combat' state controller.
                             # self.__finished_hunting_callback()
                             return
-                
-                log.info("Current map fully searched!")
-                MapChanger.change_map(map_coords, self.__movement_data)
-                if MapChanger.has_loading_screen_passed():
-                    continue
-                else:
-                    # ToDo: Link to recovery state.
-                    log.critical("Not implemented!")
+                        else:
+                            if map_coords != MapChanger.get_current_map_coords():
+                                did_map_change_during_attack_attempt = True
+                                break
+                            elif self.__is_char_in_lumberjack_workshop():
+                                log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
+                                self.__leave_lumberjacks_workshop()
+                                if MapChanger.has_loading_screen_passed():
+                                    log.info("Successfully left 'Lumberjack's Workshop'.")
+                                    continue
+                                else:
+                                    # ToDo: Link to recovery state.
+                                    return
+
+                if not did_map_change_during_attack_attempt:
+                    log.info(f"Map {map_coords} fully searched. Changing map ... ")
+                    MapChanger.change_map(map_coords, self.__movement_data)
+                    if MapChanger.has_loading_screen_passed():
+                        continue
+                    else:
+                        # ToDo: Link to recovery state.
+                        log.critical("Not implemented!")
 
     def __get_monster_detection_data(self):
         image_folder_path = "src\\state\\out_of_combat\\sub_state\\hunting\\monster_images"
@@ -103,8 +117,8 @@ class Hunter:
                 raise FileNotFoundError(f"Image path '{path}' does not exist.")
             loaded_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
         return (
-            Hunter.__segment_data(loaded_images, 4),
-            Hunter.__segment_data(dtc.Detection.create_masks(loaded_images), 4)
+            self.__segment_data(loaded_images, 4),
+            self.__segment_data(dtc.Detection.create_masks(loaded_images), 4)
         )
 
     def __get_join_sword_detection_data(self):
@@ -121,8 +135,7 @@ class Hunter:
             read_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
         return read_images, dtc.Detection.create_masks(read_images)
 
-    @staticmethod
-    def __segment_data(data: list, segment_size) -> list[list]:
+    def __segment_data(self, data: list, segment_size) -> list[list]:
         segments = []
         for i in range(0, len(data), segment_size):
             segments.append(data[i:i + segment_size])
@@ -151,14 +164,15 @@ class Hunter:
         if "Dofus Retro" in self.__game_window_title:
             pyag.click(button="right")
         else:
+            pass
             # This is for Abrak server. Simply right clicking doesn't work (v1.42.3)
-            pyag.keyDown("shift")
-            pyag.click()
-            pyag.keyUp("shift")
+            # pyag.keyDown("shift")
+            # pyag.click()
+            # pyag.keyUp("shift")
 
     def __is_attack_successful(self):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 8:
+        while perf_counter() - start_time <= 5:
             if len(
                 dtc.Detection.find_images(
                     wc.WindowCapture.gamewindow_capture(), 
@@ -194,3 +208,18 @@ class Hunter:
         if map_coords in movement_data.keys():
             return True
         return False
+
+    def __is_char_in_lumberjack_workshop(self):
+        return all ((
+            pyag.pixelMatchesColor(49, 559, (0, 0, 0)),
+            pyag.pixelMatchesColor(48, 137, (0, 0, 0)),
+            pyag.pixelMatchesColor(782, 89, (0, 0, 0)),
+            pyag.pixelMatchesColor(820, 380, (0, 0, 0)),
+            pyag.pixelMatchesColor(731, 554, (0, 0, 0)),
+        ))
+
+    def __leave_lumberjacks_workshop(self):
+        pyag.keyDown('e')
+        pyag.moveTo(667, 507)
+        pyag.click()
+        pyag.keyUp('e')

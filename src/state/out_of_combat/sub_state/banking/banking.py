@@ -11,7 +11,7 @@ import data
 import window_capture as wc
 
 
-class Banking:
+class Banker:
 
     map_coords = None
     data_map = None
