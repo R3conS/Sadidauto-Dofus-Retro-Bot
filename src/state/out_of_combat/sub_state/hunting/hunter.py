@@ -16,8 +16,6 @@ import window_capture as wc
 
 class Hunter:
 
-    # ToDo: Fix __attack() method before fully commiting.
-
     def __init__(
             self, 
             finished_hunting_callback: callable, 
@@ -80,14 +78,15 @@ class Hunter:
             matches = self.__search_segment(segment_index, wc.WindowCapture.gamewindow_capture())
             if len(matches) > 0:
                 monster_x, monster_y = matches[0][0], matches[0][1]
-                
                 log.info(f"Found monster at {monster_x, monster_y}.")
+
                 if self.__is_join_sword_on_pos(monster_x, monster_y):
                     log.info("Monster was attacked by someone else. Skipping ... ")
                     continue
+
                 self.__attack(monster_x, monster_y)
-                # Allow time for 'Right Click Menu' to open in case the click missed.
-                # Click can miss if monster moves from the coordinates.
+                # Allow time for 'Right Click Menu' to open in case the attack 
+                # click missed. Clicks can miss if the monster moves away.
                 sleep(0.25)
                 if Interfaces.is_right_click_menu_open():
                     log.info("Failed to attack monster because it moved away. Skipping ... ")
@@ -96,8 +95,6 @@ class Hunter:
 
                 if self.__is_attack_successful():
                     self.fight_counter += 1
-                    # ToDo: Return control back to 'Out of Combat' state controller.
-                    # self.__finished_hunting_callback()
                     return "started_combat"
                 else:
                     if map_coords != MapChanger.get_current_map_coords():
@@ -109,8 +106,7 @@ class Hunter:
                         if MapChanger.has_loading_screen_passed():
                             log.info("Successfully left 'Lumberjack's Workshop'.")
                             continue
-                        else:
-                            return "failed_to_handle"
+                        return "failed_to_handle"
 
         log.info(f"Map {map_coords} fully searched. Changing map ... ")
         MapChanger.change_map(map_coords, self.__movement_data)
