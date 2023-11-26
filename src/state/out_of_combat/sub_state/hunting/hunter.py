@@ -16,8 +16,7 @@ import window_capture as wc
 
 class Hunter:
 
-    # ToDo: Implement 'was map changed accidentally'.
-    # ToDo: Implement lumberjack's workshop detection.
+    # ToDo: Fix __attack() method before fully commiting.
 
     def __init__(
             self, 
@@ -40,63 +39,84 @@ class Hunter:
     def hunt(self):
         while True:
             map_coords = MapChanger.get_current_map_coords()
+            log.info(f"Hunting on map: {map_coords}.")
             if not self.__are_map_coords_valid(map_coords, self.__movement_data):
                 raise KeyError(f"Map coordinates {map_coords} are not in movement data!")
 
             map_type = self.__map_type_data[map_coords]
+
             if map_type == "traversable":
-                MapChanger.change_map(map_coords, self.__movement_data)
-                if MapChanger.has_loading_screen_passed():
+                status = self.__handle_traversable_map(map_coords)
+                if status == "traversed_successfully":
                     continue
-                else:
+                elif status == "failed_to_handle":
                     # ToDo: Link to recovery state.
-                    log.critical("Not implemented!")
-
+                    return
+                
             elif map_type == "fightable":
-                did_map_change_during_attack_attempt = False
-                for segment_index in range(len(self.__monster_detection_data[0])):
-                    matches = self.__search_segment(segment_index, wc.WindowCapture.gamewindow_capture())
-                    if len(matches) > 0:
-                        monster_x, monster_y = matches[0][0], matches[0][1]
-                        log.info(f"Found monster at {monster_x, monster_y}.")
-                        if self.__is_join_sword_on_pos(monster_x, monster_y):
-                            log.info("Monster was attacked by someone else. Skipping ... ")
-                            continue
-                        self.__attack(monster_x, monster_y)
-                        # Allow time for 'Right Click Menu' to open in case the click missed.
-                        # Click can miss if monster moves from the coordinates.
-                        sleep(0.25)
-                        if Interfaces.is_right_click_menu_open():
-                            log.info("Failed to attack monster because it moved away. Skipping ... ")
-                            Interfaces.close_right_click_menu()
-                            continue
-                        if self.__is_attack_successful():
-                            self.fight_counter += 1
-                            # ToDo: Return control back to 'Out of Combat' state controller.
-                            # self.__finished_hunting_callback()
-                            return
-                        else:
-                            if map_coords != MapChanger.get_current_map_coords():
-                                did_map_change_during_attack_attempt = True
-                                break
-                            elif self.__is_char_in_lumberjack_workshop():
-                                log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
-                                self.__leave_lumberjacks_workshop()
-                                if MapChanger.has_loading_screen_passed():
-                                    log.info("Successfully left 'Lumberjack's Workshop'.")
-                                    continue
-                                else:
-                                    # ToDo: Link to recovery state.
-                                    return
+                status = self.__handle_fightable_map(map_coords)
+                if status == "started_combat":
+                    # ToDo: Return control back to 'Out of Combat' state controller.
+                    # self.__finished_hunting_callback()
+                    return
+                elif status == "accidentally_changed_map_during_attack":
+                    continue
+                elif status == "map_fully_searched":
+                    continue
+                elif status == "failed_to_handle":
+                    # ToDo: Link to recovery state.
+                    return
 
-                if not did_map_change_during_attack_attempt:
-                    log.info(f"Map {map_coords} fully searched. Changing map ... ")
-                    MapChanger.change_map(map_coords, self.__movement_data)
-                    if MapChanger.has_loading_screen_passed():
-                        continue
-                    else:
-                        # ToDo: Link to recovery state.
-                        log.critical("Not implemented!")
+    def __handle_traversable_map(self, map_coords):
+        MapChanger.change_map(map_coords, self.__movement_data)
+        if MapChanger.has_loading_screen_passed():
+            return "traversed_successfully"
+        else:
+            log.critical("Not implemented!")
+            return "failed_to_handle"
+
+    def __handle_fightable_map(self, map_coords):
+        for segment_index in range(len(self.__monster_detection_data[0])):
+            matches = self.__search_segment(segment_index, wc.WindowCapture.gamewindow_capture())
+            if len(matches) > 0:
+                monster_x, monster_y = matches[0][0], matches[0][1]
+                
+                log.info(f"Found monster at {monster_x, monster_y}.")
+                if self.__is_join_sword_on_pos(monster_x, monster_y):
+                    log.info("Monster was attacked by someone else. Skipping ... ")
+                    continue
+                self.__attack(monster_x, monster_y)
+                # Allow time for 'Right Click Menu' to open in case the click missed.
+                # Click can miss if monster moves from the coordinates.
+                sleep(0.25)
+                if Interfaces.is_right_click_menu_open():
+                    log.info("Failed to attack monster because it moved away. Skipping ... ")
+                    Interfaces.close_right_click_menu()
+                    continue
+
+                if self.__is_attack_successful():
+                    self.fight_counter += 1
+                    # ToDo: Return control back to 'Out of Combat' state controller.
+                    # self.__finished_hunting_callback()
+                    return "started_combat"
+                else:
+                    if map_coords != MapChanger.get_current_map_coords():
+                        log.info("Map was changed during the attack.")
+                        return "accidentally_changed_map_during_attack"
+                    elif self.__is_char_in_lumberjack_workshop():
+                        log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
+                        self.__leave_lumberjacks_workshop()
+                        if MapChanger.has_loading_screen_passed():
+                            log.info("Successfully left 'Lumberjack's Workshop'.")
+                            continue
+                        else:
+                            return "failed_to_handle"
+
+        log.info(f"Map {map_coords} fully searched. Changing map ... ")
+        MapChanger.change_map(map_coords, self.__movement_data)
+        if MapChanger.has_loading_screen_passed():
+            return "map_fully_searched"
+        return "failed_to_handle"
 
     def __get_monster_detection_data(self):
         image_folder_path = "src\\state\\out_of_combat\\sub_state\\hunting\\monster_images"

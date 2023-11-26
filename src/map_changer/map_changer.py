@@ -28,7 +28,6 @@ class MapChanger:
 
     @classmethod
     def get_current_map_coords(cls):
-        log.info(f"Getting current map coordinates ... ")
         current_map_image = wc.WindowCapture.custom_area_capture(
             capture_region=(487, 655, 78, 52),
         )
@@ -41,7 +40,6 @@ class MapChanger:
                 remove_alpha_channels=True
             )
             if len(result) > 0:
-                log.info(f"Current map is: {map_coords}.")
                 return map_coords
         raise ValueError(f"Current map is not in map image data.")
 
@@ -64,7 +62,7 @@ class MapChanger:
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
             if MapChanger.__is_loading_screen_visible():
-                log.info(f"Loading screen detected.")
+                log.info(f"Loading screen detected ... ")
                 break
         else:
             log.error(f"Failed to detect loading screen.")
