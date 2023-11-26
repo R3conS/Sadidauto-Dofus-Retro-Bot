@@ -5,19 +5,28 @@ import cv2
 import numpy as np
 from PIL import Image
 from tesserocr import PyTessBaseAPI
+from paddleocr import PaddleOCR
+
+from src.detection import Detection
 
 
 def get_text_from_image(
-        image: np.ndarray,
+        image: np.ndarray | str,
         to_grayscale: bool = False,
         resize_to: tuple = None,
         invert: bool = False,
         binarize: int = None,
         erode: int = None,
         dilate: int = None,
+        ocr_engine: str = "tesserocr"
     ):
+    if isinstance(image, str):
+        if not os.path.exists(image):
+            raise FileNotFoundError(f"Image path '{image}' does not exist.")
+        image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
     if to_grayscale:
-        image = convert_to_grayscale(image)
+        if Detection.get_number_of_channels(image) > 1:
+            image = convert_to_grayscale(image)
     if resize_to is not None:
         image = resize_image(image, resize_to[0], resize_to[1])
     if invert:
@@ -28,7 +37,10 @@ def get_text_from_image(
         image = erode_image(image, erode)
     if dilate is not None:
         image = dilate_image(image, dilate)
-    return read_text(Image.fromarray(image))
+    if ocr_engine == "tesserocr":
+        return read_text_tesserocr(Image.fromarray(image))
+    elif ocr_engine == "paddleocr":
+        return read_text_paddleocr(image)
 
 def convert_to_grayscale(image: np.ndarray):
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -50,7 +62,19 @@ def dilate_image(image: np.ndarray, kernel_size: int):
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     return cv2.dilate(image, kernel, iterations=1)
 
-def read_text(image: Image):
+def read_text_tesserocr(image: Image):
     with PyTessBaseAPI() as api:
         api.SetImage(image)
         return api.GetUTF8Text().strip()
+
+def read_text_paddleocr(
+    image_path: np.ndarray | str,
+    lang: str = "en",
+    use_angle_cls: bool = False,
+    show_log: bool = False
+):
+    if isinstance(image_path, str):
+        image_path = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    ocr = PaddleOCR(lang=lang, use_angle_cls=use_angle_cls, show_log=show_log)
+    results = ocr.ocr(image_path, cls=use_angle_cls)
+    return [result[1][0] for result in results]
