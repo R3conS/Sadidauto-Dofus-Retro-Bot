@@ -5,10 +5,11 @@ import os
 
 import pygetwindow as gw
 
-from state.botstate_enum import BotState
-import window_capture as wc
 import detection as dtc
 from interfaces import Interfaces
+from state.botstate_enum import BotState
+import window_capture as wc
+from src.tesserocr.ocr import read_text_paddleocr
 
 
 class Initializer:
@@ -63,7 +64,7 @@ class Initializer:
         Interfaces.open_characteristics()
         if Interfaces.is_characteristics_open():
             sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
-            if self.__character_name == dtc.Detection.get_text_from_image(sc)[0]:
+            if self.__character_name == read_text_paddleocr(sc)[0]:
                 log.info("Successfully verified character's name!")
                 Interfaces.close_characteristics()
                 if not Interfaces.is_characteristics_open():
