@@ -1,6 +1,5 @@
 import os
 
-from paddleocr import PaddleOCR
 import cv2
 import numpy as np
 
@@ -143,19 +142,6 @@ class Detection:
             int(x_y_w_h[0] + (x_y_w_h[2] / 2)),
             int(x_y_w_h[1] + (x_y_w_h[3] / 2))
         )
-
-    @staticmethod
-    def get_text_from_image(
-        image_path: np.ndarray | str,
-        lang: str = "en",
-        use_angle_cls: bool = False,
-        show_log: bool = False
-    ):
-        if isinstance(image_path, str):
-            image_path = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-        ocr = PaddleOCR(lang=lang, use_angle_cls=use_angle_cls, show_log=show_log)
-        results = ocr.ocr(image_path, cls=use_angle_cls)
-        return [result[1][0] for result in results]
 
     @staticmethod
     def draw_rectangle(
