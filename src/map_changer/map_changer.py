@@ -65,7 +65,7 @@ class MapChanger:
                 log.info(f"Loading screen detected ... ")
                 break
         else:
-            log.error(f"Failed to detect loading screen.")
+            log.info(f"Failed to detect loading screen.")
             return False
         
         start_time = perf_counter()
@@ -74,7 +74,7 @@ class MapChanger:
                 log.info(f"Loading screen finished.")
                 return True
         else:
-            log.error(f"Failed to detect end of loading screen.")
+            log.info(f"Failed to detect end of loading screen.")
             return False
 
     @staticmethod
