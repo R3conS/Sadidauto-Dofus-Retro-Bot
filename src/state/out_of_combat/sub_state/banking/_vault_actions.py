@@ -32,6 +32,7 @@ class VaultActions:
     }
     inventory_slot_area = (687, 252, 227, 291)
     inventory_tab_area = (684, 187, 234, 69)
+    inventory_pod_tooltip_area = (688, 527, 160, 30)
 
     @classmethod
     def deposit_all_visible_items(cls):
@@ -162,9 +163,9 @@ class VaultActions:
     def open_resources_tab(cls):
         pass
 
-    @staticmethod
-    def get_tooltip_area_image():
-        return WindowCapture.custom_area_capture((688, 527, 160, 30))
+    @classmethod
+    def get_tooltip_area_image(cls):
+        return WindowCapture.custom_area_capture(cls.inventory_pod_tooltip_area)
 
     @staticmethod
     def get_tooltip_rectangle_from_image(tooltip_area_image: np.ndarray):
