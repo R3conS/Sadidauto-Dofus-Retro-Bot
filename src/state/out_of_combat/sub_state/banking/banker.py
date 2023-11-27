@@ -9,6 +9,7 @@ import cv2
 import pyautogui as pyag
 
 from .map_data.getter import Getter as MapDataGetter
+from ._vault_actions import VaultActions
 from src.map_changer.map_changer import MapChanger
 from src.detection import Detection
 from src.window_capture import WindowCapture

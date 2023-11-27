@@ -3,13 +3,15 @@ from time import perf_counter
 import os
 
 import cv2
+import numpy as np
 import pyautogui as pyag
 
 from src.detection import Detection
 from src.window_capture import WindowCapture
+from src.ocr.ocr import OCR
 
 
-class _VaultActions:
+class VaultActions:
 
     image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images"
     empty_slot_image = cv2.imread(os.path.join(image_folder_path, "empty_slot.png"), cv2.IMREAD_UNCHANGED)
@@ -159,3 +161,37 @@ class _VaultActions:
     @__handle_tab_opening
     def open_resources_tab(cls):
         pass
+
+    @staticmethod
+    def get_tooltip_area_image():
+        return WindowCapture.custom_area_capture((688, 527, 160, 30))
+
+    @staticmethod
+    def get_tooltip_rectangle_from_image(tooltip_area_image: np.ndarray):
+        tooltip_area_image = OCR.convert_to_grayscale(tooltip_area_image)
+        tooltip_area_image = cv2.morphologyEx(tooltip_area_image, cv2.MORPH_CLOSE, np.ones((4, 4), np.uint8))
+        tooltip_area_image = OCR.invert_image(tooltip_area_image)
+        tooltip_area_image = OCR.binarize_image(tooltip_area_image, 180)
+        canny = cv2.Canny(tooltip_area_image, 50, 150)
+        contours, _ = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            epsilon = 0.05 * cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, epsilon, True)
+            x, y, w, h = cv2.boundingRect(approx)
+            if w > 50 and h > 18:
+                return x, y, w, h
+
+    @staticmethod
+    def crop_tooltip_from_image(screenshot: np.ndarray, rectangle: tuple[int, int, int, int]):
+        x, y, w, h = rectangle
+        return screenshot[y:y+h, x:x+w]
+
+    @staticmethod
+    def read_text_from_tooltip(tooltip: np.ndarray):
+        tooltip = OCR.convert_to_grayscale(tooltip)
+        tooltip = OCR.invert_image(tooltip)
+        tooltip = OCR.resize_image(tooltip, tooltip.shape[1] * 5, tooltip.shape[0] * 5)
+        tooltip = OCR.dilate_image(tooltip, 2)
+        tooltip = OCR.binarize_image(tooltip, 145)
+        tooltip = cv2.GaussianBlur(tooltip, (3, 3), 0)
+        return OCR.get_text_from_image(tooltip, ocr_engine="tesserocr")
