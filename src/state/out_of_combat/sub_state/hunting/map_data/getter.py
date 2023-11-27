@@ -8,4 +8,4 @@ class Getter:
         if script == "af_anticlock":
             return AntiClock
         else:
-            raise ValueError(f"Invalid script: {script}")
+            raise ValueError(f"No hunting data for script: {script}")
