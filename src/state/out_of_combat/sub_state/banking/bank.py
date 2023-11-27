@@ -91,52 +91,6 @@ class Bank:
             wc.WindowCapture.on_exit_capture()
 
     @classmethod
-    def enter_bank(cls):
-        """Move character inside of bank."""
-        log.info("Entering bank ... ")
-
-        coords = [(767, 205), (792, 203), (765, 193), (761, 215), (748, 201)]
-        x, y = random.choice(coords)
-
-        pyautogui.keyDown('e')
-        pyautogui.moveTo(x, y, duration=0.15)
-        pyautogui.click()
-        pyautogui.keyUp('e')
-
-        start_time = time.time()
-        wait_time = 5
-
-        while time.time() - start_time < wait_time:
-            if cls.inside_or_outside():
-                log.info("Successfully entered!")
-                return True
-        else:
-            log.error("Failed to enter bank!")
-            return False
-
-    @classmethod
-    def exit_bank(cls):
-        """Move character outside of bank."""
-        log.info("Exiting bank ... ")
-
-        x, y = (268, 494)
-        pyautogui.keyDown('e')
-        pyautogui.moveTo(x, y, duration=0.15)
-        pyautogui.click()
-        pyautogui.keyUp('e')
-
-        start_time = time.time()
-        wait_time = 5
-
-        while time.time() - start_time < wait_time:
-            if not cls.inside_or_outside():
-                log.info("Successfully exited!")
-                return True
-        else:
-            log.error("Failed to exit bank!")
-            return False
-
-    @classmethod
     def deposit_items(cls):
         """
         Deposit all items from inventory into bank.
@@ -206,49 +160,6 @@ class Bank:
         else:
             log.error(f"Failed to close bank vault in '{wait_time}' "
                       "seconds!")
-            return False
-
-    @staticmethod
-    def inside_or_outside():
-        """
-        Check if character is inside or outside Astrub bank.
-        
-        Character must be on '4,-16' map.
-
-        """
-        color = (0, 0, 0)
-        black_pixel_1 = pyautogui.pixelMatchesColor(117, 525, color)
-        black_pixel_2 = pyautogui.pixelMatchesColor(821, 526, color)
-        black_pixel_3 = pyautogui.pixelMatchesColor(454, 90, color)
-
-        if black_pixel_1 and black_pixel_2 and black_pixel_3:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def __banker_detect_npc(cls):
-        """Detect banker NPC."""
-        log.info("Detecting banker ... ")
-
-        start_time = time.time()
-        wait_time = 10
-
-        while time.time() - start_time < wait_time:
-
-            screenshot = wc.WindowCapture.gamewindow_capture()
-            rectangles, coordinates = dtc.Detection.detect_objects(
-                    cls.img_list,
-                    cls.img_path,
-                    screenshot
-                )
-
-            if len(coordinates) > 0:
-                log.info("Banker detected!")
-                return rectangles, coordinates
-            
-        else:
-            log.error(f"Failed to detect banker in {wait_time} seconds!")
             return False
 
     @classmethod
@@ -366,57 +277,6 @@ class Bank:
             return "opened"
         else:
             return "closed"
-
-    @staticmethod
-    def __bank_vault():
-        """Get status of bank vault (opened/closed)."""
-        wait_time = 3
-        start_time = time.time()
-
-        while time.time() - start_time < wait_time:
-
-            # Gray pixels inside bank vault interface.
-            px_1 = pyautogui.pixelMatchesColor(218, 170, (81, 74, 60))
-            px_2 = pyautogui.pixelMatchesColor(881, 172, (81, 74, 60))
-            px_3 = pyautogui.pixelMatchesColor(700, 577, (213, 207, 170))
-
-            if px_1 and px_2 and px_3:
-                return "opened"
-
-        else:
-            return "closed"
-
-    @staticmethod
-    def __banker_open_dialogue(banker_coordinates):
-        """
-        Talk with banker.
-        
-        Parameters
-        ----------
-        banker_coordinates : Tuple[int, int]
-            Coordinates (x, y) of banker.
-
-        """
-        log.info("Talking with banker ... ")
-
-        x, y = banker_coordinates
-        pyautogui.moveTo(x, y, duration=0.15)
-        pyautogui.click(button="right")
-
-        wait_time = 3
-        click_time = time.time()
-
-        while time.time() - click_time < wait_time:
-
-            dialogue = pyautogui.pixelMatchesColor(333, 322, (255, 255, 206))
-
-            if dialogue:
-                log.info("Successfully started dialogue!")
-                return True
-        
-        else:
-            log.error(f"Failed to start dialogue in {wait_time} seconds!")
-            return False
 
     @staticmethod
     def __banker_open_personal_safe():

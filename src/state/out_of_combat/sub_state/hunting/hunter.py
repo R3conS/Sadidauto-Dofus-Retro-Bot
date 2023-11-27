@@ -187,9 +187,8 @@ class Hunter:
         pyag.moveTo(monster_x, monster_y)
         if "Dofus Retro" in self.__game_window_title:
             pyag.click(button="right")
-        else:
+        else: # For Abrak private server
             pass
-            # This is for Abrak server. Simply right clicking doesn't work (v1.42.3)
             # pyag.keyDown("shift")
             # pyag.click()
             # pyag.keyUp("shift")

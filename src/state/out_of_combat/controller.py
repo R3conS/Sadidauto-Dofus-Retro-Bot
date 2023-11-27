@@ -24,7 +24,10 @@ class Controller:
             game_window_title,
             game_window_size
         )
-        self.__banking = Banker(self.__finished_banking_callback)
+        self.__banking = Banker(
+            self.__finished_banking_callback, 
+            script
+        )
 
     def run(self):
         sub_state = self.__determine_sub_state()

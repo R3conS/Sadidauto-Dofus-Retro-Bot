@@ -127,14 +127,6 @@ class Interfaces:
         ))
     
     @staticmethod
-    def is_banker_dialogue_open():
-        """Astrub banker dialogue interface."""
-        return all((
-            pixelMatchesColor(25, 255, (255, 255, 206)),
-            pixelMatchesColor(123, 255, (255, 255, 206))
-        ))
-
-    @staticmethod
     def is_caution_open():
         """E.g. the confirmation window when clicking logout on Main Menu."""
         return all((

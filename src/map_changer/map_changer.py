@@ -36,7 +36,7 @@ class MapChanger:
                 haystack=map_image,
                 needle=current_map_image,
                 confidence=0.99,
-                method=cv2.TM_CCOEFF_NORMED,
+                method=cv2.TM_SQDIFF_NORMED,
                 remove_alpha_channels=True,
             )
             if len(result) > 0:
@@ -45,7 +45,7 @@ class MapChanger:
 
     @staticmethod
     def change_map(map_coords: str, map_data: dict[str, tuple[int, int]]):
-        log.info(f"Changing map to: {map_coords} ... ")
+        log.info(f"Changing map ... ")
         sun_x, sun_y = map_data[map_coords]
         pyag.keyDown("e")
         pyag.moveTo(sun_x, sun_y)
