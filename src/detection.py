@@ -15,6 +15,7 @@ class Detection:
             method: int = cv2.TM_CCORR_NORMED,
             mask: np.ndarray = None,
             remove_alpha_channels: bool = True,
+            get_best_match_only: bool = True
         ) -> tuple[int, int, int, int] | list:
         """Get location of the best match of needle image in haystack image."""
         # Make sure correct method is selected when mask is given
@@ -57,9 +58,10 @@ class Detection:
         else:
             locations = np.where(result >= confidence)
 
-        # Get top-left coordinates of the best match
         locations = list(zip(*locations[::-1]))  # Create a list of (x, y) tuples
         if len(locations) > 0:
+            if not get_best_match_only:
+                return [(loc[0], loc[1], needle.shape[1], needle.shape[0]) for loc in locations]
             if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
                 best_match_index = np.argmin([result[loc[1], loc[0]] for loc in locations])
             else:
