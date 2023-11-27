@@ -1,6 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+from functools import wraps
 from time import perf_counter
 import os
 
@@ -24,7 +25,12 @@ class Banker:
         "4,-19"
     ]
 
-    def __init__(self, set_sub_state_callback, script: str, game_window_title: str):
+    def __init__(
+            self, 
+            set_sub_state_callback: callable, 
+            script: str, 
+            game_window_title: str
+        ):
         self.__set_sub_state_callback = set_sub_state_callback
         self.__game_window_title = game_window_title
         self.__npc_images = self.__load_npc_images()
@@ -50,9 +56,9 @@ class Banker:
                             log.info("Successfully recalled.")
                             return "sucessfully_recalled"
                     else:
-                        log.info("Failed to detect loading screen after trying to recall.")
+                        log.info("Failed to detect loading screen after recalling.")
                         # ToDo: link to recovery state.
-                        return "failed_to_handle"
+                        return "failed_to_detect_loading_screen_after_recall"
                 else:
                     log.info("Character does not have a recall potion.")
                     return "char_doesnt_have_recall_potion"
@@ -79,13 +85,13 @@ class Banker:
                 return "sucessfully_entered_bank"
             else:
                 log.info("Failed to enter the bank.")
-                return "failed_to_handle"
+                return "failed_to_enter_bank"
         else:
             # ToDo: link to recovery state.
-            log.info("Failed to detect loading screen after tring to enter the bank.")
-            return "failed_to_handle"
+            log.info("Failed to detect loading screen after trying to enter the bank.")
+            return "failed_to_enter_bank"
 
-    def __handle_char_on_asturb_bank_map_inside(self):
+    def __handle_char_on_asturb_bank_map_inside_vault_closed(self):
         if self.is_banker_npc_detected():
             banker_x, banker_y = self.get_banker_npc_coords()
             log.info("Banker NPC detected. Talking with banker ... ")
@@ -106,6 +112,9 @@ class Banker:
             log.info("Failed to detect banker NPC.")
             return "failed_to_detect_banker_npc"
 
+    def __handle_char_on_asturb_bank_map_inside_vault_open(self):
+        pass
+
     def bank(self):
         while True:
             if not self.is_char_on_astrub_bank_map():
@@ -119,7 +128,7 @@ class Banker:
                     continue
                 elif status == "map_changed_successfully":
                     continue
-                elif status == "failed_to_handle":
+                elif status == "failed_to_detect_loading_screen_after_recall":
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
                     os._exit(1)
@@ -128,7 +137,7 @@ class Banker:
                 status = self.__handle_char_on_asturb_bank_map_outside()
                 if status == "sucessfully_entered_bank":
                     continue
-                elif status == "failed_to_handle":
+                elif status == "failed_to_enter_bank":
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
                     os._exit(1)
@@ -138,7 +147,7 @@ class Banker:
                 and self.is_char_inside_astrub_bank()
                 and not self.__is_bank_vault_open
             ):
-                status = self.__handle_char_on_asturb_bank_map_inside()
+                status = self.__handle_char_on_asturb_bank_map_inside_vault_closed()
                 if status == "sucessfully_opened_bank_vault":
                     self.__is_bank_vault_open = True
                     continue
@@ -156,8 +165,8 @@ class Banker:
                 and self.is_char_inside_astrub_bank()
                 and self.__is_bank_vault_open
             ):
-                log.info("Banking finished.")
-                return True
+                os._exit(1)
+                status = self.__handle_char_on_asturb_bank_map_inside_vault_open()
 
     @classmethod
     def is_char_on_no_recall_map(cls):
