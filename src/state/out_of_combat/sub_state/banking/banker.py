@@ -2,53 +2,48 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import time
+import os
 
+import cv2
 import pyautogui as pyag
 
-from src.state.botstate_enum import BotState
-import bank
-import data
+# from .bank import Bank
 import window_capture as wc
+from src.map_changer.map_changer import MapChanger
 
 
 class Banker:
 
-    map_coords = None
-    data_map = None
+    no_recall_maps = [
+        "4,-16",
+        "4,-17",
+        "4,-18",
+        "4,-19"
+    ]
 
-    __state = None
-    __recall_potion_used = False
-
-    def __init__(self, set_sub_state_callback, controller):
+    def __init__(self, set_sub_state_callback):
         self.__set_sub_state_callback = set_sub_state_callback
-        self.__controller = controller
-        bank.Bank.img_path = data.images.npc.AstrubBanker.img_path
-        bank.Bank.img_list = data.images.npc.AstrubBanker.img_list
+        self.__npc_images = self.__load_npc_images()
+
+    def __load_npc_images(self):
+        image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
+        loaded_images = []
+        for image in os.listdir(image_folder_path):
+            loaded_images.append(cv2.imread(os.path.join(image_folder_path, image), cv2.IMREAD_UNCHANGED))
+        return loaded_images
+
 
     def bank(self):
-        """
-        Banking logic.
-
-        Logic
-        ----------
-        - If 'Recall Potion' wasn't used:
-            - Use it.
-        - Elif character on "4,-16" map:
-            - Launch 'Astrub Bank' banking logic.
-        - Else:
-            - Change 'BotState' to 'MOVING'.
-
-        """
-
+    
+        
         while True:
-
             if not self.__recall_potion_used and self.map_coords == "4,-19":
                 self.__recall_potion_used = True
                 self.__state = BotState.CONTROLLER
                 return self.__state
 
             elif not self.__recall_potion_used:
-                if self.recall_potion_available():
+                if self.has_recall_potion():
                     if self.recall():
                         log.info("Successfully recalled during banking state!")
                     else:
@@ -68,77 +63,23 @@ class Banker:
                 self.__state = BotState.MOVING
                 return self.__state
 
-    def recall(self):
-        """
-        Recall by using 'Recall Potion'.
-        
-        Make sure that an appropriate Zaap is saved on character. 
-        For example, when using 'Astrub Forest' script, Astrub's Zaap 
-        should be saved.
-
-        """
-        use_time = time.time()
-        timeout = 10
-
-        while time.time() - use_time < timeout:
-
-            if self.__use_recall_potion():
-                log.info("Successfully recalled to save point!")
-                self.__controller.set_was_map_changed(True)
-                return True
-            else:
-                continue
-
-        else:
-            log.error(f"Timed out in 'recall()!")
-            return False
+    @staticmethod
+    def is_char_on_no_recall_map():
+        return MapChanger.get_current_map_coords() in ["4,-16", "4,-17", "4,-18", "4,-19"]
 
     @staticmethod
-    def recall_potion_available():
-        """
-        Check if 'Recall Potion' is available or not.
-        
-        Make sure the potion is in first slot of second 'Item' row.
+    def does_char_have_recall_potion():
+        return pyag.pixelMatchesColor(664, 725, (120, 151, 154), tolerance=20)
 
-        """
-        log.info("Checking if 'Recall Potion' is available ... ")
-
-        color = (120, 151, 154)
-        px = pyag.pixelMatchesColor(664, 725, color, tolerance=20)
-
-        if px:
-            log.info("'Recall Potion' is available!")
-            return True
-        else:
-            log.info("'Recall Potion' is not available!")
-            return False
-
-    def __use_recall_potion(self):
-        """
-        Double click 'Recall Potion' in 'Items' bar.
-        
-        Make sure the potion is in first slot of second 'Items' row.
-
-        """
+    @staticmethod
+    def use_recall_potion():
         log.info("Using 'Recall Potion' ... ")
-
-        pyag.moveTo(664, 725, duration=0.15)
+        pyag.moveTo(664, 725)
         pyag.click(clicks=2, interval=0.1)
 
-        if self.__controller.moving.loading_screen(3):
-            log.info("Successfully used 'Recall Potion'!")
-            return True
-
-        else:
-            coords = self.__controller.moving.get_coordinates(self.data_map)
-
-            if coords == "4,-19":
-                log.info("Successfully used 'Recall Potion'!")
-                return True
-
-            else:
-                log.error(f"Failed to use 'Recall Potion'!")
-                return False
+    @staticmethod
+    def is_char_on_zaap_map():
+        return MapChanger.get_current_map_coords() == "4,-19"
 
     def __astrub_bank(self):
         """

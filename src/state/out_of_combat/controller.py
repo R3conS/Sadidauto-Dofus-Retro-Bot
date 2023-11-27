@@ -1,7 +1,7 @@
 from src.state.botstate_enum import BotState
-from src.bank import Bank
+# from src.bank import Bank
 from .sub_state.hunting.hunter import Hunter
-from .sub_state.banking.banking import Banker
+from .sub_state.banking.banker import Banker
 
 
 class Controller:

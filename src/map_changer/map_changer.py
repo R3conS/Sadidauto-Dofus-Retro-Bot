@@ -33,15 +33,15 @@ class MapChanger:
         )
         for map_coords, map_image in cls.map_data.items():
             result = dtc.Detection.find_image(
-                haystack=current_map_image,
-                needle=map_image,
-                confidence=0.995,
-                method=cv2.TM_CCORR_NORMED,
-                remove_alpha_channels=True
+                haystack=map_image,
+                needle=current_map_image,
+                confidence=0.99,
+                method=cv2.TM_CCOEFF_NORMED,
+                remove_alpha_channels=True,
             )
             if len(result) > 0:
                 return map_coords
-        raise ValueError(f"Current map is not in map image data.")
+        raise ValueError(f"Failed to find current map coords. Perhaps the map image is missing?")
 
     @staticmethod
     def change_map(map_coords: str, map_data: dict[str, tuple[int, int]]):
