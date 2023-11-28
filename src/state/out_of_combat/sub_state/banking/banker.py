@@ -57,27 +57,24 @@ class Banker:
                     if MapChanger.has_loading_screen_passed():
                         if MapChanger.get_current_map_coords() == self.astrub_zaap_map:
                             log.info("Successfully recalled.")
-                            return "sucessfully_recalled"
+                            return Status.SUCCESSFULLY_RECALLED
                     else:
                         log.info("Failed to detect loading screen after recalling.")
-                        # ToDo: link to recovery state.
-                        return "failed_to_detect_loading_screen_after_recall"
+                        return Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_RECALL
                 else:
                     log.info("Character does not have a recall potion.")
-                    return "char_doesnt_have_recall_potion"
+                    return Status.CHAR_DOESNT_HAVE_RECALL_POTION
             else:
                 log.info("Character is close to the bank. No need to recall.")
-                return "no_need_to_recall"
+                return Status.NO_NEED_TO_RECALL
         else:
             map_coords = MapChanger.get_current_map_coords()
             log.info(f"Running to bank. Current map coords: {map_coords}.")
             MapChanger.change_map(map_coords, self.__movement_data)
             if MapChanger.has_loading_screen_passed():
-                return "map_changed_successfully"
-            else:
-                # ToDo: link to recovery state.
-                log.critical("Not implemented!")
-                return "failed_to_handle"
+                return Status.MAP_CHANGED_SUCCESSFULLY
+            log.info("Failed to detect loading screen after changing map.")
+            return Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_CHANGE_MAP
 
     def __handle_char_on_asturb_bank_map_outside(self):
         log.info("Character is outside the bank. Going inside ... ")
@@ -85,14 +82,13 @@ class Banker:
         if MapChanger.has_loading_screen_passed():
             if self.is_char_inside_astrub_bank():
                 log.info("Successfully entered the bank.")
-                return "sucessfully_entered_bank"
+                return Status.SUCCESSFULLY_ENTERED_BANK
             else:
                 log.info("Failed to enter the bank.")
-                return "failed_to_enter_bank"
+                return Status.FAILED_TO_ENTER_BANK
         else:
-            # ToDo: link to recovery state.
             log.info("Failed to detect loading screen after trying to enter the bank.")
-            return "failed_to_enter_bank"
+            return Status.FAILED_TO_ENTER_BANK
 
     def __handle_char_on_asturb_bank_map_inside_vault_closed(self):
         if self.is_banker_npc_detected():
@@ -104,16 +100,16 @@ class Banker:
                 self.select_consult_your_personal_safe()
                 if self.is_bank_vault_open():
                     log.info("Successfully opened bank vault.")
-                    return "sucessfully_opened_bank_vault"
+                    return Status.SUCCESSFULLY_OPENED_BANK_VAULT
                 else:
                     log.info("Failed to open bank vault.")
-                    return "failed_to_open_bank_vault"
+                    return Status.FAILED_TO_OPEN_BANK_VAULT
             else:
                 log.info("Failed to open banker dialogue.")
-                return "failed_to_open_banker_dialogue"
+                return Status.FAILED_TO_OPEN_BANKER_DIALOGUE
         else:
             log.info("Failed to detect banker NPC.")
-            return "failed_to_detect_banker_npc"
+            return Status.FAILED_TO_DETECT_BANKER_NPC
 
     def __handle_char_on_asturb_bank_map_inside_vault_open(self):
         return VaultActions.deposit_all_tabs()
@@ -123,24 +119,27 @@ class Banker:
             if not self.is_char_on_astrub_bank_map():
                 status = self.__handle_char_not_on_asturb_bank_map()
                 if (
-                    status == "sucessfully_recalled"
-                    or status == "char_doesnt_have_recall_potion"
-                    or status == "no_need_to_recall"
+                    status == Status.SUCCESSFULLY_RECALLED
+                    or status == Status.CHAR_DOESNT_HAVE_RECALL_POTION
+                    or status == Status.NO_NEED_TO_RECALL
                 ):
                     self.__was_recall_attempted = True
                     continue
-                elif status == "map_changed_successfully":
+                elif status == Status.MAP_CHANGED_SUCCESSFULLY:
                     continue
-                elif status == "failed_to_detect_loading_screen_after_recall":
+                elif (
+                    status == Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_RECALL
+                    or status == Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_CHANGE_MAP
+                ):
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
                     os._exit(1)
 
             elif self.is_char_on_astrub_bank_map() and not self.is_char_inside_astrub_bank():
                 status = self.__handle_char_on_asturb_bank_map_outside()
-                if status == "sucessfully_entered_bank":
+                if status == Status.SUCCESSFULLY_ENTERED_BANK:
                     continue
-                elif status == "failed_to_enter_bank":
+                elif status == Status.FAILED_TO_ENTER_BANK:
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
                     os._exit(1)
@@ -152,13 +151,13 @@ class Banker:
                 and not self.__is_depositing_finished
             ):
                 status = self.__handle_char_on_asturb_bank_map_inside_vault_closed()
-                if status == "sucessfully_opened_bank_vault":
+                if status == Status.SUCCESSFULLY_OPENED_BANK_VAULT:
                     self.__is_bank_vault_open = True
                     continue
                 elif (
-                    status == "failed_to_open_bank_vault"
-                    or status == "failed_to_open_banker_dialogue" 
-                    or status == "failed_to_detect_banker_npc"
+                    status == Status.FAILED_TO_OPEN_BANK_VAULT
+                    or status == Status.FAILED_TO_OPEN_BANKER_DIALOGUE
+                    or status == Status.FAILED_TO_DETECT_BANKER_NPC
                 ):
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
@@ -181,7 +180,7 @@ class Banker:
             
             elif self.__is_depositing_finished:
                 status = self.handle_depositing_finished()
-                if status == "successfully_left_bank":
+                if status == Status.SUCCESSFULLY_LEFT_BANK:
                     log.info("Successfully banked.")
                     self.__is_depositing_finished = False
                     self.__is_bank_vault_open = False
@@ -189,8 +188,8 @@ class Banker:
                     # ToDo: Pass control back to the controller/s.
                     os._exit(0)
                 elif (
-                    status == "failed_to_leave_bank"
-                    or status == "failed_to_close_bank_vault"
+                    status == Status.FAILED_TO_LEAVE_BANK
+                    or status == Status.FAILED_TO_CLOSE_BANK_VAULT
                 ):
                     log.critical("Not implemented!")
                     # ToDo: link to recovery state.
@@ -207,15 +206,15 @@ class Banker:
             if MapChanger.has_loading_screen_passed():
                 if not cls.is_char_inside_astrub_bank():
                     log.info("Successfully left the bank.")
-                    return "successfully_left_bank"
+                    return Status.SUCCESSFULLY_LEFT_BANK
                 else:
                     log.info("Failed to leave the bank.")
-                    return "failed_to_leave_bank"
+                    return Status.FAILED_TO_LEAVE_BANK
             else:
                 log.info("Failed to detect loading screen after trying to leave the bank.")
-                return "failed_to_leave_bank"
+                return Status.FAILED_TO_LEAVE_BANK
         log.info("Failed to close the bank vault.")
-        return "failed_to_close_bank_vault"
+        return Status.FAILED_TO_CLOSE_BANK_VAULT
 
     @classmethod
     def is_char_on_no_recall_map(cls):
