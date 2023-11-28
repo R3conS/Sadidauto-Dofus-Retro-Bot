@@ -25,14 +25,15 @@ class Handler:
             if self.handle_character_outside_bank() == Status.FAILED_TO_ENTER_BANK:
                 return Status.FAILED_TO_ENTER_BANK
 
-        status = self.handle_vault_closed()
-        if (
-            status == Status.FAILED_TO_OPEN_BANK_VAULT
-            or status == Status.FAILED_TO_OPEN_BANKER_DIALOGUE
-            or status == Status.FAILED_TO_DETECT_BANKER_NPC
-        ):
-            return Status.FAILED_TO_OPEN_BANK_VAULT
-        
+        if not self.is_bank_vault_open():
+            status = self.handle_vault_closed()
+            if (
+                status == Status.FAILED_TO_OPEN_BANK_VAULT
+                or status == Status.FAILED_TO_OPEN_BANKER_DIALOGUE
+                or status == Status.FAILED_TO_DETECT_BANKER_NPC
+            ):
+                return Status.FAILED_TO_OPEN_BANK_VAULT
+            
         if self.handle_vault_open() == Status.FAILED_TO_DEPOSIT_ALL_TABS:
             return Status.FAILED_TO_DEPOSIT_ALL_TABS
     
