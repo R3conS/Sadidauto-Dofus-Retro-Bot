@@ -9,6 +9,7 @@ import cv2
 import pyautogui as pyag
 
 from ._pods_getter import PodsGetter
+from ._status_codes_enum import Status
 from src.detection import Detection
 from src.window_capture import WindowCapture
 
@@ -22,7 +23,7 @@ def _handle_tab_opening(decorated_method):
         
         if is_tab_open():
             log.info(f"'{tab_name.capitalize()}' tab is open.")
-            return f"{tab_name}_tab_is_already_open"
+            return True
 
         tab_icon = Detection.find_image(
             haystack=cls.get_inventory_tab_area_screenshot(),
@@ -43,13 +44,13 @@ def _handle_tab_opening(decorated_method):
             while perf_counter() - start_time <= 5:
                 if is_tab_open():
                     log.info(f"Successfully opened '{tab_name.capitalize()}' tab.")
-                    return f"successfully_opened_{tab_name}_tab"
+                    return True
                 
             log.info(f"Failed to open '{tab_name.capitalize()}' tab.")
-            return f"failed_to_open_{tab_name}_tab"
+            return False
         
         log.info(f"Failed to find '{tab_name.capitalize()}' tab icon.")
-        return f"failed_to_find_{tab_name}_tab_icon"
+        return False
     
     return wrapper
 
@@ -64,7 +65,7 @@ def _handle_tab_depositing(decorated_method):
         open_tab()
         if not is_tab_open():
             log.info(f"Failed to open '{tab_name.capitalize()}' tab.")
-            return f"failed_to_open_{tab_name}_tab"
+            return Status.TAB_FAILED_TO_OPEN
 
         is_first_iteration = True
         while True:
@@ -72,10 +73,10 @@ def _handle_tab_depositing(decorated_method):
             if occupied_slots_amount == 0:
                 if is_first_iteration:
                     log.info(f"No items to deposit in '{tab_name.capitalize()}' tab.")
-                    return f"no_items_to_deposit_in_{tab_name}_tab"
+                    return Status.TAB_NO_ITEMS_TO_DEPOSIT
                 else:
                     log.info(f"Finished depositing items in '{tab_name.capitalize()}' tab.")
-                    return f"finished_depositing_items_in_{tab_name}_tab"
+                    return Status.TAB_FINISHED_DEPOSITING_ITEMS
 
             is_first_iteration = False
             log.info(f"Depositing {occupied_slots_amount} items ...")
@@ -87,7 +88,7 @@ def _handle_tab_depositing(decorated_method):
                 log.info(f"Successfully deposited {occupied_slots_amount} items! Pods freed: {pods_before_deposit - pods_after_deposit}.")
             else:
                 log.info(f"Failed to deposit items in {tab_name.capitalize()} tab.")
-                return f"failed_to_deposit_items_in_{tab_name}_tab"
+                return Status.TAB_FAILED_TO_DEPOSIT_ITEMS
 
     return wrapper
 
@@ -113,6 +114,20 @@ class VaultActions:
     }
     inventory_slot_area = (687, 252, 227, 291)
     inventory_tab_area = (684, 187, 234, 69)
+
+    @classmethod
+    def deposit_all_tabs(cls):
+        deposit_methods = [
+            cls.deposit_equipment_tab,
+            cls.deposit_resources_tab,
+            # cls.deposit_misc_tab,
+        ]
+        for deposit_method in deposit_methods:
+            status = deposit_method()
+            if status == Status.TAB_FAILED_TO_OPEN or status == Status.TAB_FAILED_TO_DEPOSIT_ITEMS:
+                return Status.FAILED_TO_DEPOSIT_ALL_TABS
+        log.info("Successfully deposited all tabs.")
+        return Status.SUCCESSFULLY_DEPOSITED_ALL_TABS
 
     @classmethod
     @_handle_tab_opening

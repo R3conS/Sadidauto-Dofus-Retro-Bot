@@ -10,6 +10,7 @@ import pyautogui as pyag
 
 from .map_data.getter import Getter as MapDataGetter
 from ._vault_actions import VaultActions
+from ._status_codes_enum import Status
 from src.map_changer.map_changer import MapChanger
 from src.detection import Detection
 from src.window_capture import WindowCapture
@@ -38,6 +39,7 @@ class Banker:
         self.__movement_data = MapDataGetter.get_data_object(script).get_movement_data()
         self.__was_recall_attempted = False
         self.__is_bank_vault_open = False
+        self.__is_depositing_finished = False
 
     def __load_npc_images(self):
         image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
@@ -114,7 +116,7 @@ class Banker:
             return "failed_to_detect_banker_npc"
 
     def __handle_char_on_asturb_bank_map_inside_vault_open(self):
-        pass
+        return VaultActions.deposit_all_tabs()
 
     def bank(self):
         while True:
@@ -147,6 +149,7 @@ class Banker:
                 self.is_char_on_astrub_bank_map() 
                 and self.is_char_inside_astrub_bank()
                 and not self.__is_bank_vault_open
+                and not self.__is_depositing_finished
             ):
                 status = self.__handle_char_on_asturb_bank_map_inside_vault_closed()
                 if status == "sucessfully_opened_bank_vault":
@@ -165,9 +168,54 @@ class Banker:
                 self.is_char_on_astrub_bank_map() 
                 and self.is_char_inside_astrub_bank()
                 and self.__is_bank_vault_open
+                and not self.__is_depositing_finished
             ):
-                os._exit(1)
                 status = self.__handle_char_on_asturb_bank_map_inside_vault_open()
+                if status == Status.SUCCESSFULLY_DEPOSITED_ALL_TABS:
+                    self.__is_depositing_finished = True
+                    continue
+                elif status == Status.FAILED_TO_DEPOSIT_ALL_TABS:
+                    log.critical("Not implemented!")
+                    # ToDo: link to recovery state.
+                    os._exit(1)
+            
+            elif self.__is_depositing_finished:
+                status = self.handle_depositing_finished()
+                if status == "successfully_left_bank":
+                    log.info("Successfully banked.")
+                    self.__is_depositing_finished = False
+                    self.__is_bank_vault_open = False
+                    self.__was_recall_attempted = False
+                    # ToDo: Pass control back to the controller/s.
+                    os._exit(0)
+                elif (
+                    status == "failed_to_leave_bank"
+                    or status == "failed_to_close_bank_vault"
+                ):
+                    log.critical("Not implemented!")
+                    # ToDo: link to recovery state.
+                    os._exit(1)
+
+    @classmethod
+    def handle_depositing_finished(cls):
+        log.info("Closing the bank vault ... ")
+        cls.close_bank_vault()
+        if not cls.is_bank_vault_open():
+            log.info("Successfully closed the bank vault.")
+            log.info("Leaving the bank ... ")
+            cls.leave_astrub_bank()
+            if MapChanger.has_loading_screen_passed():
+                if not cls.is_char_inside_astrub_bank():
+                    log.info("Successfully left the bank.")
+                    return "successfully_left_bank"
+                else:
+                    log.info("Failed to leave the bank.")
+                    return "failed_to_leave_bank"
+            else:
+                log.info("Failed to detect loading screen after trying to leave the bank.")
+                return "failed_to_leave_bank"
+        log.info("Failed to close the bank vault.")
+        return "failed_to_close_bank_vault"
 
     @classmethod
     def is_char_on_no_recall_map(cls):
@@ -280,5 +328,15 @@ class Banker:
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if cls.is_bank_vault_open():
+                return True
+        return False
+
+    @classmethod
+    def close_bank_vault(cls):
+        pyag.moveTo(904, 172)
+        pyag.click()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if not cls.is_bank_vault_open():
                 return True
         return False
