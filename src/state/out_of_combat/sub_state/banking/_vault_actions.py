@@ -5,6 +5,7 @@ import os
 import cv2
 import numpy as np
 import pyautogui as pyag
+import win32api
 
 from src.detection import Detection
 from src.window_capture import WindowCapture
@@ -34,12 +35,12 @@ class VaultActions:
     inventory_tab_area = (684, 187, 234, 69)
 
     @classmethod
-    def deposit_all_visible_items(cls):
-        deposit_coords = cls.get_deposit_coordinates(cls.get_amount_of_occuppied_slots())
+    def deposit_items(cls, amount_of_items):
         pyag.moveTo(687, 275) # To the left of the first slot.
+        pyag.click() # Click to make sure window is focused.
         pyag.keyDown("ctrl")
         pyag.keyDown("shift")
-        for coords in deposit_coords:
+        for coords in cls.get_deposit_coordinates(amount_of_items):
             pyag.moveTo(coords[0], coords[1], duration=0.2) # Doesn't select items if moving faster
         pyag.click(clicks=2, interval=0.1)
         pyag.keyUp("shift")
@@ -79,7 +80,7 @@ class VaultActions:
             method=cv2.TM_CCOEFF_NORMED,
             get_best_match_only=False,
         )
-        return len(cv2.groupRectangles(rectangles, 1, 0.1)[0])
+        return len(cv2.groupRectangles(rectangles, 1, 0.5)[0])
 
     @classmethod
     def get_inventory_slot_area_screenshot(cls):
@@ -204,6 +205,10 @@ class PodsGetter:
         def trigger_pods_tooltip():
             pyag.moveTo(735, 560)
 
+        @staticmethod
+        def hide_pods_tooltip():
+            pyag.moveTo(735, 580)
+
         @classmethod
         def is_pods_tooltip_visible(cls):
             tooltip_area = cls.screenshot_tooltip_area()
@@ -220,6 +225,7 @@ class PodsGetter:
                 if cls.is_pods_tooltip_visible():
                     tooltip_area = cls.screenshot_tooltip_area()
                     tooltip_rectangle = cls.get_tooltip_rectangle_from_image(tooltip_area)
+                    cls.hide_pods_tooltip()
                     if tooltip_rectangle is not None:
                         tooltip = cls.crop_tooltip_from_image(tooltip_area, tooltip_rectangle)
                         text = cls.read_text_from_tooltip(tooltip)
