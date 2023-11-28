@@ -50,15 +50,20 @@ class PodsGetter:
         tooltip_area = OCR.convert_to_grayscale(tooltip_area)
         tooltip_area = cv2.morphologyEx(tooltip_area, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
         tooltip_area = OCR.invert_image(tooltip_area)
-        tooltip_area = OCR.binarize_image(tooltip_area, 170)
-        canny = cv2.Canny(tooltip_area, 50, 150)
-        contours, _ = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            epsilon = 0.05 * cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, epsilon, True)
-            x, y, w, h = cv2.boundingRect(approx)
-            if w > 60 and h > 18:
-                return x, y, w, h
+
+        threshold = 170
+        max_threshold = 125
+        while threshold >= max_threshold:
+            binarized_tooltip_area = OCR.binarize_image(tooltip_area, threshold)
+            canny = cv2.Canny(binarized_tooltip_area, 50, 150)
+            contours, _ = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for contour in contours:
+                epsilon = 0.05 * cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                x, y, w, h = cv2.boundingRect(approx)
+                if w > 60 and h > 18:
+                    return x, y, w, h
+            threshold -=1
         return None
 
     @staticmethod
