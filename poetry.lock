@@ -4871,7 +4871,7 @@ files = [
 
 [package.source]
 type = "file"
-url = "tesserocr-2.6.0-cp310-cp310-win_amd64.whl"
+url = "src/ocr/tesserocr-2.6.0-cp310-cp310-win_amd64.whl"
 
 [[package]]
 name = "tifffile"
@@ -4982,4 +4982,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.6"
-content-hash = "60cadebd0bbd792ffa562f3ef2191dddbedf97b1618f173efe393f1a458d0eea"
+content-hash = "f7f3c516814aaed58b307df338ad0095dd1afeba9954541571e7921d45d8bb80"
