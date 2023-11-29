@@ -6,6 +6,7 @@ from time import perf_counter
 import os
 
 import cv2
+import numpy as np
 import pyautogui as pyag
 
 from ._pods_getter import PodsGetter
@@ -22,7 +23,7 @@ def _handle_tab_opening(decorated_method):
         is_tab_open = getattr(VaultActions, f"is_{tab_name}_tab_open")
         
         if is_tab_open():
-            log.info(f"'{tab_name.capitalize()}' tab is open.")
+            log.info(f"'{tab_name.capitalize()}' tab is already open.")
             return True
 
         tab_icon = Detection.find_image(
@@ -46,7 +47,7 @@ def _handle_tab_opening(decorated_method):
                     log.info(f"Successfully opened '{tab_name.capitalize()}' tab.")
                     return True
                 
-            log.info(f"Failed to open '{tab_name.capitalize()}' tab.")
+            log.info(f"Timed out while opening '{tab_name.capitalize()}' tab.")
             return False
         
         log.info(f"Failed to find '{tab_name.capitalize()}' tab icon.")
@@ -60,89 +61,79 @@ def _handle_tab_depositing(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
         tab_name = decorated_method.__name__.split("_")[1]
-        open_tab = getattr(VaultActions, f"open_{tab_name}_tab")
-        is_tab_open = getattr(VaultActions, f"is_{tab_name}_tab_open")
-        open_tab()
-        if not is_tab_open():
+        getattr(VaultActions, f"open_{tab_name}_tab")()
+        if not getattr(VaultActions, f"is_{tab_name}_tab_open")():
             log.info(f"Failed to open '{tab_name.capitalize()}' tab.")
-            return Status.TAB_FAILED_TO_OPEN
+            return Status.FAILED_TO_OPEN_TAB
 
-        is_first_iteration = True
-        while True:
-            occupied_slots_amount = cls.get_amount_of_occupied_slots()
-            if occupied_slots_amount == 0:
-                if is_first_iteration:
-                    log.info(f"No items to deposit in '{tab_name.capitalize()}' tab.")
-                    return Status.TAB_NO_ITEMS_TO_DEPOSIT
-                else:
-                    log.info(f"Finished depositing items in '{tab_name.capitalize()}' tab.")
-                    return Status.TAB_FINISHED_DEPOSITING_ITEMS
-
-            is_first_iteration = False
-            log.info(f"Depositing {occupied_slots_amount} items ...")
-            pods_before_deposit = PodsGetter.get_pods_numbers()[0]
-            cls.deposit_visible_items(occupied_slots_amount)
-            pods_after_deposit = PodsGetter.get_pods_numbers()[0]
-
-            if pods_after_deposit < pods_before_deposit:
-                log.info(f"Successfully deposited {occupied_slots_amount} items! Pods freed: {pods_before_deposit - pods_after_deposit}.")
-            else:
-                log.info(f"Failed to deposit items in {tab_name.capitalize()} tab.")
-                return Status.TAB_FAILED_TO_DEPOSIT_ITEMS
+        if getattr(VaultActions, f"does_{tab_name}_tab_have_forbidden_items_loaded")():
+            log.info(f"'{tab_name.capitalize()}' tab has forbidden items loaded. Will deposit slot by slot.")
+            return cls.deposit_tab_slot_by_slot(
+                getattr(VaultActions, f"forbidden_{tab_name}_items_loaded"),
+                getattr(VaultActions, f"forbidden_{tab_name}_items")
+            )
+        else:
+            log.info(f"No forbidden items detected for '{tab_name.capitalize()}' tab. Will mass deposit.")
+            return cls.deposit_tab_mass()
 
     return wrapper
+
+
+def _load_image(image_folder_path: str, image_name: str):
+    image_path = os.path.join(image_folder_path, image_name)
+    if not os.path.exists(image_path) and not os.path.isfile(image_path):
+        raise FileNotFoundError(f"Image '{image_name}' not found in '{image_folder_path}'.")
+    return cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+
+
+def _load_forbidden_items(
+        folder_path: str, 
+        forbidden_items: dict[float, list[str]]
+    ) -> dict[float, list[np.ndarray]]:
+    loaded_forbidden_items = {}
+    for confidence, item_names in forbidden_items.items():
+        loaded_images = []
+        for item_name in item_names:
+            loaded_images.append(_load_image(folder_path, item_name))
+        loaded_forbidden_items[confidence] = loaded_images
+    return loaded_forbidden_items
 
 
 class VaultActions:
 
     image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images"
-    empty_slot_image = cv2.imread(os.path.join(image_folder_path, "empty_slot.png"), cv2.IMREAD_UNCHANGED)
-    tab_equipment_open_image = cv2.imread(os.path.join(image_folder_path, "tab_equipment_open.png"), cv2.IMREAD_UNCHANGED)
-    tab_equipment_closed_image = cv2.imread(os.path.join(image_folder_path, "tab_equipment_closed.png"), cv2.IMREAD_UNCHANGED)
-    tab_resources_open_image = cv2.imread(os.path.join(image_folder_path, "tab_resources_open.png"), cv2.IMREAD_UNCHANGED)
-    tab_resources_closed_image = cv2.imread(os.path.join(image_folder_path, "tab_resources_closed.png"), cv2.IMREAD_UNCHANGED)
-    tab_misc_open_image = cv2.imread(os.path.join(image_folder_path, "tab_misc_open.png"), cv2.IMREAD_UNCHANGED)
-    tab_misc_closed_image = cv2.imread(os.path.join(image_folder_path, "tab_misc_closed.png"), cv2.IMREAD_UNCHANGED)
+    empty_slot_image = _load_image(image_folder_path, "empty_slot.png")
+    tab_equipment_open_image = _load_image(image_folder_path, "tab_equipment_open.png")
+    tab_equipment_closed_image = _load_image(image_folder_path, "tab_equipment_closed.png")
+    tab_resources_open_image = _load_image(image_folder_path, "tab_resources_open.png")
+    tab_resources_closed_image = _load_image(image_folder_path, "tab_resources_closed.png")
+    tab_misc_open_image = _load_image(image_folder_path, "tab_misc_open.png")
+    tab_misc_closed_image = _load_image(image_folder_path, "tab_misc_closed.png")
+
     inventory_slot_coords = { # Middle of each slot.
-       "row_1" : [(712, 275), (753, 276), (791, 276), (832, 276), (873, 278)],
-       "row_2" : [(712, 315), (753, 316), (791, 316), (832, 316), (873, 318)],
-       "row_3" : [(712, 355), (753, 356), (791, 356), (832, 356), (873, 358)],
-       "row_4" : [(712, 395), (753, 396), (791, 396), (832, 396), (873, 398)],
-       "row_5" : [(712, 435), (753, 436), (791, 436), (832, 436), (873, 438)],
-       "row_6" : [(712, 475), (753, 476), (791, 476), (832, 476), (873, 478)],
-       "row_7" : [(712, 515), (753, 516), (791, 516), (832, 516), (873, 518)],
+       "row_1" : [(712, 276), (752, 276), (792, 276), (832, 276), (872, 276)],
+       "row_2" : [(712, 316), (752, 316), (792, 316), (832, 316), (872, 316)],
+       "row_3" : [(712, 356), (752, 356), (792, 356), (832, 356), (872, 356)],
+       "row_4" : [(712, 396), (752, 396), (792, 396), (832, 396), (872, 396)],
+       "row_5" : [(712, 436), (752, 436), (792, 436), (832, 436), (872, 436)],
+       "row_6" : [(712, 476), (752, 476), (792, 476), (832, 476), (872, 476)],
+       "row_7" : [(712, 516), (752, 516), (792, 516), (832, 516), (872, 516)],
     }
     inventory_slot_area = (687, 252, 227, 291)
     inventory_tab_area = (684, 187, 234, 69)
 
-    @classmethod
-    def deposit_all_tabs(cls):
-        deposit_methods = [
-            cls.deposit_equipment_tab,
-            cls.deposit_resources_tab,
-            # cls.deposit_misc_tab,
-        ]
-        for deposit_method in deposit_methods:
-            status = deposit_method()
-            if status == Status.TAB_FAILED_TO_OPEN or status == Status.TAB_FAILED_TO_DEPOSIT_ITEMS:
-                return Status.FAILED_TO_DEPOSIT_ALL_TABS
-        log.info("Successfully deposited all tabs.")
-        return Status.SUCCESSFULLY_DEPOSITED_ALL_TABS
-
-    @classmethod
-    @_handle_tab_opening
-    def open_equipment_tab(cls):
-        pass
-    
-    @classmethod
-    @_handle_tab_opening
-    def open_misc_tab(cls):
-        pass
-    
-    @classmethod
-    @_handle_tab_opening
-    def open_resources_tab(cls):
-        pass
+    # Items that won't be deposited.
+    forbidden_equipment_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_equipment_items"
+    forbidden_equipment_items = {}
+    forbidden_equipment_items_loaded = _load_forbidden_items(forbidden_equipment_items_folder_path, forbidden_equipment_items)
+    forbidden_misc_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_misc_items"
+    forbidden_misc_items = { # confidence: [image name, ...]
+        0.99: ["recall_potion.png", "bonta_potion.png", "brakmar_potion.png"]
+    }
+    forbidden_misc_items_loaded = _load_forbidden_items(forbidden_misc_items_folder_path, forbidden_misc_items)
+    forbidden_resources_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_resources_items"
+    forbidden_resources_items = {}
+    forbidden_resources_items_loaded = _load_forbidden_items(forbidden_resources_items_folder_path, forbidden_resources_items)
 
     @classmethod
     @_handle_tab_depositing
@@ -157,6 +148,113 @@ class VaultActions:
     @classmethod
     @_handle_tab_depositing
     def deposit_resources_tab(cls):
+        pass
+
+    @classmethod
+    def deposit_all_tabs(cls):
+        deposit_methods = [
+            cls.deposit_equipment_tab,
+            cls.deposit_misc_tab,
+            cls.deposit_resources_tab,
+        ]
+        for deposit_method in deposit_methods:
+            status = deposit_method()
+            if (
+                status == Status.FAILED_TO_OPEN_TAB 
+                or status == Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
+                or status == Status.FAILED_TO_DEPOSIT_SLOT
+            ):
+                return Status.FAILED_TO_DEPOSIT_ALL_TABS
+        log.info("Successfully deposited all tabs.")
+        return Status.SUCCESSFULLY_DEPOSITED_ALL_TABS
+
+    @classmethod
+    def deposit_tab_mass(cls):
+        """
+        Deposit all items in the tab by repeatedly selecting all items 
+        while holding ctrl+shift and double clicking.
+        """
+        is_first_iteration = True
+        while True:
+            occupied_slots_amount = cls.get_amount_of_occupied_slots()
+            if occupied_slots_amount == 0:
+                if is_first_iteration:
+                    log.info("No items to deposit.")
+                    return Status.NO_ITEMS_TO_DEPOSIT_IN_TAB
+                else:
+                    log.info("Successfully deposited items.")
+                    return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
+
+            is_first_iteration = False
+            log.info(f"Depositing {occupied_slots_amount} items ...")
+            pods_before_deposit = PodsGetter.get_pods_numbers()[0]
+            cls.deposit_visible_items(occupied_slots_amount)
+            pods_after_deposit = PodsGetter.get_pods_numbers()[0]
+
+            if pods_after_deposit < pods_before_deposit:
+                log.info(
+                    f"Successfully deposited {occupied_slots_amount} items! "
+                    f"Pods freed: {pods_before_deposit - pods_after_deposit}."
+                )
+            else:
+                log.info("Failed to deposit items.")
+                return Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
+
+    @classmethod
+    def deposit_tab_slot_by_slot(
+        cls, 
+        loaded_forbidden_items: dict[float, list[np.ndarray]],
+        forbidden_items: dict[float, list[str]],
+    ):
+        slot_coords = cls.inventory_slot_coords["row_1"][0]
+        while True:
+            if cls.is_slot_empty(*slot_coords):
+                log.info("Successfully deposited all items in the tab.")
+                return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
+            if not cls.is_item_forbidden(*slot_coords, loaded_forbidden_items):
+                next_slot_screenshot = cls.screenshot_next_slot(*slot_coords)
+                cls.deposit_slot(*slot_coords)
+                if cls.was_slot_deposited(*slot_coords, next_slot_screenshot):
+                    continue
+                log.info("Failed to deposit slot.")
+                return Status.FAILED_TO_DEPOSIT_SLOT
+            else:
+                name = cls.get_forbidden_item_name(*slot_coords, loaded_forbidden_items, forbidden_items)
+                log.info(f"Skipping forbidden item '{name}'.")
+                slot_coords = cls.get_next_slot_coords(*slot_coords)
+
+    @classmethod
+    def deposit_visible_items(cls, amount_of_items):
+        pyag.moveTo(687, 275) # To the left of the first slot.
+        pyag.click() # Click to make sure window is focused.
+        pyag.keyDown("ctrl")
+        pyag.keyDown("shift")
+        for coords in cls.get_deposit_coordinates(amount_of_items):
+            pyag.moveTo(coords[0], coords[1], duration=0.2) # Doesn't select items if moving faster
+        pyag.click(clicks=2, interval=0.1)
+        pyag.keyUp("shift")
+        pyag.keyUp("ctrl")
+
+    @staticmethod
+    def deposit_slot(slot_x, slot_y):
+        pyag.keyDown("ctrl")
+        pyag.moveTo(slot_x, slot_y)
+        pyag.click(clicks=2)
+        pyag.keyUp("ctrl")
+
+    @classmethod
+    @_handle_tab_opening
+    def open_equipment_tab(cls):
+        pass
+    
+    @classmethod
+    @_handle_tab_opening
+    def open_misc_tab(cls):
+        pass
+    
+    @classmethod
+    @_handle_tab_opening
+    def open_resources_tab(cls):
         pass
 
     @classmethod
@@ -191,6 +289,67 @@ class VaultActions:
                 method=cv2.TM_CCOEFF_NORMED,
             )
         ) > 0
+
+    @classmethod
+    def is_item_forbidden(cls, slot_x, slot_y, forbidden_items_loaded: dict[float, list[np.ndarray]]):
+        """
+        Best way to ensure consistent results is to take a screenshot of the
+        slot with the forbidden item by using screenshot_slot(),
+        then make the upper half (20px) of the image transparent. Also, 
+        different images might need different confidence levels so make
+        sure to test the item out once it's added.
+        """
+        for confidence, items in forbidden_items_loaded.items():
+            for item in items:
+                rectangle = Detection.find_image(
+                    haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+                    needle=item,
+                    confidence=confidence,
+                    method=cv2.TM_CCORR_NORMED,
+                    mask=Detection.create_mask(item)
+                )
+                if len(rectangle) > 0:
+                    return True
+        return False
+
+    @classmethod
+    def is_slot_empty(cls, slot_x, slot_y):
+        rectangle = Detection.find_image(
+            haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+            needle=VaultActions.empty_slot_image,
+            confidence=0.99,
+            method=cv2.TM_CCORR_NORMED,
+        )
+        if len(rectangle) > 0:
+            return True
+        return False
+
+    @classmethod
+    def was_slot_deposited(cls, slot_x, slot_y, next_slot_screenshot):
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            current_slot_screenshot = cls.screenshot_slot(slot_x, slot_y)
+            rectangle = Detection.find_image(
+                haystack=current_slot_screenshot,
+                needle=next_slot_screenshot,
+                confidence=0.95,
+                method=cv2.TM_CCORR_NORMED,
+            )
+            if len(rectangle) > 0:
+                return True
+        return False 
+
+    @classmethod
+    def does_equipment_tab_have_forbidden_items_loaded(cls):
+        return len(cls.forbidden_equipment_items_loaded) > 0
+    
+    @classmethod
+    def does_misc_tab_have_forbidden_items_loaded(cls):
+        return len(cls.forbidden_misc_items_loaded) > 0
+    
+    @classmethod
+    def does_resources_tab_have_forbidden_items_loaded(cls):
+        return len(cls.forbidden_resources_items_loaded) > 0
 
     @classmethod
     def get_deposit_coordinates(cls, occupied_slots_amount):
@@ -237,13 +396,60 @@ class VaultActions:
         return WindowCapture.custom_area_capture(cls.inventory_tab_area)
 
     @classmethod
-    def deposit_visible_items(cls, amount_of_items):
-        pyag.moveTo(687, 275) # To the left of the first slot.
-        pyag.click() # Click to make sure window is focused.
-        pyag.keyDown("ctrl")
-        pyag.keyDown("shift")
-        for coords in cls.get_deposit_coordinates(amount_of_items):
-            pyag.moveTo(coords[0], coords[1], duration=0.2) # Doesn't select items if moving faster
-        pyag.click(clicks=2, interval=0.1)
-        pyag.keyUp("shift")
-        pyag.keyUp("ctrl")
+    def get_forbidden_item_name(
+        cls, 
+        slot_x, 
+        slot_y, 
+        forbidden_items_loaded: dict[float, list[np.ndarray]],
+        forbidden_items: dict[float, list[str]],
+    ):
+        for confidence, items in forbidden_items_loaded.items():
+            for i, item in enumerate(items):
+                rectangle = Detection.find_image(
+                    haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+                    needle=item,
+                    confidence=confidence,
+                    method=cv2.TM_CCORR_NORMED,
+                    mask=Detection.create_mask(item)
+                )
+                if len(rectangle) > 0:
+                    name = forbidden_items[confidence][i]
+                    name = name.split(".")[0]
+                    name = name.replace("_", " ")
+                    return name.title()
+        return None
+
+    @classmethod
+    def get_next_slot_coords(cls, current_slot_x, current_slot_y):
+        for row, slots in cls.inventory_slot_coords.items():
+            for slot in slots:
+                if slot[0] == current_slot_x and slot[1] == current_slot_y:
+                    if slots.index(slot) == len(slots) - 1:
+                        if row != "row_7":
+                            next_row = list(cls.inventory_slot_coords.keys())[list(cls.inventory_slot_coords.keys()).index(row) + 1]
+                            return cls.inventory_slot_coords[next_row][0]  # Return next row's first slot
+                        else:
+                            # ToDo: implement scrolling down.
+                            return None  
+                    else:
+                        return cls.inventory_slot_coords[row][slots.index(slot) + 1]
+
+    @classmethod
+    def get_slot_rectangle(cls, slot_center_x, slot_center_y):
+        slot_width = 40
+        slot_height = 40
+        return (
+            int(slot_center_x - (slot_width / 2)), 
+            int(slot_center_y - (slot_height / 2)),
+            slot_width,
+            slot_height
+        )
+
+    @classmethod
+    def screenshot_next_slot(cls, current_slot_center_x, current_slot_center_y):
+        next_slot_coords = cls.get_next_slot_coords(current_slot_center_x, current_slot_center_y)
+        return WindowCapture.custom_area_capture(cls.get_slot_rectangle(*next_slot_coords))
+
+    @classmethod
+    def screenshot_slot(cls, slot_center_x, slot_center_y):
+        return WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_center_x, slot_center_y))
