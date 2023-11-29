@@ -9,10 +9,10 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from ._pods_getter import PodsGetter
 from ._status_codes_enum import Status
 from src.detection import Detection
 from src.window_capture import WindowCapture
+from src.state.out_of_combat._pods_getter import PodsGetter
 
 
 def _handle_tab_opening(decorated_method):
@@ -187,9 +187,9 @@ class VaultActions:
 
             is_first_iteration = False
             log.info(f"Depositing {occupied_slots_amount} items ...")
-            pods_before_deposit = PodsGetter.get_pods_numbers()[0]
+            pods_before_deposit = PodsGetter.get_occupied_bank_pods()
             cls.deposit_visible_items(occupied_slots_amount)
-            pods_after_deposit = PodsGetter.get_pods_numbers()[0]
+            pods_after_deposit = PodsGetter.get_occupied_bank_pods()
 
             if pods_after_deposit < pods_before_deposit:
                 log.info(
