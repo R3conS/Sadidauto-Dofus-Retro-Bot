@@ -69,6 +69,7 @@ class Handler:
                 self.select_consult_your_personal_safe()
                 if self.is_bank_vault_open():
                     log.info("Successfully opened bank vault.")
+                    log.info("Waiting for item sprites to load ... ")
                     if self.have_item_sprites_loaded():
                         log.info("Item sprites have loaded.")
                         return Status.SUCCESSFULLY_OPENED_BANK_VAULT

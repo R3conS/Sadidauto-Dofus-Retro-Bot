@@ -12,7 +12,7 @@ import pyautogui as pyag
 from ._status_codes_enum import Status
 from src.detection import Detection
 from src.window_capture import WindowCapture
-from src.state.out_of_combat._pods_getter import PodsGetter
+from src.state.out_of_combat.pods_reader._pods_reader import PodsReader
 
 
 def _handle_tab_opening(decorated_method):
@@ -163,6 +163,7 @@ class VaultActions:
                 status == Status.FAILED_TO_OPEN_TAB 
                 or status == Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
                 or status == Status.FAILED_TO_DEPOSIT_SLOT
+                or status == Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
             ):
                 return Status.FAILED_TO_DEPOSIT_ALL_TABS
         log.info("Successfully deposited all tabs.")
@@ -182,14 +183,21 @@ class VaultActions:
                     log.info("No items to deposit.")
                     return Status.NO_ITEMS_TO_DEPOSIT_IN_TAB
                 else:
-                    log.info("Successfully deposited items.")
+                    log.info("Successfully deposited all items in the tab!")
                     return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
 
             is_first_iteration = False
+
             log.info(f"Depositing {occupied_slots_amount} items ...")
-            pods_before_deposit = PodsGetter.get_occupied_bank_pods()
+            pods_before_deposit = PodsReader.get_occupied_bank_pods()
+            if pods_before_deposit is None:
+                log.info("Failed to get occupied bank pods.")
+                return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
             cls.deposit_visible_items(occupied_slots_amount)
-            pods_after_deposit = PodsGetter.get_occupied_bank_pods()
+            pods_after_deposit = PodsReader.get_occupied_bank_pods()
+            if pods_after_deposit is None:
+                log.info("Failed to get occupied bank pods.")
+                return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
 
             if pods_after_deposit < pods_before_deposit:
                 log.info(
@@ -206,15 +214,30 @@ class VaultActions:
         loaded_forbidden_items: dict[float, list[np.ndarray]],
         forbidden_items: dict[float, list[str]],
     ):
+        pods_before_deposit = PodsReader.get_occupied_bank_pods()
+        if pods_before_deposit is None:
+            log.info("Failed to get occupied bank pods.")
+            return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+        
         slot_coords = cls.inventory_slot_coords["row_1"][0]
+        deposited_items_count = 0
         while True:
             if cls.is_slot_empty(*slot_coords):
-                log.info("Successfully deposited all items in the tab.")
+                pods_after_deposit = PodsReader.get_occupied_bank_pods()
+                if pods_after_deposit is None:
+                    log.info("Failed to get occupied bank pods.")
+                    return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+                log.info(
+                    f"Successfully deposited all items in the tab! "
+                    f"Total items deposited: {deposited_items_count}. "
+                    f"Pods freed: {pods_before_deposit - pods_after_deposit}."
+                )
                 return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
             if not cls.is_item_forbidden(*slot_coords, loaded_forbidden_items):
                 next_slot_screenshot = cls.screenshot_next_slot(*slot_coords)
                 cls.deposit_slot(*slot_coords)
                 if cls.was_slot_deposited(*slot_coords, next_slot_screenshot):
+                    deposited_items_count += 1
                     continue
                 log.info("Failed to deposit slot.")
                 return Status.FAILED_TO_DEPOSIT_SLOT

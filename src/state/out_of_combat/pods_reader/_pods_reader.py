@@ -1,3 +1,8 @@
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+
+from datetime import datetime
+import os
 from time import perf_counter
 
 from functools import wraps
@@ -43,7 +48,9 @@ def _get_pods_numbers(decorated_method):
                     tooltip = cls.crop_tooltip_from_image(tooltip_area, tooltip_rectangle)
                     text = cls.read_tooltip_text(tooltip)
                     return cls.parse_tooltip_text(text)
-        raise Exception(f"Timed out while getting '{tooltip_name.capitalize()}' pods amount.")
+        log.info(f"Timed out while getting {tooltip_name} pods numbers.")
+        cls.save_images_for_debug()
+        return None
     return wrapper
 
 
@@ -51,8 +58,10 @@ def _get_occupied_pods(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
         tooltip_name = decorated_method.__name__.split("_")[2]
-        get_numbers = getattr(cls, f"get_{tooltip_name}_numbers")
-        return get_numbers()[0]
+        numbers = getattr(cls, f"get_{tooltip_name}_numbers")()
+        if numbers is not None:
+            return numbers[0]
+        return None
     return wrapper
 
 
@@ -60,8 +69,10 @@ def _get_total_pods(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
         tooltip_name = decorated_method.__name__.split("_")[2]
-        get_numbers = getattr(cls, f"get_{tooltip_name}_numbers")
-        return get_numbers()[1]
+        numbers = getattr(cls, f"get_{tooltip_name}_numbers")()
+        if numbers is not None:
+            return numbers[1]
+        return None
     return wrapper
 
 
@@ -69,15 +80,16 @@ def _get_percentage(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
         tooltip_name = decorated_method.__name__.split("_")[2]
-        get_numbers = getattr(cls, f"get_{tooltip_name}_numbers")
-        occupied, total = get_numbers()
-        return round(occupied / total * 100, 2)
+        numbers = getattr(cls, f"get_{tooltip_name}_numbers")()
+        if numbers is not None:
+            return round(numbers[0] / numbers[1] * 100, 2)
+        return None
     return wrapper
 
 
-class PodsGetter:
+class PodsReader:
     """
-    For most methods in this class to work the according interface has to be open.
+    For getter methods to work the according interface has to be open.
     - `bank` refers to pods in inventory when bank vault is open.
     - `inventory` refers to pods when regular inventory interface is open.
     """
@@ -234,3 +246,17 @@ class PodsGetter:
                     number += char
             numbers.append(int(number))
         return tuple(numbers)
+
+    @classmethod
+    def save_images_for_debug(cls):
+        dir_path = "src\\state\\out_of_combat\\pods_reader\\reading_failed_images"
+        log.info("Capturing images for debugging ... ")
+        game_window_screenshot = WindowCapture.gamewindow_capture()
+        bank_tooltip_screeshot = cls.screenshot_bank_tooltip_area()
+        inventory_tooltip_screenshot = cls.screenshot_inventory_tooltip_area()
+        date_and_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        log.info("Saving images ... ")
+        cv2.imwrite(os.path.join(dir_path, f"game_window_{date_and_time}.png"), game_window_screenshot)
+        cv2.imwrite(os.path.join(dir_path, f"bank_tooltip_{date_and_time}.png"), bank_tooltip_screeshot)
+        cv2.imwrite(os.path.join(dir_path, f"inventory_tooltip_{date_and_time}.png"), inventory_tooltip_screenshot)
+        log.info("Images saved.")
