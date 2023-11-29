@@ -16,7 +16,7 @@ class Detection:
             mask: np.ndarray = None,
             remove_alpha_channels: bool = True,
             get_best_match_only: bool = True
-        ) -> tuple[int, int, int, int] | list:
+        ) -> tuple[int, int, int, int] | list[tuple[int, int, int, int]] | list:
         """Get location of the best match of needle image in haystack image."""
         # Make sure correct method is selected when mask is given
         if mask is not None and method not in [cv2.TM_SQDIFF, cv2.TM_CCORR_NORMED]:
