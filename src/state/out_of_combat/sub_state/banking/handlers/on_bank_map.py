@@ -11,6 +11,7 @@ from .._status_codes_enum import Status
 from .._vault_actions import VaultActions
 from src.detection import Detection
 from src.map_changer.map_changer import MapChanger
+from src.ocr.ocr import OCR
 from src.window_capture import WindowCapture
 
 
@@ -31,6 +32,7 @@ class Handler:
                 status == Status.FAILED_TO_OPEN_BANK_VAULT
                 or status == Status.FAILED_TO_OPEN_BANKER_DIALOGUE
                 or status == Status.FAILED_TO_DETECT_BANKER_NPC
+                or status == Status.FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED
             ):
                 return Status.FAILED_TO_OPEN_BANK_VAULT
             
@@ -67,7 +69,12 @@ class Handler:
                 self.select_consult_your_personal_safe()
                 if self.is_bank_vault_open():
                     log.info("Successfully opened bank vault.")
-                    return Status.SUCCESSFULLY_OPENED_BANK_VAULT
+                    if self.have_item_sprites_loaded():
+                        log.info("Item sprites have loaded.")
+                        return Status.SUCCESSFULLY_OPENED_BANK_VAULT
+                    else:
+                        log.info("Failed to detect if item sprites have loaded.")
+                        return Status.FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED
                 else:
                     log.info("Failed to open bank vault.")
                     return Status.FAILED_TO_OPEN_BANK_VAULT
@@ -210,3 +217,20 @@ class Handler:
         pyag.moveTo(262, 502)
         pyag.click()
         pyag.keyUp('e')
+
+    @staticmethod
+    def have_item_sprites_loaded():
+        """
+        Checks for the character's name in the inventory title bar.
+        When it's displayed it means the sprites have loaded.
+        """
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            bar = WindowCapture.custom_area_capture((684, 159, 210, 27))
+            bar = OCR.convert_to_grayscale(bar)
+            bar = OCR.resize_image(bar, bar.shape[1] * 2, bar.shape[0] * 3)
+            bar = OCR.invert_image(bar)
+            bar = OCR.binarize_image(bar, 127)
+            if len(OCR.get_text_from_image(bar, ocr_engine="tesserocr")) > 0:
+                return True
+        return False

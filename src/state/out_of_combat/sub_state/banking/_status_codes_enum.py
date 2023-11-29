@@ -22,6 +22,7 @@ class Status(Enum):
     FAILED_TO_DEPOSIT_ITEMS_IN_TAB = "failed_to_deposit_items_in_tab"
     FAILED_TO_DEPOSIT_ALL_TABS = "failed_to_deposit_all_tabs"
     FAILED_TO_DEPOSIT_SLOT = "failed_to_deposit_slot"
+    FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED = "failed_to_detect_if_item_sprites_have_loaded"
     CHAR_DOESNT_HAVE_RECALL_POTION = "char_doesnt_have_recall_potion"
     NO_NEED_TO_RECALL = "no_need_to_recall"
     NO_ITEMS_TO_DEPOSIT_IN_TAB = "no_items_to_deposit_in_tab"
