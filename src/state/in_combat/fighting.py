@@ -80,7 +80,7 @@ class Fighting:
                          "seconds!")
             log.critical("Timed out!")
             log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            wc.ScreenCapture.on_exit_capture()
 
     def __move_character(self):
         """Move character."""
@@ -219,7 +219,7 @@ class Fighting:
         else:
             log.critical(f"Failed to cast spells in {timeout} seconds!")
             log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            wc.ScreenCapture.on_exit_capture()
 
     def __detect_end_of_fight(self):
         """
@@ -274,7 +274,7 @@ class Fighting:
                                  f"{timeout_time} second(s)!")
                     log.critical("Timed out!")
                     log.critical("Exiting ... ")
-                    wc.WindowCapture.on_exit_capture()
+                    wc.ScreenCapture.on_exit_capture()
 
     @staticmethod
     def __detect_results_window():
@@ -287,7 +287,7 @@ class Fighting:
             `list` of `tuple` containing [(x, y)] coordinates.
 
         """
-        screenshot = wc.WindowCapture.gamewindow_capture()
+        screenshot = wc.ScreenCapture.game_window()
         close_button = dtc.ImageDetection.get_click_coords(
                 dtc.ImageDetection.find(
                         screenshot,

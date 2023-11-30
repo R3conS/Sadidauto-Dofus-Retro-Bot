@@ -12,7 +12,7 @@ import numpy as np
 import pyautogui as pyag
 
 from src.ocr.ocr import OCR
-from src.window_capture import WindowCapture
+from src.screen_capture import ScreenCapture
 
 
 def _is_tooltip_visible(decorated_method):
@@ -166,11 +166,11 @@ class PodsReader:
 
     @staticmethod
     def screenshot_bank_tooltip_area():
-        return WindowCapture.custom_area_capture((688, 527, 160, 30))
+        return ScreenCapture.custom_area((688, 527, 160, 30))
 
     @staticmethod
     def screenshot_inventory_tooltip_area():
-        return WindowCapture.custom_area_capture((545, 305, 160, 29))
+        return ScreenCapture.custom_area((545, 305, 160, 29))
 
     @staticmethod
     def get_bank_tooltip_rectangle(tooltip_area: np.ndarray):
@@ -253,7 +253,7 @@ class PodsReader:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         log.info("Capturing images for debugging ... ")
-        game_window_screenshot = WindowCapture.gamewindow_capture()
+        game_window_screenshot = ScreenCapture.game_window()
         bank_tooltip_screeshot = cls.screenshot_bank_tooltip_area()
         inventory_tooltip_screenshot = cls.screenshot_inventory_tooltip_area()
         date_and_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

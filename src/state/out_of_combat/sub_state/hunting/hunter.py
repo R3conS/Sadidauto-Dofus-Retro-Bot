@@ -10,16 +10,15 @@ import pyautogui as pyag
 from image_detection import ImageDetection
 from interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
+from screen_capture import ScreenCapture
 from src.map_changer.map_changer import MapChanger
 from .status_enum import Status
-import window_capture as wc
 
 
 class Hunter:
 
-    def __init__(self, script: str, game_window_title: str, game_window_size: tuple[int, int]):
+    def __init__(self, script: str, game_window_title: str):
         self.__game_window_title = game_window_title
-        self.__game_window_size = game_window_size
         self.__consecutive_fights_counter = 0
         self.__check_pods_every_x_fights = 5
         # Map data
@@ -66,7 +65,7 @@ class Hunter:
 
     def __handle_fightable_map(self, map_coords):
         for segment_index in range(len(self.__monster_detection_data[0])):
-            matches = self.__search_segment(segment_index, wc.WindowCapture.gamewindow_capture())
+            matches = self.__search_segment(segment_index, ScreenCapture.game_window())
             if len(matches) > 0:
                 monster_x, monster_y = matches[0][0], matches[0][1]
                 log.info(f"Found monster at {monster_x, monster_y}.")
@@ -172,17 +171,16 @@ class Hunter:
         if "Dofus Retro" in self.__game_window_title:
             pyag.click(button="right")
         else: # For Abrak private server
-            pass
-            # pyag.keyDown("shift")
-            # pyag.click()
-            # pyag.keyUp("shift")
+            pyag.keyDown("shift")
+            pyag.click()
+            pyag.keyUp("shift")
 
     def __is_attack_successful(self):
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if len(
                 ImageDetection.find_images(
-                    wc.WindowCapture.gamewindow_capture(), 
+                    ScreenCapture.game_window(), 
                     ["src\\initializer\\cc_lit.png", "src\\initializer\\cc_dim.png"],
                 )
             ) > 0:
@@ -192,12 +190,7 @@ class Hunter:
         return False  
 
     def __is_join_sword_on_pos(self, x, y):
-        haystack = wc.WindowCapture.area_around_mouse_capture(
-            65, 
-            (x, y),
-            max_bottom_right_x=self.__game_window_size[0],
-            max_bottom_right_y=self.__game_window_size[1]
-        )
+        haystack = ScreenCapture.around_pos((x, y), 65)
         for i, image in enumerate(self.__join_sword_detection_data[0]):
             result = ImageDetection.find_image(
                 haystack,

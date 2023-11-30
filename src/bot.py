@@ -1,6 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+import os
 import threading
 
 from disturbance_checker import DisturbanceChecker
@@ -8,7 +9,6 @@ from src.initializer.initializer import Initializer
 from state.botstate_enum import BotState
 from state.out_of_combat.controller import Controller as OOC_Controller
 from state.in_combat.controller import Controller as IC_Controller
-import window_capture as wc
 
 
 class Bot(threading.Thread):
@@ -24,8 +24,7 @@ class Bot(threading.Thread):
         self.ooc_controller = OOC_Controller(
             self.set_state, 
             script, 
-            initializer.window_title, 
-            initializer.window_size
+            initializer.window_title
         )
         self.ic_controller = IC_Controller(self.set_state)
 
@@ -39,13 +38,10 @@ class Bot(threading.Thread):
         except:
             log.exception("An exception occured!")
             log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            os._exit(1)
 
     def stop(self):
         self.__stopped = True
 
     def set_state(self, state):
         self.__state = state
-
-    def get_state(self):
-        return self.__state

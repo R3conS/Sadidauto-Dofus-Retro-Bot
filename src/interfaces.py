@@ -8,7 +8,7 @@ from pyautogui import moveTo, click, pixelMatchesColor
 
 import data
 from image_detection import ImageDetection
-import window_capture as wc
+from screen_capture import ScreenCapture
 
 
 class Interfaces:
@@ -141,7 +141,7 @@ class Interfaces:
     def is_login_screen_open():
         return len(
             ImageDetection.find_image(
-                wc.WindowCapture.gamewindow_capture(),
+                ScreenCapture.game_window(),
                 data.images.Interface.dofus_logo,
                 confidence=0.995
             )
@@ -151,7 +151,7 @@ class Interfaces:
     def is_right_click_menu_open():
         return len(
             ImageDetection.find_image(
-                wc.WindowCapture.gamewindow_capture(),
+                ScreenCapture.game_window(),
                 data.images.Interface.right_click_menu,
                 confidence=0.995
             )

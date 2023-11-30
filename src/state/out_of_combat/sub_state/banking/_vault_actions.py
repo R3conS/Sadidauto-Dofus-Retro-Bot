@@ -11,7 +11,7 @@ import pyautogui as pyag
 
 from .status_enum import Status
 from src.image_detection import ImageDetection
-from src.window_capture import WindowCapture
+from src.screen_capture import ScreenCapture
 from src.state.out_of_combat.pods_reader.pods_reader import PodsReader
 
 
@@ -325,7 +325,7 @@ class VaultActions:
         for confidence, items in forbidden_items_loaded.items():
             for item in items:
                 rectangle = ImageDetection.find_image(
-                    haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+                    haystack=ScreenCapture.custom_area(cls.get_slot_rectangle(slot_x, slot_y)),
                     needle=item,
                     confidence=confidence,
                     method=cv2.TM_CCORR_NORMED,
@@ -338,7 +338,7 @@ class VaultActions:
     @classmethod
     def is_slot_empty(cls, slot_x, slot_y):
         rectangle = ImageDetection.find_image(
-            haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+            haystack=ScreenCapture.custom_area(cls.get_slot_rectangle(slot_x, slot_y)),
             needle=VaultActions.empty_slot_image,
             confidence=0.99,
             method=cv2.TM_CCORR_NORMED,
@@ -412,11 +412,11 @@ class VaultActions:
 
     @classmethod
     def get_inventory_slot_area_screenshot(cls):
-        return WindowCapture.custom_area_capture(cls.inventory_slot_area)
+        return ScreenCapture.custom_area(cls.inventory_slot_area)
 
     @classmethod
     def get_inventory_tab_area_screenshot(cls):
-        return WindowCapture.custom_area_capture(cls.inventory_tab_area)
+        return ScreenCapture.custom_area(cls.inventory_tab_area)
 
     @classmethod
     def get_forbidden_item_name(
@@ -429,7 +429,7 @@ class VaultActions:
         for confidence, items in forbidden_items_loaded.items():
             for i, item in enumerate(items):
                 rectangle = ImageDetection.find_image(
-                    haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
+                    haystack=ScreenCapture.custom_area(cls.get_slot_rectangle(slot_x, slot_y)),
                     needle=item,
                     confidence=confidence,
                     method=cv2.TM_CCORR_NORMED,
@@ -471,8 +471,8 @@ class VaultActions:
     @classmethod
     def screenshot_next_slot(cls, current_slot_center_x, current_slot_center_y):
         next_slot_coords = cls.get_next_slot_coords(current_slot_center_x, current_slot_center_y)
-        return WindowCapture.custom_area_capture(cls.get_slot_rectangle(*next_slot_coords))
+        return ScreenCapture.custom_area(cls.get_slot_rectangle(*next_slot_coords))
 
     @classmethod
     def screenshot_slot(cls, slot_center_x, slot_center_y):
-        return WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_center_x, slot_center_y))
+        return ScreenCapture.custom_area(cls.get_slot_rectangle(slot_center_x, slot_center_y))

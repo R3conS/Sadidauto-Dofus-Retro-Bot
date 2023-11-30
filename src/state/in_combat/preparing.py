@@ -66,7 +66,7 @@ class Preparing:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
             log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            wc.ScreenCapture.on_exit_capture()
 
     def get_start_cell_color(self, map_coords, database, start_cell_coords):
         """
@@ -427,7 +427,7 @@ class Preparing:
             # Checking if combat started after 'Ready' was clicked.
             if ready_button_clicked:
 
-                screenshot = wc.WindowCapture.gamewindow_capture()
+                screenshot = wc.ScreenCapture.game_window()
                 cc_icon = dtc.ImageDetection.find(
                         screenshot,
                         data.images.Status.fighting_sv_1,

@@ -91,7 +91,7 @@ class Controller:
         else:
             log.critical(f"Invalid map type '{self.__map_type}' for map "
                          f"'{self.map_coords}'! Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            wc.ScreenCapture.on_exit_capture()
 
     def __is_over_pods_limit(self):
         log.info("Checking if character is overloaded ... ")

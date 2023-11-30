@@ -12,7 +12,7 @@ from .._vault_actions import VaultActions
 from src.image_detection import ImageDetection
 from src.map_changer.map_changer import MapChanger
 from src.ocr.ocr import OCR
-from src.window_capture import WindowCapture
+from src.screen_capture import ScreenCapture
 
 
 class Handler:
@@ -127,7 +127,7 @@ class Handler:
         ))
 
     def is_banker_npc_detected(self):
-        astrub_bank_interior = WindowCapture.gamewindow_capture()
+        astrub_bank_interior = ScreenCapture.game_window()
         for banker_image in self.__npc_images:
             result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
@@ -139,7 +139,7 @@ class Handler:
         return False
     
     def get_banker_npc_coords(self):
-        astrub_bank_interior = WindowCapture.gamewindow_capture()
+        astrub_bank_interior = ScreenCapture.game_window()
         for banker_image in self.__npc_images:
             result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
@@ -227,7 +227,7 @@ class Handler:
         """
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            bar = WindowCapture.custom_area_capture((684, 159, 210, 27))
+            bar = ScreenCapture.custom_area((684, 159, 210, 27))
             bar = OCR.convert_to_grayscale(bar)
             bar = OCR.resize_image(bar, bar.shape[1] * 2, bar.shape[0] * 3)
             bar = OCR.invert_image(bar)

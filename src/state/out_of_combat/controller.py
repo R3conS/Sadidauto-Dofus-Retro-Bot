@@ -17,12 +17,11 @@ class Controller:
             set_bot_state_callback: callable, 
             script: str,
             game_window_title: str,
-            game_window_size: tuple[int, int]
         ):
         self.__set_bot_state_callback = set_bot_state_callback
-        self.__hunter = Hunter(script, game_window_title, game_window_size)
-        self.__banker = Banker(script, game_window_title)
         self.__pod_limit = 90
+        self.__hunter = Hunter(script, game_window_title)
+        self.__banker = Banker(script, game_window_title)
 
     def run(self):
         while True:

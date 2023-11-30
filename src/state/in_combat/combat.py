@@ -82,7 +82,7 @@ class Combat:
 
             if px_1 and px_2 and not px_3:
 
-                sc = wc.WindowCapture.custom_area_capture((170, 95, 200, 30))
+                sc = wc.ScreenCapture.custom_area((170, 95, 200, 30))
                 text = dtc.ImageDetection.get_text_from_image(sc)
 
                 if len(text) > 0:
@@ -132,7 +132,7 @@ class Combat:
             log.critical(f"Couldn't pass turn for {timeout_time} second(s)!")
             log.critical("Timed out!")
             log.critical("Exiting ... ")
-            wc.WindowCapture.on_exit_capture()
+            wc.ScreenCapture.on_exit_capture()
 
     @classmethod
     def get_available_spells(cls):
@@ -291,7 +291,7 @@ class Combat:
 
         Interfaces.close_right_click_menu()
 
-        sc_for_circles = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
+        sc_for_circles = wc.ScreenCapture.game_window((0, 0, 933, 598))
         _, coords = dtc.ImageDetection.detect_objects(
                 circles, 
                 data.images.Combat.path,
@@ -305,7 +305,7 @@ class Combat:
 
                 pyag.moveTo(coord[0], coord[1], duration=0.15)
                 time.sleep(0.25)
-                sc = wc.WindowCapture.gamewindow_capture((597, 599, 215, 30))
+                sc = wc.ScreenCapture.game_window((597, 599, 215, 30))
                 _, _, text = dtc.ImageDetection.get_text_from_image(sc)
 
                 if cls.character_name in text:
@@ -410,7 +410,7 @@ class Combat:
             If `spell` is not available.
         
         """
-        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
+        sc = wc.ScreenCapture.custom_area((645, 660, 265, 80))
         rects = dtc.ImageDetection.find(sc, spell, threshold=threshold)
         if len(rects) > 0:
             return True
@@ -437,7 +437,7 @@ class Combat:
             If coordinates couldn't be detected.
         
         """
-        sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
+        sc = wc.ScreenCapture.custom_area((645, 660, 265, 80))
         rects = dtc.ImageDetection.find(sc, spell, threshold=threshold)
 
         if len(rects) > 0:
@@ -669,7 +669,7 @@ class Combat:
             spell_border = [data.images.Combat.spell_border]
             img_data = dtc.ImageDetection.generate_image_data(spell_border, path)
 
-            screenshot = wc.WindowCapture.area_around_mouse_capture(
+            screenshot = wc.ScreenCapture.around_pos(
                     20,
                     coordinates
                 )
@@ -712,7 +712,7 @@ class Combat:
 
         while time.time() - start_time < timeout:
 
-            screenshot = wc.WindowCapture.area_around_mouse_capture(
+            screenshot = wc.ScreenCapture.around_pos(
                     65,
                     cast_coordinates
                 )
@@ -729,5 +729,5 @@ class Combat:
     def __screenshot_ap_area():
         """Screenshot AP area and return image."""
         region = (449, 605, 36, 34)
-        screenshot = wc.WindowCapture.custom_area_capture(region)
+        screenshot = wc.ScreenCapture.custom_area(region)
         return screenshot

@@ -8,7 +8,7 @@ import pygetwindow as gw
 from image_detection import ImageDetection
 from interfaces import Interfaces
 from state.botstate_enum import BotState
-import window_capture as wc
+from screen_capture import ScreenCapture
 from src.ocr.ocr import OCR
 
 
@@ -63,7 +63,7 @@ class Initializer:
         log.info("Verifying character's name ... ")
         Interfaces.open_characteristics()
         if Interfaces.is_characteristics_open():
-            sc = wc.WindowCapture.custom_area_capture((685, 93, 205, 26))
+            sc = ScreenCapture.custom_area((685, 93, 205, 26))
             if self.__character_name == OCR.get_text_from_image(sc, ocr_engine="paddleocr")[0]:
                 log.info("Successfully verified character's name!")
                 Interfaces.close_characteristics()
@@ -77,7 +77,6 @@ class Initializer:
                 "Failed to verify character's name because 'Characteristics' "
                 "interface is not open! Exiting ... "
             )
-            wc.WindowCapture.on_exit_capture()
             os._exit(1)
 
     def __set_initial_bot_state(self):
@@ -85,7 +84,7 @@ class Initializer:
             "src\\initializer\\cc_lit.png",
             "src\\initializer\\cc_dim.png"
         ]
-        game_window_image = wc.WindowCapture.gamewindow_capture()
+        game_window_image = ScreenCapture.game_window()
         for path in image_paths:
             if len(ImageDetection.find_image(game_window_image, path, 0.98)) > 0:
                 self.__set_bot_state_callback(BotState.IN_COMBAT)

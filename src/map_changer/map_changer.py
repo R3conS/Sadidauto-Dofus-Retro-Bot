@@ -9,7 +9,7 @@ import numpy as np
 import pyautogui as pyag
 
 from image_detection import ImageDetection
-import window_capture as wc
+from screen_capture import ScreenCapture
 
 
 def _load_map_image_data() -> dict[str, np.ndarray]:
@@ -28,9 +28,7 @@ class MapChanger:
 
     @classmethod
     def get_current_map_coords(cls):
-        current_map_image = wc.WindowCapture.custom_area_capture(
-            capture_region=(487, 655, 78, 52),
-        )
+        current_map_image = ScreenCapture.custom_area((487, 655, 78, 52))
         for map_coords, map_image in cls.map_data.items():
             result = ImageDetection.find_image(
                 haystack=map_image,
