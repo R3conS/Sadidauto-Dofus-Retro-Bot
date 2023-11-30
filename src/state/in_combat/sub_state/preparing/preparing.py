@@ -96,39 +96,32 @@ class Preparing:
         timeout = 20
 
         while time.time() - start_time < timeout:
-
             cells = self.__get_cells_from_database(self.map_coords, self.data_map)
             e_cells = self.__get_empty_cells(cells)
-
             if len(e_cells) <= 0:
                 self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                 continue
-
             if self.__move_char_to_cell(e_cells):
-
-                self.__cell_color = self.get_start_cell_color(self.map_coords,
-                                                            self.data_map,
-                                                            self.__cell_coords)
+                self.__cell_color = self.get_start_cell_color(
+                    self.map_coords,
+                    self.data_map,
+                    self.__cell_coords
+                )
                 self.__controller.fighting.cell_color = self.__cell_color
-
                 if self.__start_combat():
                     log.info(f"Successfully selected starting cell!")
                     return "combat_start"
-
             else:
-
                 if failed_attempts < attempts_allowed:
                     self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                     failed_attempts += 1
                     continue
-
                 else:
                     log.error("Cell selection failed!")
                     log.info("Trying to start combat ... ")
                     if self.__start_combat():
                         self.__controller.fighting.cell_select_failed = True
                         return "selection_fail"
-
         else:
             log.error(f"Timed out in '__select_starting_cell()'!")
             log.error("Cell selection failed!")
