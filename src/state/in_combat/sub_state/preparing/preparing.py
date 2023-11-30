@@ -5,10 +5,9 @@ import time
 
 import pyautogui as pyag
 
-from .botstate_enum import BotState
 import data
 from image_detection import ImageDetection
-import window_capture as wc
+from screen_capture import ScreenCapture
 
 
 class Preparing:
@@ -41,52 +40,27 @@ class Preparing:
         time.sleep(0.5)
 
         while time.time() - start_time < allowed_time:
-
             if not self.__tactical_mode:
                 if self.__enable_tactical_mode():
                     self.__tactical_mode = True
-
             if self.__tactical_mode:
-
                 if check_for_dummy_cells:
-
                     check_for_dummy_cells = False
                     if self.__check_dummy_cells(self.map_coords, self.data_map):
                         self.__select_dummy_cells()
-
                 else:
-
                     if self.__select_starting_cell():
                         self.__state = BotState.FIGHTING
                         return self.__state
                     else:
                         continue
-
         else:
             log.critical(f"Failed to select starting cell in '{allowed_time}' "
                          "seconds!")
             log.critical("Exiting ... ")
-            wc.ScreenCapture.on_exit_capture()
+            ScreenCapture.on_exit_capture()
 
     def get_start_cell_color(self, map_coords, database, start_cell_coords):
-        """
-        Get combat start cell color.
-
-        Parameters
-        ----------
-        map_coords : str
-            Map's coordinates as `str`.
-        database : list[dict]
-            `list` of `dict` from script's 'Hunting.data'.
-        start_cell_coords : Tuple[int, int]
-            Starting cell's (x, y) coordinates.
-
-        Returns
-        ----------
-        str
-            Color of starting cell.
-
-        """
         cells_list = self.__get_cells_from_database(map_coords, database)
         index = cells_list.index(start_cell_coords)
 
@@ -96,25 +70,6 @@ class Preparing:
             return "blue"
 
     def __move_char_to_cell(self, cell_coordinates_list):
-        """
-        Move character to cell.
-
-        Also saves the starting cell coordinates for use in "FIGHTING"
-        state.
-        
-        Parameters
-        ----------
-        cell_coordinates_list : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates of cells.
-
-        Returns
-        ----------
-        True : bool
-            If character was moved successfully.
-        False : bool
-            If character wasn't moved.
-        
-        """
         # Time to wait after moving character to cell. If omitted,
         # '__check_if_char_moved()' starts checking before 
         # character has time to move and gives false results.
@@ -183,14 +138,6 @@ class Preparing:
                 return "selection_fail"
 
     def __select_dummy_cells(self):
-        """
-        Select dummy cell to make starting cells visible.
-        
-        On certain maps character might spawn on a starting cell and
-        block visibility of another starting cell. This method moves
-        character out of the way so that all starting cells are visible.
-
-        """
         log.info("Trying to move character to dummy cell ... ")
 
         failed_attempts = 0
@@ -253,22 +200,6 @@ class Preparing:
 
     @staticmethod
     def __get_cells_from_database(map_coords, database):
-        """
-        Get map's starting cell coordinates from database.
-        
-        Parameters
-        ----------
-        map_coords : str
-            Map's coordinates as `str`.
-        database : list[dict]
-            `list` of `dict` from script's 'Hunting.data'.
-        
-        Returns
-        ----------
-        cell_coordinates_list : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates of cells.
-        
-        """
         for _, value in enumerate(database):
             for i_key, i_value in value.items():
                 if map_coords == i_key:
@@ -277,28 +208,6 @@ class Preparing:
 
     @staticmethod
     def __get_empty_cells(cell_coordinates_list):
-        """
-        Get empty cell coordinates from cell coordinates list.
-
-        Logic
-        ----------
-        - Check for red and blue pixels on every (x, y) coordinate in
-        `cell_coordinates_list`.
-        - Append every coordinate where pixels were found to 
-        `empty_cells_list`
-
-        Parameters
-        ----------
-        cell_coordinates_list : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates of cells.
-        
-        Returns
-        ----------
-        empty_cells_list : list[Tuple[int, int]]
-            `list` of `tuple` containing [(x, y)] coordinates of empty
-            cells.
-        
-        """
         empty_cells_list = []
         colors = [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]
 
@@ -355,24 +264,6 @@ class Preparing:
 
     @staticmethod
     def __check_if_char_moved(cell_coordinates):
-        """
-        Check if character moved to cell.
-
-        Checks for red and blue colored pixels on `cell_coordinates`. If
-        none were found it means character is standing there.
-        
-        Parameters
-        ----------
-        cell_coordinates : Tuple[int, int]
-
-        Returns
-        ----------
-        True : bool
-            If character was moved successfully.
-        False : bool
-            If character wasn't moved.
-        
-        """
         pixels = []
         colors = [
             (255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154), (85, 81, 56)
@@ -427,21 +318,21 @@ class Preparing:
             # Checking if combat started after 'Ready' was clicked.
             if ready_button_clicked:
 
-                screenshot = wc.ScreenCapture.game_window()
-                cc_icon = dtc.ImageDetection.find(
+                screenshot = ScreenCapture.game_window()
+                cc_icon = ImageDetection.find_image(
                         screenshot,
                         data.images.Status.fighting_sv_1,
-                        threshold=0.8
+                        confidence=0.8
                     )
-                ap_icon = dtc.ImageDetection.find(
+                ap_icon = ImageDetection.find_image(
                         screenshot, 
                         data.images.Status.fighting_sv_2,
-                        threshold=0.8
+                        confidence=0.8
                     )
-                mp_icon = dtc.ImageDetection.find(
+                mp_icon = ImageDetection.find_image(
                         screenshot,
                         data.images.Status.fighting_sv_3,
-                        threshold=0.8
+                        confidence=0.8
                     )
                 
                 if time.time() - click_time > wait_combat_start:
