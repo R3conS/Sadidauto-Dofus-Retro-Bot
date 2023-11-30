@@ -250,6 +250,8 @@ class PodsReader:
     @classmethod
     def save_images_for_debug(cls):
         dir_path = "src\\state\\out_of_combat\\pods_reader\\reading_failed_images"
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
         log.info("Capturing images for debugging ... ")
         game_window_screenshot = WindowCapture.gamewindow_capture()
         bank_tooltip_screeshot = cls.screenshot_bank_tooltip_area()

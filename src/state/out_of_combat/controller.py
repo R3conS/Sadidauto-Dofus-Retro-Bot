@@ -1,13 +1,18 @@
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+
+from src.interfaces import Interfaces
+from .pods_reader.pods_reader import PodsReader
 from src.state.botstate_enum import BotState
-# from src.bank import Bank
 from .sub_state.hunting.hunter import Hunter
 from .sub_state.banking.banker import Banker
+from .sub_state.banking.status_enum import Status as BankerStatus
+from .sub_state.hunting.status_enum import Status as HunterStatus
 
 
 class Controller:
     
-    __pod_limit = 88
-    __check_pods_every_x_fights = 5
+    __pod_limit = 10
 
     def __init__(
             self, 
@@ -17,38 +22,65 @@ class Controller:
             game_window_size: tuple[int, int]
         ):
         self.__set_bot_state_callback = set_bot_state_callback
-        self.__hunter = Hunter(
-            self.__finished_hunting_callback, 
-            script,
-            self.__check_pods_every_x_fights,
-            game_window_title,
-            game_window_size
-        )
-        self.__banking = Banker(
-            self.__finished_banking_callback, 
-            script
-        )
+        self.__hunter = Hunter(script, game_window_title, game_window_size)
+        self.__banker = Banker(script, game_window_title)
 
     def run(self):
-        sub_state = self.__determine_sub_state()
-        if sub_state == _SubState.HUNTING:
-            self.__hunter.hunt()
-        elif sub_state == _SubState.BANKING:
-            self.__banking.bank()
+        while True:
+            sub_state = self.__determine_sub_state()
+            
+            if sub_state == _SubState.HUNTING:
+                status = self.__hunter.hunt()
+                if status == HunterStatus.SUCCESSFULLY_FINISHED_HUNTING:
+                    continue
+                elif status == HunterStatus.FAILED_TO_FINISH_HUNTING:
+                    log.info(f"Failed to finish hunting. Attempting to recover ...")
+                    self.__set_bot_state_callback(BotState.RECOVERY)
+                    return
+
+            elif sub_state == _SubState.BANKING:
+                status = self.__banker.bank()
+                if status == BankerStatus.SUCCESSFULLY_FINISHED_BANKING:
+                    continue
+                elif status == BankerStatus.FAILED_TO_FINISH_BANKING:
+                    log.info(f"Failed to finish banking. Attempting to recover ...")
+                    self.__set_bot_state_callback(BotState.RECOVERY)
+                    return
+                
+            elif sub_state == _SubState.RECOVERY:
+                log.info("'Out of Combat' controller failed to determine its sub state. Attempting to recover ...")
+                self.__set_bot_state_callback(BotState.RECOVERY)
+                return
 
     def __determine_sub_state(self):
-        if Bank.get_pods_percentage() >= self.__pod_limit:
-            return _SubState.BANKING
-        return _SubState.HUNTING
+        pods_percentage = self.__get_pods_percentage()
+        if pods_percentage is not None:
+            if pods_percentage >= self.__pod_limit:
+                log.info(f"Reached pods limit of: {self.__pod_limit}%. Going to bank ... ")
+                return _SubState.BANKING
+            log.info(f"Not at pods limit. Hunting ...")
+            return _SubState.HUNTING
+        log.info("'Out of Combat' controller failed to determine its sub state.")
+        return _SubState.RECOVERY
 
-    def __finished_hunting_callback(self):
-        self.__set_bot_state_callback(BotState.IN_COMBAT)
-
-    def __finished_banking_callback(self):
-        self.__set_bot_state_callback(BotState.OUT_OF_COMBAT)
+    def __get_pods_percentage(self):
+        log.info("Getting inventory pods percentage ... ")
+        Interfaces.open_inventory()
+        if Interfaces.is_inventory_open():
+            percentage = PodsReader.get_occupied_inventory_percentage()
+            if percentage is not None:
+                log.info(f"Inventory is {percentage}% full.")
+                Interfaces.close_inventory()
+                if not Interfaces.is_inventory_open():
+                    return percentage
+            else:
+                log.info("Failed to get inventory pods percentage.")
+                PodsReader.save_images_for_debug()
+        return None
 
 
 class _SubState:
 
     HUNTING = "HUNTING"
     BANKING = "BANKING"
+    RECOVERY = "RECOVERY"

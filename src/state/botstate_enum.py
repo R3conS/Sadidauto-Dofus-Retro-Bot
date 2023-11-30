@@ -3,4 +3,5 @@ class BotState:
 
     OUT_OF_COMBAT = "OUT_OF_COMBAT"
     IN_COMBAT = "IN_COMBAT"
+    RECOVERY = "RECOVERY"
     

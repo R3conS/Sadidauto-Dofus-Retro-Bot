@@ -11,24 +11,17 @@ import detection as dtc
 from interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
 from src.map_changer.map_changer import MapChanger
+from .status_enum import Status
 import window_capture as wc
 
 
 class Hunter:
 
-    def __init__(
-            self, 
-            finished_hunting_callback: callable, 
-            script: str,
-            check_pods_every_x_fights: int,
-            game_window_title: str,
-            game_window_size: tuple[int, int]
-        ):
-        self.__finished_hunting_callback = finished_hunting_callback
-        self.__check_pods_every_x_fights = check_pods_every_x_fights
+    def __init__(self, script: str, game_window_title: str, game_window_size: tuple[int, int]):
         self.__game_window_title = game_window_title
         self.__game_window_size = game_window_size
         self.__consecutive_fights_counter = 0
+        self.__check_pods_every_x_fights = 5
         # Map data
         map_data = MapDataGetter.get_data_object(script)
         self.__movement_data = map_data.get_movement_data()
@@ -40,46 +33,36 @@ class Hunter:
         while True:
             if self.__consecutive_fights_counter >= self.__check_pods_every_x_fights:
                 self.__consecutive_fights_counter = 0
-                # ToDo: Give control back to 'Out of Combat' state controller.
-                # self.__finished_hunting_callback()
-                return
+                return Status.REACHED_CONSECUTIVE_FIGHTS_LIMIT
 
             map_coords = MapChanger.get_current_map_coords()
-            log.info(f"Hunting on map: {map_coords}.")
+            log.info(f"Current map coordinates: {map_coords}")
             if not self.__are_map_coords_valid(map_coords, self.__movement_data):
                 raise KeyError(f"Map coordinates {map_coords} are not in movement data!")
 
             map_type = self.__map_type_data[map_coords]
 
             if map_type == "traversable":
-                status = self.__handle_traversable_map(map_coords)
-                if status == "traversed_successfully":
-                    continue
-                elif status == "failed_to_handle":
-                    # ToDo: Link to recovery state.
-                    return
+                if self.__handle_traversable_map(map_coords) == Status.FAILED_TO_TRAVERSE_MAP:
+                    return Status.FAILED_TO_FINISH_HUNTING
                 
             elif map_type == "fightable":
+                log.info(f"Hunting on map: {map_coords} ... ")
                 status = self.__handle_fightable_map(map_coords)
-                if status == "started_combat":
-                    # ToDo: Return control back to 'Out of Combat' state controller.
-                    # self.__finished_hunting_callback()
-                    return
-                elif status == "accidentally_changed_map_during_attack":
-                    continue
-                elif status == "map_fully_searched":
-                    continue
-                elif status == "failed_to_handle":
-                    # ToDo: Link to recovery state.
-                    return
+                if status == Status.SUCCESSFULLY_STARTED_COMBAT:
+                    return Status.SUCCESSFULLY_FINISHED_HUNTING
+                elif (
+                    status == Status.FAILED_TO_CHANGE_MAP
+                    or status == Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
+                ):
+                    return Status.FAILED_TO_FINISH_HUNTING
 
     def __handle_traversable_map(self, map_coords):
         MapChanger.change_map(map_coords, self.__movement_data)
         if MapChanger.has_loading_screen_passed():
-            return "traversed_successfully"
-        else:
-            log.critical("Not implemented!")
-            return "failed_to_handle"
+            return Status.SUCCESSFULLY_TRAVERSED_MAP
+        log.info("Failed to detect loading screen after changing map.")
+        return Status.FAILED_TO_TRAVERSE_MAP
 
     def __handle_fightable_map(self, map_coords):
         for segment_index in range(len(self.__monster_detection_data[0])):
@@ -95,7 +78,7 @@ class Hunter:
                 self.__attack(monster_x, monster_y)
                 # Allow time for 'Right Click Menu' to open in case the attack 
                 # click missed. Clicks can miss if the monster moves away.
-                sleep(0.25)
+                sleep(0.25) # Maybe increase this to 0.5?
                 if Interfaces.is_right_click_menu_open():
                     log.info("Failed to attack monster because it moved away. Skipping ... ")
                     Interfaces.close_right_click_menu()
@@ -103,24 +86,25 @@ class Hunter:
 
                 if self.__is_attack_successful():
                     self.__consecutive_fights_counter += 1
-                    return "started_combat"
+                    return Status.SUCCESSFULLY_STARTED_COMBAT
                 else:
                     if map_coords != MapChanger.get_current_map_coords():
                         log.info("Map was changed during the attack.")
-                        return "accidentally_changed_map_during_attack"
+                        return Status.ACCIDENTALLY_CHANGED_MAP_DURING_ATTACK
                     elif self.__is_char_in_lumberjack_workshop():
                         log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                         self.__leave_lumberjacks_workshop()
                         if MapChanger.has_loading_screen_passed():
                             log.info("Successfully left 'Lumberjack's Workshop'.")
                             continue
-                        return "failed_to_handle"
+                        log.info("Failed to leave 'Lumberjack's Workshop'.")
+                        return Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
 
         log.info(f"Map {map_coords} fully searched. Changing map ... ")
         MapChanger.change_map(map_coords, self.__movement_data)
         if MapChanger.has_loading_screen_passed():
-            return "map_fully_searched"
-        return "failed_to_handle"
+            return Status.MAP_FULLY_SEARCHED
+        return Status.FAILED_TO_CHANGE_MAP
 
     def __get_monster_detection_data(self):
         image_folder_path = "src\\state\\out_of_combat\\sub_state\\hunting\\monster_images"

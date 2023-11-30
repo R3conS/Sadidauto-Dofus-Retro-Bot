@@ -7,7 +7,7 @@ import cv2
 import pyautogui as pyag
 from time import perf_counter
 
-from .._status_codes_enum import Status
+from ..status_enum import Status
 from .._vault_actions import VaultActions
 from src.detection import Detection
 from src.map_changer.map_changer import MapChanger

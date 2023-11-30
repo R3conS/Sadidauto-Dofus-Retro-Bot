@@ -9,10 +9,10 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from ._status_codes_enum import Status
+from .status_enum import Status
 from src.detection import Detection
 from src.window_capture import WindowCapture
-from src.state.out_of_combat.pods_reader._pods_reader import PodsReader
+from src.state.out_of_combat.pods_reader.pods_reader import PodsReader
 
 
 def _handle_tab_opening(decorated_method):

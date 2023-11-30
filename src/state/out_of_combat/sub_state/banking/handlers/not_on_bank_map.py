@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import pyautogui as pyag
 
-from .._status_codes_enum import Status
+from ..status_enum import Status
 from ..map_data.getter import Getter as MapDataGetter
 from src.map_changer.map_changer import MapChanger
 
