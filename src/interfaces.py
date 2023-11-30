@@ -7,7 +7,7 @@ from time import perf_counter
 from pyautogui import moveTo, click, pixelMatchesColor
 
 import data
-import detection
+from image_detection import ImageDetection
 import window_capture as wc
 
 
@@ -140,7 +140,7 @@ class Interfaces:
     @staticmethod
     def is_login_screen_open():
         return len(
-            detection.Detection.find_image(
+            ImageDetection.find_image(
                 wc.WindowCapture.gamewindow_capture(),
                 data.images.Interface.dofus_logo,
                 confidence=0.995
@@ -150,7 +150,7 @@ class Interfaces:
     @staticmethod
     def is_right_click_menu_open():
         return len(
-            detection.Detection.find_image(
+            ImageDetection.find_image(
                 wc.WindowCapture.gamewindow_capture(),
                 data.images.Interface.right_click_menu,
                 confidence=0.995

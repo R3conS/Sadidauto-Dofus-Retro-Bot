@@ -11,8 +11,6 @@ from .sub_state.hunting.status_enum import Status as HunterStatus
 
 
 class Controller:
-    
-    __pod_limit = 10
 
     def __init__(
             self, 
@@ -24,6 +22,7 @@ class Controller:
         self.__set_bot_state_callback = set_bot_state_callback
         self.__hunter = Hunter(script, game_window_title, game_window_size)
         self.__banker = Banker(script, game_window_title)
+        self.__pod_limit = 90
 
     def run(self):
         while True:

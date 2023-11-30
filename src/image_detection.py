@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-class Detection:
+class ImageDetection:
 
     @classmethod
     def find_image(
@@ -116,7 +116,7 @@ class Detection:
             if not os.path.exists(image):
                 raise FileNotFoundError(f"Image path '{image}' does not exist.")
             image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
-        if Detection.get_number_of_channels(image) < 4:
+        if ImageDetection.get_number_of_channels(image) < 4:
             raise ValueError("Provided image doesn't have an alpha channel.")
         _, mask = cv2.threshold(image[..., 3], 127, 255, cv2.THRESH_BINARY)
         return mask
@@ -129,7 +129,7 @@ class Detection:
                 if not os.path.exists(image):
                     raise FileNotFoundError(f"Image path '{image}' does not exist.")
                 image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
-            masks.append(Detection.create_mask(image))
+            masks.append(ImageDetection.create_mask(image))
         return masks
 
     @staticmethod

@@ -5,10 +5,9 @@ import time
 
 import pyautogui as pyag
 
-from .botstate_enum import BotState
 import combat as cbt
 import data
-import detection as dtc
+from image_detection import ImageDetection
 from interfaces import Interfaces
 import window_capture as wc
 
@@ -289,8 +288,8 @@ class Fighting:
 
         """
         screenshot = wc.WindowCapture.gamewindow_capture()
-        close_button = dtc.Detection.get_click_coords(
-                dtc.Detection.find(
+        close_button = dtc.ImageDetection.get_click_coords(
+                dtc.ImageDetection.find(
                         screenshot,
                         data.images.Status.end_of_combat_v_1,
                         threshold=0.75

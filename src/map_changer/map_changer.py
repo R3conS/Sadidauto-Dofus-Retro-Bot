@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-import detection as dtc
+from image_detection import ImageDetection
 import window_capture as wc
 
 
@@ -32,7 +32,7 @@ class MapChanger:
             capture_region=(487, 655, 78, 52),
         )
         for map_coords, map_image in cls.map_data.items():
-            result = dtc.Detection.find_image(
+            result = ImageDetection.find_image(
                 haystack=map_image,
                 needle=current_map_image,
                 confidence=0.99,

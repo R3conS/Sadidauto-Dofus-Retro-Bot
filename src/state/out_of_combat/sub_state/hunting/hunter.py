@@ -7,7 +7,7 @@ import os
 import cv2
 import pyautogui as pyag
 
-import detection as dtc
+from image_detection import ImageDetection
 from interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
 from src.map_changer.map_changer import MapChanger
@@ -126,7 +126,7 @@ class Hunter:
             loaded_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
         return (
             self.__segment_data(loaded_images, 4),
-            self.__segment_data(dtc.Detection.create_masks(loaded_images), 4)
+            self.__segment_data(ImageDetection.create_masks(loaded_images), 4)
         )
 
     def __get_join_sword_detection_data(self):
@@ -141,7 +141,7 @@ class Hunter:
             if not os.path.exists(path):
                 raise FileNotFoundError(f"Image path '{path}' does not exist.")
             read_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
-        return read_images, dtc.Detection.create_masks(read_images)
+        return read_images, ImageDetection.create_masks(read_images)
 
     def __segment_data(self, data: list, segment_size) -> list[list]:
         segments = []
@@ -152,7 +152,7 @@ class Hunter:
     def __search_segment(self, segment_index, haystack_image) -> list[tuple[int, int]]:
         images_segment = self.__monster_detection_data[0][segment_index]
         masks_segment = self.__monster_detection_data[1][segment_index]
-        matches = dtc.Detection.find_images(
+        matches = ImageDetection.find_images(
             haystack=haystack_image,
             needles=images_segment,
             confidence=0.9837,
@@ -163,7 +163,7 @@ class Hunter:
         click_coords = []
         for match in matches:
             if len(match) > 0:
-                click_coords.append(dtc.Detection.get_rectangle_center_point(match))
+                click_coords.append(ImageDetection.get_rectangle_center_point(match))
         return click_coords
 
     def __attack(self, monster_x, monster_y):
@@ -181,7 +181,7 @@ class Hunter:
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if len(
-                dtc.Detection.find_images(
+                ImageDetection.find_images(
                     wc.WindowCapture.gamewindow_capture(), 
                     ["src\\initializer\\cc_lit.png", "src\\initializer\\cc_dim.png"],
                 )
@@ -199,7 +199,7 @@ class Hunter:
             max_bottom_right_y=self.__game_window_size[1]
         )
         for i, image in enumerate(self.__join_sword_detection_data[0]):
-            result = dtc.Detection.find_image(
+            result = ImageDetection.find_image(
                 haystack,
                 image,
                 confidence=0.98,

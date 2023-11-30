@@ -7,7 +7,7 @@ import pyautogui as pyag
 
 from .botstate_enum import BotState
 import data
-import detection as dtc
+from image_detection import ImageDetection
 import window_capture as wc
 
 
@@ -428,17 +428,17 @@ class Preparing:
             if ready_button_clicked:
 
                 screenshot = wc.WindowCapture.gamewindow_capture()
-                cc_icon = dtc.Detection.find(
+                cc_icon = dtc.ImageDetection.find(
                         screenshot,
                         data.images.Status.fighting_sv_1,
                         threshold=0.8
                     )
-                ap_icon = dtc.Detection.find(
+                ap_icon = dtc.ImageDetection.find(
                         screenshot, 
                         data.images.Status.fighting_sv_2,
                         threshold=0.8
                     )
-                mp_icon = dtc.Detection.find(
+                mp_icon = dtc.ImageDetection.find(
                         screenshot,
                         data.images.Status.fighting_sv_3,
                         threshold=0.8

@@ -5,7 +5,7 @@ import os
 
 import pygetwindow as gw
 
-import detection as dtc
+from image_detection import ImageDetection
 from interfaces import Interfaces
 from state.botstate_enum import BotState
 import window_capture as wc
@@ -87,7 +87,7 @@ class Initializer:
         ]
         game_window_image = wc.WindowCapture.gamewindow_capture()
         for path in image_paths:
-            if len(dtc.Detection.find(game_window_image, path, 0.98)) > 0:
+            if len(ImageDetection.find_image(game_window_image, path, 0.98)) > 0:
                 self.__set_bot_state_callback(BotState.IN_COMBAT)
                 break
         self.__set_bot_state_callback(BotState.OUT_OF_COMBAT)

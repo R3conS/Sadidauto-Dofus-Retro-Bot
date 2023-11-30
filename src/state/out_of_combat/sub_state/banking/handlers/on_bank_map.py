@@ -9,7 +9,7 @@ from time import perf_counter
 
 from ..status_enum import Status
 from .._vault_actions import VaultActions
-from src.detection import Detection
+from src.image_detection import ImageDetection
 from src.map_changer.map_changer import MapChanger
 from src.ocr.ocr import OCR
 from src.window_capture import WindowCapture
@@ -129,7 +129,7 @@ class Handler:
     def is_banker_npc_detected(self):
         astrub_bank_interior = WindowCapture.gamewindow_capture()
         for banker_image in self.__npc_images:
-            result = Detection.find_image(
+            result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
                 needle=banker_image,
                 confidence=0.99,
@@ -141,13 +141,13 @@ class Handler:
     def get_banker_npc_coords(self):
         astrub_bank_interior = WindowCapture.gamewindow_capture()
         for banker_image in self.__npc_images:
-            result = Detection.find_image(
+            result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
                 needle=banker_image,
                 confidence=0.99,
             )
             if len(result) > 0:
-                return Detection.get_rectangle_center_point(result)
+                return ImageDetection.get_rectangle_center_point(result)
         raise ValueError("Failed to find banker npc.")
 
     def talk_with_banker(self, banker_x, banker_y):

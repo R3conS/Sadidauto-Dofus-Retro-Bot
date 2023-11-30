@@ -10,7 +10,7 @@ import numpy as np
 import pyautogui as pyag
 
 from .status_enum import Status
-from src.detection import Detection
+from src.image_detection import ImageDetection
 from src.window_capture import WindowCapture
 from src.state.out_of_combat.pods_reader.pods_reader import PodsReader
 
@@ -26,14 +26,14 @@ def _handle_tab_opening(decorated_method):
             log.info(f"'{tab_name.capitalize()}' tab is already open.")
             return True
 
-        tab_icon = Detection.find_image(
+        tab_icon = ImageDetection.find_image(
             haystack=cls.get_inventory_tab_area_screenshot(),
             needle=getattr(VaultActions, f"tab_{tab_name}_closed_image"),
             confidence=0.95,
             method=cv2.TM_CCOEFF_NORMED,
         )
         if len(tab_icon) > 0:
-            tab_x, tab_y = Detection.get_rectangle_center_point(tab_icon)
+            tab_x, tab_y = ImageDetection.get_rectangle_center_point(tab_icon)
             tab_x += cls.inventory_tab_area[0]
             tab_y += cls.inventory_tab_area[1]
 
@@ -283,7 +283,7 @@ class VaultActions:
     @classmethod
     def is_equipment_tab_open(cls):
         return len(
-            Detection.find_image(
+            ImageDetection.find_image(
                 haystack=cls.get_inventory_tab_area_screenshot(),
                 needle=cls.tab_equipment_open_image,
                 confidence=0.95,
@@ -294,7 +294,7 @@ class VaultActions:
     @classmethod
     def is_misc_tab_open(cls):
         return len(
-            Detection.find_image(
+            ImageDetection.find_image(
                 haystack=cls.get_inventory_tab_area_screenshot(),
                 needle=cls.tab_misc_open_image,
                 confidence=0.95,
@@ -305,7 +305,7 @@ class VaultActions:
     @classmethod
     def is_resources_tab_open(cls):
         return len(
-            Detection.find_image(
+            ImageDetection.find_image(
                 haystack=cls.get_inventory_tab_area_screenshot(),
                 needle=cls.tab_resources_open_image,
                 confidence=0.95,
@@ -324,12 +324,12 @@ class VaultActions:
         """
         for confidence, items in forbidden_items_loaded.items():
             for item in items:
-                rectangle = Detection.find_image(
+                rectangle = ImageDetection.find_image(
                     haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
                     needle=item,
                     confidence=confidence,
                     method=cv2.TM_CCORR_NORMED,
-                    mask=Detection.create_mask(item)
+                    mask=ImageDetection.create_mask(item)
                 )
                 if len(rectangle) > 0:
                     return True
@@ -337,7 +337,7 @@ class VaultActions:
 
     @classmethod
     def is_slot_empty(cls, slot_x, slot_y):
-        rectangle = Detection.find_image(
+        rectangle = ImageDetection.find_image(
             haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
             needle=VaultActions.empty_slot_image,
             confidence=0.99,
@@ -352,7 +352,7 @@ class VaultActions:
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             current_slot_screenshot = cls.screenshot_slot(slot_x, slot_y)
-            rectangle = Detection.find_image(
+            rectangle = ImageDetection.find_image(
                 haystack=current_slot_screenshot,
                 needle=next_slot_screenshot,
                 confidence=0.95,
@@ -401,7 +401,7 @@ class VaultActions:
 
     @classmethod
     def get_amount_of_empty_slots(cls):
-        rectangles = Detection.find_image(
+        rectangles = ImageDetection.find_image(
             haystack=cls.get_inventory_slot_area_screenshot(),
             needle=cls.empty_slot_image,
             confidence=0.65,
@@ -428,12 +428,12 @@ class VaultActions:
     ):
         for confidence, items in forbidden_items_loaded.items():
             for i, item in enumerate(items):
-                rectangle = Detection.find_image(
+                rectangle = ImageDetection.find_image(
                     haystack=WindowCapture.custom_area_capture(cls.get_slot_rectangle(slot_x, slot_y)),
                     needle=item,
                     confidence=confidence,
                     method=cv2.TM_CCORR_NORMED,
-                    mask=Detection.create_mask(item)
+                    mask=ImageDetection.create_mask(item)
                 )
                 if len(rectangle) > 0:
                     name = forbidden_items[confidence][i]

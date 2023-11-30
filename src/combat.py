@@ -8,7 +8,7 @@ import time
 import pyautogui as pyag
 
 import data
-import detection as dtc
+from image_detection import ImageDetection
 from interfaces import Interfaces
 import window_capture as wc
 
@@ -83,7 +83,7 @@ class Combat:
             if px_1 and px_2 and not px_3:
 
                 sc = wc.WindowCapture.custom_area_capture((170, 95, 200, 30))
-                text = dtc.Detection.get_text_from_image(sc)
+                text = dtc.ImageDetection.get_text_from_image(sc)
 
                 if len(text) > 0:
                     if text[0] == cls.character_name:
@@ -292,7 +292,7 @@ class Combat:
         Interfaces.close_right_click_menu()
 
         sc_for_circles = wc.WindowCapture.gamewindow_capture((0, 0, 933, 598))
-        _, coords = dtc.Detection.detect_objects(
+        _, coords = dtc.ImageDetection.detect_objects(
                 circles, 
                 data.images.Combat.path,
                 sc_for_circles,
@@ -306,7 +306,7 @@ class Combat:
                 pyag.moveTo(coord[0], coord[1], duration=0.15)
                 time.sleep(0.25)
                 sc = wc.WindowCapture.gamewindow_capture((597, 599, 215, 30))
-                _, _, text = dtc.Detection.get_text_from_image(sc)
+                _, _, text = dtc.ImageDetection.get_text_from_image(sc)
 
                 if cls.character_name in text:
                     # MapChanger mouse off char. so spell bar is visible.
@@ -400,7 +400,7 @@ class Combat:
         spell : str
             Name of `spell`.
         threshold : float, optional
-            Detection `threshold` used in `find()`. Defaults to 0.85.
+            ImageDetection `threshold` used in `find()`. Defaults to 0.85.
 
         Returns
         ----------
@@ -411,7 +411,7 @@ class Combat:
         
         """
         sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
-        rects = dtc.Detection.find(sc, spell, threshold=threshold)
+        rects = dtc.ImageDetection.find(sc, spell, threshold=threshold)
         if len(rects) > 0:
             return True
         else:
@@ -427,7 +427,7 @@ class Combat:
         spell : str
             Name of `spell`.
         threshold : float, optional
-            Detection `threshold` used in `find()`. Defaults to 0.85.
+            ImageDetection `threshold` used in `find()`. Defaults to 0.85.
 
         Returns
         ----------
@@ -438,10 +438,10 @@ class Combat:
         
         """
         sc = wc.WindowCapture.custom_area_capture((645, 660, 265, 80))
-        rects = dtc.Detection.find(sc, spell, threshold=threshold)
+        rects = dtc.ImageDetection.find(sc, spell, threshold=threshold)
 
         if len(rects) > 0:
-            coords = dtc.Detection.get_click_coords(
+            coords = dtc.ImageDetection.get_click_coords(
                     rects,
                     (645, 660, 265, 80)
                 )
@@ -632,7 +632,7 @@ class Combat:
         while time.time() - start_time < timeout:
 
             screenshot_after = cls.__screenshot_ap_area()
-            rects = dtc.Detection.find(screenshot_before, 
+            rects = dtc.ImageDetection.find(screenshot_before, 
                                        screenshot_after,
                                        threshold=0.98)
 
@@ -667,14 +667,14 @@ class Combat:
 
             path = data.images.Combat.path
             spell_border = [data.images.Combat.spell_border]
-            img_data = dtc.Detection.generate_image_data(spell_border, path)
+            img_data = dtc.ImageDetection.generate_image_data(spell_border, path)
 
             screenshot = wc.WindowCapture.area_around_mouse_capture(
                     20,
                     coordinates
                 )
 
-            rects, _ = dtc.Detection.detect_objects_with_masks(
+            rects, _ = dtc.ImageDetection.detect_objects_with_masks(
                     img_data, 
                     spell_border,
                     screenshot,
@@ -717,7 +717,7 @@ class Combat:
                     cast_coordinates
                 )
 
-            rects = dtc.Detection.find(screenshot, spell, threshold=0.85)
+            rects = dtc.ImageDetection.find(screenshot, spell, threshold=0.85)
 
             if len(rects) > 0:
                 return True
