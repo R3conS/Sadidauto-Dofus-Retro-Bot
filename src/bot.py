@@ -26,7 +26,7 @@ class Bot(threading.Thread):
             script, 
             initializer.window_title
         )
-        self.ic_controller = IC_Controller(self.set_state)
+        self.ic_controller = IC_Controller(self.set_state, script)
 
     def run(self):
         try:

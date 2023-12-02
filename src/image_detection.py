@@ -52,9 +52,9 @@ class ImageDetection:
         result = cv2.matchTemplate(haystack, needle, method, mask=mask)
         if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
             if method == cv2.TM_SQDIFF:
-                locations = np.where(result <= np.min(result))
-            else:
-                locations = np.where(result <= 1 - confidence)
+                # Normalizing to [0.0, 1.0] range
+                result = (result - np.min(result)) / (np.max(result) - np.min(result))
+            locations = np.where(result <= 1 - confidence)
         else:
             locations = np.where(result >= confidence)
 
@@ -118,7 +118,7 @@ class ImageDetection:
             image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
         if ImageDetection.get_number_of_channels(image) < 4:
             raise ValueError("Provided image doesn't have an alpha channel.")
-        _, mask = cv2.threshold(image[..., 3], 127, 255, cv2.THRESH_BINARY)
+        _, mask = cv2.threshold(image[..., 3], 0, 255, cv2.THRESH_BINARY)
         return mask
 
     @staticmethod

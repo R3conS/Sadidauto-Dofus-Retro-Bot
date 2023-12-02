@@ -101,6 +101,7 @@ class Preparing:
             if len(e_cells) <= 0:
                 self.map_coords = self.__controller.moving.get_coordinates(self.data_map)
                 continue
+            
             if self.__move_char_to_cell(e_cells):
                 self.__cell_color = self.get_start_cell_color(
                     self.map_coords,

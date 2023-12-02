@@ -5,6 +5,7 @@ import os
 
 import cv2
 
+from .sub_state.preparing.preparer import Preparer
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 
@@ -18,7 +19,7 @@ def _load_image(image_folder_path: str, image_name: str):
 
 class Controller:
     
-    def __init__(self, set_bot_state_callback: callable):
+    def __init__(self, set_bot_state_callback: callable, script: str):
         self.__set_bot_state_callback = set_bot_state_callback
         image_folder_path = "src\\state\\in_combat\\images"
         self.__ap_icon_image = _load_image(image_folder_path, "sub_state_verifier_1.png")
