@@ -7,6 +7,7 @@ from time import perf_counter
 import cv2
 import numpy as np
 import pyautogui as pyag
+from PIL import Image
 
 from .status_enum import Status
 from .map_data.getter import Getter as MapDataGetter
@@ -25,9 +26,11 @@ def _load_image(image_folder_path: str, image_name: str):
 class Preparer:
 
     image_folder_path = "src\\state\\in_combat\\sub_state\\preparing\\images"
-    loading_icon_image = _load_image(image_folder_path, "loading_icon.png")
-    loading_icon_image_mask = ImageDetection.create_mask(loading_icon_image)
-
+    tactical_mode_off_icon = _load_image(image_folder_path, "tactical_mode_off.png")
+    tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
+    fight_lock_off_icon = _load_image(image_folder_path, "fight_lock_off.png")
+    fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
+    icon_area = (693, 506, 241, 40)
     RED = "red"
     BLUE = "blue"
 
@@ -36,19 +39,51 @@ class Preparer:
         self.__dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
 
     def prepare(self):
+        result = self.handle_fight_lock()
+        if (
+            result == Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
+            or result == Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
+        ):
+            return Status.FAILED_TO_FINISH_PREPARING
+        
+        result = self.handle_tactical_mode()
+        if (
+            result == Status.FAILED_TO_GET_TACTICAL_MODE_ICON_POS
+            or result == Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
+        ):
+            return Status.FAILED_TO_FINISH_PREPARING
+
         map_coords = MapChanger.get_current_map_coords()
         
         dummy_cell_color = None
         result = self.handle_dummy_cells(map_coords)
         if result == Status.FAILED_TO_MOVE_TO_DUMMY_CELLS:
-            return Status.FAILED_TO_PREPARE
+            return Status.FAILED_TO_FINISH_PREPARING
         else:
             if isinstance(result, str):
                 dummy_cell_color = result
         
         result = self.handle_starting_cells(map_coords, dummy_cell_color)
         if result == Status.FAILED_TO_MOVE_TO_STARTING_CELLS:
-            return Status.FAILED_TO_PREPARE
+            return Status.FAILED_TO_FINISH_PREPARING
+        
+        log.info("Successfully finished preparing.")
+
+    @classmethod
+    def handle_fight_lock(cls):
+        if cls.is_fight_lock_on():
+            log.info("Fight lock is on.")
+            return Status.FIGHT_LOCK_IS_ALREADY_ON
+        log.info("Fight lock is off.")
+        return cls.turn_on_fight_lock()
+
+    @classmethod
+    def handle_tactical_mode(cls):
+        if cls.is_tactical_mode_on():
+            log.info("Tactical mode is on.")
+            return Status.TACTICAL_MODE_IS_ALREADY_ON
+        log.info("Tactical mode is off.")
+        return cls.turn_on_tactical_mode()
 
     def handle_dummy_cells(self, map_coords: str):
         log.info(f"Checking for dummy cells on map: {map_coords} ... ")
@@ -136,7 +171,7 @@ class Preparer:
         return free_cells
 
     @staticmethod
-    def is_cell_free(cell_x, cell_y, game_window_screenshot=None):
+    def is_cell_free(cell_x, cell_y, game_window_screenshot: Image.Image):
         if game_window_screenshot is None:
             game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
         for color in [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]:
@@ -174,3 +209,91 @@ class Preparer:
             ):
                 return True
         return False
+
+    @classmethod
+    def is_fight_lock_on(cls):
+        return not len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.icon_area),
+                needle=cls.fight_lock_off_icon,
+                confidence=0.99,
+                method=cv2.TM_CCORR_NORMED,
+                mask=cls.fight_lock_off_icon_mask
+            )
+        ) > 0
+
+    @classmethod
+    def is_tactical_mode_on(cls):
+        return not len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.icon_area),
+                needle=cls.tactical_mode_off_icon,
+                confidence=0.98,
+                method=cv2.TM_CCORR_NORMED,
+                mask=cls.tactical_mode_off_icon_mask
+            )
+        ) > 0
+
+    @classmethod
+    def get_fight_lock_icon_pos(cls):
+        rectangle = ImageDetection.find_image(
+            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+            needle=cls.fight_lock_off_icon,
+            confidence=0.99,
+            method=cv2.TM_CCORR_NORMED,
+            mask=cls.fight_lock_off_icon_mask
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point(rectangle)
+        raise None
+
+    @classmethod
+    def get_tactical_mode_icon_pos(cls):
+        rectangle = ImageDetection.find_image(
+            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+            needle=cls.tactical_mode_off_icon,
+            confidence=0.98,
+            method=cv2.TM_CCORR_NORMED,
+            mask=cls.tactical_mode_off_icon_mask
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point(rectangle)
+        raise None
+
+    @classmethod
+    def turn_on_fight_lock(cls):
+        log.info("Turning on fight lock ... ")
+        fight_lock_icon_pos = cls.get_fight_lock_icon_pos()
+        if fight_lock_icon_pos is None:
+            log.info("Failed to get fight lock icon position.")
+            return Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
+
+        pyag.moveTo(*fight_lock_icon_pos)
+        pyag.click()
+
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if cls.is_fight_lock_on():
+                log.info("Successfully turned on fight lock.")
+                return Status.SUCCESSFULLY_TURNED_ON_FIGHT_LOCK
+        log.info("Timed out while turning on fight lock.")
+        return Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
+
+    @classmethod
+    def turn_on_tactical_mode(cls):
+        log.info("Turning on tactical mode ... ")
+        tactical_mode_icon_pos = cls.get_tactical_mode_icon_pos()
+        if tactical_mode_icon_pos is None:
+            log.info("Failed to get tactical mode icon position.")
+            return Status.FAILED_TO_GET_TACTICAL_MODE_ICON_POS
+
+        pyag.moveTo(*tactical_mode_icon_pos)
+        pyag.click()
+
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if cls.is_tactical_mode_on():
+                log.info("Successfully turned on tactical mode.")
+                return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
+        log.info("Timed out while turning on tactical mode.")
+        return Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
