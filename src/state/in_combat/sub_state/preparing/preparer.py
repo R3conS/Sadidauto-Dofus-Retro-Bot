@@ -28,15 +28,20 @@ class Preparer:
     RED = "red"
     BLUE = "blue"
     image_folder_path = "src\\state\\in_combat\\sub_state\\preparing\\images"
-    tactical_mode_off_icon = _load_image(image_folder_path, "tactical_mode_off.png")
-    tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
     fight_lock_off_icon = _load_image(image_folder_path, "fight_lock_off.png")
     fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
+    fight_lock_on_icon = _load_image(image_folder_path, "fight_lock_on.png")
+    fight_lock_on_icon_mask = ImageDetection.create_mask(fight_lock_on_icon)
+    tactical_mode_off_icon = _load_image(image_folder_path, "tactical_mode_off.png")
+    tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
+    tactical_mode_on_icon = _load_image(image_folder_path, "tactical_mode_on.png")
+    tactical_mode_on_icon_mask = ImageDetection.create_mask(tactical_mode_on_icon)
     icon_area = (693, 506, 241, 40)
     ready_button_lit_image = _load_image(image_folder_path, "ready_button_lit.png")
     ready_button_lit_image_mask = ImageDetection.create_mask(ready_button_lit_image)
     ready_button_dim_image = _load_image(image_folder_path, "ready_button_dim.png")
     ready_button_dim_image_mask = ImageDetection.create_mask(ready_button_dim_image)
+    ready_button_area = (678, 507, 258, 91)
 
     def __init__(self, script: str):
         self.__starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
@@ -176,6 +181,7 @@ class Preparer:
         for map, cell_data in self.__dummy_cell_data.items():
             if map == map_coords:
                 return cell_data[color]
+        return []
 
     def get_free_dummy_cells(self, map_coords: str, color: str):
         free_cells = []
@@ -191,6 +197,7 @@ class Preparer:
         for map, cell_data in self.__starting_cell_data.items():
             if map == map_coords:
                 return cell_data[color]
+        return []
 
     def get_free_starting_cells(self, map_coords: str, color: str):
         free_cells = []
@@ -268,7 +275,7 @@ class Preparer:
     def is_ready_button_visible(cls):
         is_lit_visible = len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+                haystack=ScreenCapture.custom_area(cls.ready_button_area),
                 needle=cls.ready_button_lit_image,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
@@ -277,7 +284,7 @@ class Preparer:
         ) > 0
         is_dim_visible = len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+                haystack=ScreenCapture.custom_area(cls.ready_button_area),
                 needle=cls.ready_button_dim_image,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
@@ -288,52 +295,71 @@ class Preparer:
 
     @classmethod
     def get_fight_lock_icon_pos(cls):
-        rectangle = ImageDetection.find_image(
-            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
-            needle=cls.fight_lock_off_icon,
-            confidence=0.99,
-            method=cv2.TM_CCORR_NORMED,
-            mask=cls.fight_lock_off_icon_mask
-        )
-        if len(rectangle) > 0:
-            return ImageDetection.get_rectangle_center_point(rectangle)
+        images_to_search = [
+            (cls.fight_lock_on_icon, cls.fight_lock_on_icon_mask),
+            (cls.fight_lock_off_icon, cls.fight_lock_off_icon_mask)
+        ]
+        for needle, mask in images_to_search:
+            rectangle = ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.icon_area),
+                needle=needle,
+                confidence=0.99,
+                method=cv2.TM_CCORR_NORMED,
+                mask=mask
+            )
+            if len(rectangle) > 0:
+                return ImageDetection.get_rectangle_center_point((
+                    rectangle[0] + cls.icon_area[0],
+                    rectangle[1] + cls.icon_area[1],
+                    rectangle[2],
+                    rectangle[3]
+                ))
         return None
 
     @classmethod
     def get_tactical_mode_icon_pos(cls):
-        rectangle = ImageDetection.find_image(
-            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
-            needle=cls.tactical_mode_off_icon,
-            confidence=0.98,
-            method=cv2.TM_CCORR_NORMED,
-            mask=cls.tactical_mode_off_icon_mask
-        )
-        if len(rectangle) > 0:
-            return ImageDetection.get_rectangle_center_point(rectangle)
+        images_to_search = [
+            (cls.tactical_mode_on_icon, cls.tactical_mode_on_icon_mask),
+            (cls.tactical_mode_off_icon, cls.tactical_mode_off_icon_mask)
+        ]
+        for needle, mask in images_to_search:
+            rectangle = ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.icon_area),
+                needle=needle,
+                confidence=0.98,
+                method=cv2.TM_CCORR_NORMED,
+                mask=mask
+            )
+            if len(rectangle) > 0:
+                return ImageDetection.get_rectangle_center_point((
+                    rectangle[0] + cls.icon_area[0],
+                    rectangle[1] + cls.icon_area[1],
+                    rectangle[2],
+                    rectangle[3]
+                ))
         return None
 
     @classmethod
     def get_ready_button_pos(cls):
-        rectangle = ImageDetection.find_image(
-            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
-            needle=cls.ready_button_lit_image,
-            confidence=0.99,
-            method=cv2.TM_CCORR_NORMED,
-            mask=cls.ready_button_lit_image_mask
-        )
-        if len(rectangle) > 0:
-            return ImageDetection.get_rectangle_center_point(rectangle)
-        
-        rectangle = ImageDetection.find_image(
-            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
-            needle=cls.ready_button_dim_image,
-            confidence=0.99,
-            method=cv2.TM_CCORR_NORMED,
-            mask=cls.ready_button_dim_image_mask
-        )
-        if len(rectangle) > 0:
-            return ImageDetection.get_rectangle_center_point(rectangle)
-
+        images_to_search = [
+            (cls.ready_button_lit_image, cls.ready_button_lit_image_mask),
+            (cls.ready_button_dim_image, cls.ready_button_dim_image_mask)
+        ]
+        for needle, mask in images_to_search:
+            rectangle = ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.ready_button_area),
+                needle=needle,
+                confidence=0.99,
+                method=cv2.TM_SQDIFF,
+                mask=mask
+            )
+            if len(rectangle) > 0:
+                return ImageDetection.get_rectangle_center_point((
+                    rectangle[0] + cls.ready_button_area[0],
+                    rectangle[1] + cls.ready_button_area[1],
+                    rectangle[2],
+                    rectangle[3]
+                ))
         return None
 
     @classmethod
