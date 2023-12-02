@@ -25,14 +25,18 @@ def _load_image(image_folder_path: str, image_name: str):
 
 class Preparer:
 
+    RED = "red"
+    BLUE = "blue"
     image_folder_path = "src\\state\\in_combat\\sub_state\\preparing\\images"
     tactical_mode_off_icon = _load_image(image_folder_path, "tactical_mode_off.png")
     tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
     fight_lock_off_icon = _load_image(image_folder_path, "fight_lock_off.png")
     fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
     icon_area = (693, 506, 241, 40)
-    RED = "red"
-    BLUE = "blue"
+    ready_button_lit_image = _load_image(image_folder_path, "ready_button_lit.png")
+    ready_button_lit_image_mask = ImageDetection.create_mask(ready_button_lit_image)
+    ready_button_dim_image = _load_image(image_folder_path, "ready_button_dim.png")
+    ready_button_dim_image_mask = ImageDetection.create_mask(ready_button_dim_image)
 
     def __init__(self, script: str):
         self.__starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
@@ -67,7 +71,14 @@ class Preparer:
         if result == Status.FAILED_TO_MOVE_TO_STARTING_CELLS:
             return Status.FAILED_TO_FINISH_PREPARING
         
-        log.info("Successfully finished preparing.")
+        result = self.handle_clicking_ready()
+        if (
+            result == Status.FAILED_TO_GET_READY_BUTTON_POS
+            or result == Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
+        ):
+            return Status.FAILED_TO_FINISH_PREPARING
+        
+        return Status.SUCCESSFULLY_FINISHED_PREPARING
 
     @classmethod
     def handle_fight_lock(cls):
@@ -132,6 +143,25 @@ class Preparer:
         
         log.info("Failed to move to a starting cell.")
         return Status.FAILED_TO_MOVE_TO_STARTING_CELLS
+
+    @classmethod
+    def handle_clicking_ready(cls):
+        log.info("Clicking ready ... ")
+        ready_button_pos = cls.get_ready_button_pos()
+        if ready_button_pos is None:
+            log.info("Failed to get ready button position.")
+            return Status.FAILED_TO_GET_READY_BUTTON_POS
+        
+        pyag.moveTo(*ready_button_pos)
+        pyag.click()
+
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if not cls.is_ready_button_visible():
+                log.info("Successfully clicked ready button.")
+                return Status.SUCCESSFULLY_CLICKED_READY_BUTTON
+        log.info("Timed out while clicking ready button.")
+        return Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
 
     def move_char_to_cell(self, cell_x, cell_y):
         screenshot_before_clicking_cell = self.screenshot_cell_area(cell_x, cell_y)
@@ -202,7 +232,7 @@ class Preparer:
     @classmethod
     def did_char_move(cls, cell_x, cell_y, cell_area_before_moving: np.ndarray):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 0.5:
+        while perf_counter() - start_time <= 0.25:
             if not cls.are_images_same(
                 cell_area_before_moving, 
                 cls.screenshot_cell_area(cell_x, cell_y)
@@ -235,6 +265,28 @@ class Preparer:
         ) > 0
 
     @classmethod
+    def is_ready_button_visible(cls):
+        is_lit_visible = len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+                needle=cls.ready_button_lit_image,
+                confidence=0.99,
+                method=cv2.TM_CCORR_NORMED,
+                mask=cls.ready_button_lit_image_mask
+            )
+        ) > 0
+        is_dim_visible = len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+                needle=cls.ready_button_dim_image,
+                confidence=0.99,
+                method=cv2.TM_CCORR_NORMED,
+                mask=cls.ready_button_dim_image_mask
+            )
+        ) > 0
+        return is_lit_visible or is_dim_visible
+
+    @classmethod
     def get_fight_lock_icon_pos(cls):
         rectangle = ImageDetection.find_image(
             haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
@@ -245,7 +297,7 @@ class Preparer:
         )
         if len(rectangle) > 0:
             return ImageDetection.get_rectangle_center_point(rectangle)
-        raise None
+        return None
 
     @classmethod
     def get_tactical_mode_icon_pos(cls):
@@ -258,7 +310,31 @@ class Preparer:
         )
         if len(rectangle) > 0:
             return ImageDetection.get_rectangle_center_point(rectangle)
-        raise None
+        return None
+
+    @classmethod
+    def get_ready_button_pos(cls):
+        rectangle = ImageDetection.find_image(
+            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+            needle=cls.ready_button_lit_image,
+            confidence=0.99,
+            method=cv2.TM_CCORR_NORMED,
+            mask=cls.ready_button_lit_image_mask
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point(rectangle)
+        
+        rectangle = ImageDetection.find_image(
+            haystack=ScreenCapture.custom_area(ScreenCapture.game_window_area),
+            needle=cls.ready_button_dim_image,
+            confidence=0.99,
+            method=cv2.TM_CCORR_NORMED,
+            mask=cls.ready_button_dim_image_mask
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point(rectangle)
+
+        return None
 
     @classmethod
     def turn_on_fight_lock(cls):
