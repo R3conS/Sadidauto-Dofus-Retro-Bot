@@ -6,6 +6,7 @@ import os
 import cv2
 
 from .sub_state.preparing.preparer import Preparer
+from .sub_state.fighting.fighter import Fighter
 from .sub_state.preparing.status_enum import Status as PreparingStatus
 from src.bot.main_states_enum import State as MainBotStates
 from src.image_detection import ImageDetection
@@ -21,12 +22,13 @@ def _load_image(image_folder_path: str, image_name: str):
 
 class Controller:
     
-    def __init__(self, set_bot_state_callback: callable, script: str):
+    def __init__(self, set_bot_state_callback: callable, script: str, character_name: str):
         self.__set_main_bot_state_callback = set_bot_state_callback
         image_folder_path = "src\\bot\\states\\in_combat\\images"
         self.__ap_icon_image = _load_image(image_folder_path, "sub_state_verifier_1.png")
         self.__mp_icon_image = _load_image(image_folder_path, "sub_state_verifier_2.png")
         self.__preparer = Preparer(script)
+        self.__fighter = Fighter(script, character_name)
 
     def run(self):
         while True:

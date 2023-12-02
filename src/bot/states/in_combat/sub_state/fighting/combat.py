@@ -14,42 +14,6 @@ import window_capture as wc
 
 
 class Combat:
-    """
-    Holds methods related to combat.
-
-    Methods
-    ----------
-    turn_detect_start()
-        Detect if turn started.
-    turn_pass()
-        Pass turn.
-    get_available_spells()
-        Get all castable spells.
-    get_spell_cast_coordinates()
-        Get coordinates of point to click on to cast spell.
-    get_movement_coordinates()
-        Get coordinates to click on to move character on correct cell.
-    get_spell_status()
-        Check if spell is available to cast.
-    get_spell_coordinates()
-        Get coordinates of spell in spellbar.
-    get_if_char_on_correct_cell()
-        Check if character is standing on correct cell.
-    get_char_position()
-        Get (x, y) position of character on screen.
-    turn_detect_end()
-        Detect if turn ended.
-    move_character()
-        Click on provided coordinates to move character.
-    cast_spell()
-        Cast spell.
-    hide_models()
-        Hide player and monster models.
-    shrink_turn_bar()
-        Shrink turn bar.
-
-    """
-
     # Public class attributes.
     # Stores spell cast data based on loaded bot script (in 'bot.py').
     data_spell_cast = None
@@ -60,31 +24,16 @@ class Combat:
 
     @classmethod
     def turn_detect_start(cls):
-        """
-        Detect if turn started.
-        
-        Returns
-        ----------
-        True : bool
-            If turn started.
-        False : bool
-            If turn has not started.
-
-        """
         while True:
-       
             px_1 = pyag.pixelMatchesColor(406, 106, (251, 103, 0), 
                                           tolerance=5)
             px_2 = pyag.pixelMatchesColor(353, 109, (213, 208, 169),
                                           tolerance=3)
             px_3 = pyag.pixelMatchesColor(110, 100, (232, 228, 198),
                                           tolerance=3)
-
             if px_1 and px_2 and not px_3:
-
                 sc = wc.ScreenCapture.custom_area((170, 95, 200, 30))
                 text = dtc.ImageDetection.get_text_from_image(sc)
-
                 if len(text) > 0:
                     if text[0] == cls.character_name:
                         log.info("Turn started!")
@@ -94,18 +43,6 @@ class Combat:
 
     @classmethod
     def turn_pass(cls):
-        """
-        Pass turn.
-        
-        Returns
-        ----------
-        True : bool
-            If turn passed successfully.
-        NoReturn
-            Exits program if character couldn't pass turn within
-            'timeout_time' seconds.
-
-        """
         start_time = time.time()
         timeout_time = 30
         
@@ -136,15 +73,6 @@ class Combat:
 
     @classmethod
     def get_available_spells(cls):
-        """
-        Get all castable spells.
-
-        Returns
-        ----------
-        available_spells : list[str]
-            `list` of available spells as `str`.
-
-        """
         spells = [
             data.images.Combat.Spell.Sadida.earthquake,
             data.images.Combat.Spell.Sadida.poisoned_wind,
