@@ -4,7 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from .handlers.not_on_bank_map import Handler as Handler_NotOnBankMap
 from .handlers.on_bank_map import Handler as Handler_OnBankMap
 from .status_enum import Status
-from src.map_changer.map_changer import MapChanger
+from src.bot.map_changer.map_changer import MapChanger
 
 
 class Banker:

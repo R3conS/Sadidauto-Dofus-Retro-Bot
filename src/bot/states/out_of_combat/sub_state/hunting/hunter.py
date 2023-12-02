@@ -8,10 +8,10 @@ import cv2
 import pyautogui as pyag
 
 from image_detection import ImageDetection
-from interfaces import Interfaces
+from src.bot.interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
 from screen_capture import ScreenCapture
-from src.map_changer.map_changer import MapChanger
+from src.bot.map_changer.map_changer import MapChanger
 from .status_enum import Status
 
 
@@ -106,7 +106,7 @@ class Hunter:
         return Status.FAILED_TO_CHANGE_MAP
 
     def __get_monster_detection_data(self):
-        image_folder_path = "src\\state\\out_of_combat\\sub_state\\hunting\\monster_images"
+        image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\monster_images"
         image_names = [
             "Boar_BL_1.png", "Boar_BR_1.png", "Boar_TL_1.png", "Boar_TR_1.png",
             "Pres_BL_1.png", "Pres_BR_1.png", "Pres_TL_1.png", "Pres_TR_1.png",
@@ -130,10 +130,10 @@ class Hunter:
 
     def __get_join_sword_detection_data(self):
         paths = [
-            "src\\state\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_1.png",
-            "src\\state\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_2.png",
-            "src\\state\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_3.png",
-            "src\\state\\out_of_combat\\sub_state\\hunting\\images\\j_sword_enemy.png",
+            "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_1.png",
+            "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_2.png",
+            "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_3.png",
+            "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_enemy.png",
         ]
         read_images = []
         for path in paths:
@@ -181,7 +181,8 @@ class Hunter:
             if len(
                 ImageDetection.find_images(
                     ScreenCapture.game_window(), 
-                    ["src\\initializer\\cc_lit.png", "src\\initializer\\cc_dim.png"],
+                    ["src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\cc_lit.png", 
+                     "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\cc_dim.png"],
                 )
             ) > 0:
                 log.info("Attack successful.")

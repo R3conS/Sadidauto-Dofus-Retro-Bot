@@ -13,7 +13,7 @@ from screen_capture import ScreenCapture
 
 
 def _load_map_image_data() -> dict[str, np.ndarray]:
-    folder_path = "src\\map_changer\\map_images"
+    folder_path = "src\\bot\\map_changer\\map_images"
     image_names = [name for name in os.listdir(folder_path) if name.endswith(".png")]
     loaded_images = {}
     for map_image_name in image_names:

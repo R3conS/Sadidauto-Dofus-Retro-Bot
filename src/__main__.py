@@ -5,7 +5,7 @@ import os
 
 from pynput import keyboard
 
-from bot import Bot
+from bot.main_controller import Controller
 from cmd_line_parser import Parser
 
 
@@ -21,7 +21,7 @@ def main():
     # args = Parser.parse_command_line()
     # bot = Bot(script=args.script, character_name=args.character_name)
     # bot.start()
-    bot = Bot(script="af_anticlock", character_name="Juni")
+    bot = Controller(script="af_anticlock", character_name="Juni")
     bot.start()
     exit_with_hotkey()
 

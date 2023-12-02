@@ -10,7 +10,7 @@ from time import perf_counter
 from ..status_enum import Status
 from .._vault_actions import VaultActions
 from src.image_detection import ImageDetection
-from src.map_changer.map_changer import MapChanger
+from src.bot.map_changer.map_changer import MapChanger
 from src.ocr.ocr import OCR
 from src.screen_capture import ScreenCapture
 
@@ -179,7 +179,7 @@ class Handler:
         return False
 
     def __load_npc_images(self):
-        image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
+        image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
         loaded_images = []
         for image in os.listdir(image_folder_path):
             loaded_images.append(cv2.imread(os.path.join(image_folder_path, image), cv2.IMREAD_UNCHANGED))

@@ -11,7 +11,7 @@ from PIL import Image
 
 from .status_enum import Status
 from .map_data.getter import Getter as MapDataGetter
-from src.map_changer.map_changer import MapChanger
+from src.bot.map_changer.map_changer import MapChanger
 from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 
@@ -27,7 +27,7 @@ class Preparer:
 
     RED = "red"
     BLUE = "blue"
-    image_folder_path = "src\\state\\in_combat\\sub_state\\preparing\\images"
+    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\preparing\\images"
     fight_lock_off_icon = _load_image(image_folder_path, "fight_lock_off.png")
     fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
     fight_lock_on_icon = _load_image(image_folder_path, "fight_lock_on.png")

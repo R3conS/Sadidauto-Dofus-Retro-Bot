@@ -5,9 +5,7 @@ import os
 
 import pygetwindow as gw
 
-from image_detection import ImageDetection
-from interfaces import Interfaces
-from state.botstate_enum import BotState
+from src.bot.interfaces import Interfaces
 from screen_capture import ScreenCapture
 from src.ocr.ocr import OCR
 
@@ -27,16 +25,14 @@ class Initializer:
         "af_west"
     ]
 
-    def __init__(self, script: str, character_name: str, set_bot_state_callback):
+    def __init__(self, script: str, character_name: str):
         self.__script = script
         self.__character_name = character_name
-        self.__set_bot_state_callback = set_bot_state_callback
         if not self.__is_script_valid(self.__script):
             log.critical(f"Invalid script name '{self.__script}'! Exiting ... ")
             os._exit(1)
         self.__prepare_game_window()
         self.__verify_character_name()
-        self.__set_initial_bot_state()
 
     def __is_script_valid(self, script_to_check):
         for script in self.__valid_scripts:
@@ -78,15 +74,3 @@ class Initializer:
                 "interface is not open! Exiting ... "
             )
             os._exit(1)
-
-    def __set_initial_bot_state(self):
-        image_paths = [
-            "src\\initializer\\cc_lit.png",
-            "src\\initializer\\cc_dim.png"
-        ]
-        game_window_image = ScreenCapture.game_window()
-        for path in image_paths:
-            if len(ImageDetection.find_image(game_window_image, path, 0.98)) > 0:
-                self.__set_bot_state_callback(BotState.IN_COMBAT)
-                break
-        self.__set_bot_state_callback(BotState.OUT_OF_COMBAT)

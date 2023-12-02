@@ -5,7 +5,7 @@ import pyautogui as pyag
 
 from ..status_enum import Status
 from ..map_data.getter import Getter as MapDataGetter
-from src.map_changer.map_changer import MapChanger
+from src.bot.map_changer.map_changer import MapChanger
 
 
 class Handler:

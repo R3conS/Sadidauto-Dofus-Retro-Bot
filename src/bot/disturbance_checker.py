@@ -4,7 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import threading
 from time import sleep
 
-from interfaces import Interfaces
+from src.bot.interfaces import Interfaces
 
 
 class DisturbanceChecker(threading.Thread):

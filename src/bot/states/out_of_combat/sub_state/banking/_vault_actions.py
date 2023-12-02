@@ -12,7 +12,7 @@ import pyautogui as pyag
 from .status_enum import Status
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.state.out_of_combat.pods_reader.pods_reader import PodsReader
+from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
 
 
 def _handle_tab_opening(decorated_method):
@@ -101,7 +101,7 @@ def _load_forbidden_items(
 
 class VaultActions:
 
-    image_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images"
+    image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images"
     empty_slot_image = _load_image(image_folder_path, "empty_slot.png")
     tab_equipment_open_image = _load_image(image_folder_path, "tab_equipment_open.png")
     tab_equipment_closed_image = _load_image(image_folder_path, "tab_equipment_closed.png")
@@ -123,15 +123,15 @@ class VaultActions:
     inventory_tab_area = (684, 187, 234, 69)
 
     # Items that won't be deposited.
-    forbidden_equipment_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_equipment_items"
+    forbidden_equipment_items_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\forbidden_equipment_items"
     forbidden_equipment_items = {}
     forbidden_equipment_items_loaded = _load_forbidden_items(forbidden_equipment_items_folder_path, forbidden_equipment_items)
-    forbidden_misc_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_misc_items"
+    forbidden_misc_items_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\forbidden_misc_items"
     forbidden_misc_items = { # confidence: [image name, ...]
         0.99: ["recall_potion.png", "bonta_potion.png", "brakmar_potion.png"]
     }
     forbidden_misc_items_loaded = _load_forbidden_items(forbidden_misc_items_folder_path, forbidden_misc_items)
-    forbidden_resources_items_folder_path = "src\\state\\out_of_combat\\sub_state\\banking\\images\\forbidden_resources_items"
+    forbidden_resources_items_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\forbidden_resources_items"
     forbidden_resources_items = {}
     forbidden_resources_items_loaded = _load_forbidden_items(forbidden_resources_items_folder_path, forbidden_resources_items)
 

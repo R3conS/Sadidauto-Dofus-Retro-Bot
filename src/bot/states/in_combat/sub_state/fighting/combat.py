@@ -9,7 +9,7 @@ import pyautogui as pyag
 
 import data
 from image_detection import ImageDetection
-from interfaces import Interfaces
+from src.bot.interfaces import Interfaces
 import window_capture as wc
 
 
