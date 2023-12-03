@@ -19,7 +19,7 @@ class TacticalMode:
     tactical_mode_on_image_mask = ImageDetection.create_mask(tactical_mode_on_image)
     tactical_mode_off_image = load_image(image_folder_path, "tactical_mode_off.png")
     tactical_mode_off_image_mask = ImageDetection.create_mask(tactical_mode_off_image)
-    icon_area = (758, 507, 174, 37)
+    icon_area = (822, 510, 34, 36)
 
     @classmethod
     def is_on(cls):
@@ -27,7 +27,7 @@ class TacticalMode:
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
                 needle=cls.tactical_mode_on_image,
-                confidence=0.98,
+                confidence=0.95,
                 method=cv2.TM_CCORR_NORMED,
                 mask=cls.tactical_mode_on_image_mask
             )

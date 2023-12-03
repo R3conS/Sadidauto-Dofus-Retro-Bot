@@ -19,7 +19,7 @@ class Models:
     model_disabler_on_image_mask = ImageDetection.create_mask(model_disabler_on_image)
     model_disabler_off_image = load_image(image_folder_path, "model_disabler_off.png")
     model_disabler_off_image_mask = ImageDetection.create_mask(model_disabler_off_image)
-    icon_area = (758, 507, 174, 37)
+    icon_area = (853, 514, 30, 34)
 
     @classmethod
     def are_disabled(cls):
@@ -28,7 +28,7 @@ class Models:
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
                 needle=cls.model_disabler_on_image,
-                confidence=0.98,
+                confidence=0.9,
                 method=cv2.TM_CCORR_NORMED,
                 mask=cls.model_disabler_on_image_mask
             )
@@ -45,7 +45,7 @@ class Models:
             rectangle = ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
                 needle=needle,
-                confidence=0.95,
+                confidence=0.6,
                 method=cv2.TM_CCORR_NORMED,
                 mask=mask
             )
