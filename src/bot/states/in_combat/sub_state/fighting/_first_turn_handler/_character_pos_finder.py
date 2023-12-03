@@ -1,4 +1,3 @@
-from typing import Any
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
@@ -61,7 +60,7 @@ class Finder:
     @classmethod
     def get_red_circle_locations(cls):
         rectangles = ImageDetection.find_image(
-            haystack=ScreenCapture.game_window(),
+            haystack=cls.screenshot_detection_area(),
             needle=cls.red_circle_image,
             method=cv2.TM_SQDIFF,
             confidence=0.9,
@@ -78,7 +77,7 @@ class Finder:
     @classmethod
     def get_blue_circle_locations(cls):
         rectangles = ImageDetection.find_image(
-            haystack=ScreenCapture.game_window(),
+            haystack=cls.screenshot_detection_area(),
             needle=cls.blue_circle_image,
             method=cv2.TM_SQDIFF,
             confidence=0.9,
@@ -95,6 +94,11 @@ class Finder:
     @staticmethod
     def screenshot_name_area_on_info_card():
         return ScreenCapture.custom_area((593, 598, 225, 28))    
+
+    @staticmethod
+    def screenshot_detection_area():
+        """No chat, no minimap, no spell & item bars."""
+        return ScreenCapture.custom_area((0, 0, 933, 600))
 
     @staticmethod
     def read_name_area_screenshot(screenshot: np.ndarray):

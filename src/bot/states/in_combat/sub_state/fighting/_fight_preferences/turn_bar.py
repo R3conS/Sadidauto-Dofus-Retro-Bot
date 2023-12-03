@@ -35,3 +35,17 @@ class TurnBar:
                 return Status.SUCCESSFULLY_SHRUNK_TURN_BAR
         log.info("Timed out while shrinking turn bar.")
         return Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR
+
+    @classmethod
+    def unshrink(cls):
+        pyag.moveTo(924, 567)
+        pyag.click()
+
+        # Checking within a timer to give shrinking animation time to finish.
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 3:
+            if not cls.is_shrunk():
+                log.info("Successfully unshrunk turn bar.")
+                return Status.SUCCESSFULLY_UNSHRUNK_TURN_BAR
+        log.info("Timed out while unshrinking turn bar.")
+        return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR

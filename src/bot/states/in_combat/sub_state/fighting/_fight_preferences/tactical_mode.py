@@ -10,6 +10,7 @@ from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.states.in_combat.sub_state.fighting.status_enum import Status
+from .turn_bar import TurnBar
 
 
 class TacticalMode:
@@ -23,6 +24,10 @@ class TacticalMode:
 
     @classmethod
     def is_on(cls):
+        """
+        Turn bar must be shrunk for accurate results because sometimes
+        the turn indicator arrow blocks the icon.
+        """
         return len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
@@ -58,6 +63,15 @@ class TacticalMode:
    
     @classmethod
     def turn_on(cls):
+        if not TurnBar.is_shrunk():
+            result = TurnBar.shrink()
+            if result == Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR:
+                return result
+            
+        if cls.is_on():
+            log.info("Tactical mode is already on.")
+            return Status.TACTICAL_MODE_IS_ALREADY_ON
+
         tactical_mode_icon_pos = cls.get_icon_pos()
         if tactical_mode_icon_pos is None:
             log.info("Failed to get tactical mode toggle icon position.")
