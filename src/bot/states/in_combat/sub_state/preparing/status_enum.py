@@ -16,7 +16,7 @@ class Status(Enum):
     FAILED_TO_TURN_ON_FIGHT_LOCK = "failed_to_turn_on_fight_lock"
     FAILED_TO_TURN_ON_TACTICAL_MODE = "failed_to_turn_on_tactical_mode"
     FAILED_TO_GET_FIGHT_LOCK_ICON_POS = "failed_to_get_fight_lock_icon_pos"
-    FAILED_TO_GET_TACTICAL_MODE_ICON_POS = "failed_to_get_tactical_mode_icon_pos"
+    FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
     FAILED_TO_GET_READY_BUTTON_POS = "failed_to_get_ready_button_pos"
     TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK = "timed_out_while_turning_on_fight_lock"
     TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE = "timed_out_while_turning_on_tactical_mode"

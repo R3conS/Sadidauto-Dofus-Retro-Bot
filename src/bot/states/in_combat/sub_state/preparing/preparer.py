@@ -57,7 +57,7 @@ class Preparer:
         
         result = self.handle_tactical_mode()
         if (
-            result == Status.FAILED_TO_GET_TACTICAL_MODE_ICON_POS
+            result == Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
             or result == Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
         ):
             return Status.FAILED_TO_FINISH_PREPARING
@@ -387,7 +387,7 @@ class Preparer:
         tactical_mode_icon_pos = cls.get_tactical_mode_icon_pos()
         if tactical_mode_icon_pos is None:
             log.info("Failed to get tactical mode icon position.")
-            return Status.FAILED_TO_GET_TACTICAL_MODE_ICON_POS
+            return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
 
         pyag.moveTo(*tactical_mode_icon_pos)
         pyag.click()
