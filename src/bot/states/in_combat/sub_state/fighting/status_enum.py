@@ -25,5 +25,8 @@ class Status(Enum):
     MODELS_TOGGLE_ICON_NOT_VISIBLE = "models_toggle_icon_not_visible"
 
     SUCCESSFULLY_SELECTED_SPELL = "successfully_selected_spell"
-    FAILED_TO_GET_SPELL_POS = "failed_to_get_spell_pos"
+    SUCCESSFULLY_CAST_SPELL = "successfully_cast_spell"
+    FAILED_TO_GET_SPELL_ICON_POS = "failed_to_get_spell_pos"
     FAILED_TO_SELECT_SPELL = "failed_to_select_spell"
+    FAILED_TO_CAST_SPELL = "failed_to_cast_spell"
+    TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY = "timed_out_while_detecting_if_spell_cast_successfully"

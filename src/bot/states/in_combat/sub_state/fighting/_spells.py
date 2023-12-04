@@ -1,3 +1,6 @@
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+
 from functools import wraps
 from time import perf_counter
 
@@ -32,7 +35,7 @@ def _is_spell_available(decorated_method):
     return wrapper
 
 
-def _get_spell_pos(decorated_method):
+def _get_spell_icon_pos(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
         spell_name = __get_spell_name(decorated_method.__name__)
@@ -112,17 +115,17 @@ def _select_spell(decorated_method):
     def wrapper(cls, *args, **kwargs):
         # Making sure to deselect any other spells just in case. Otherwise
         # the can/cannot cast image might block one of the spell icon 
-        # images and the get_spell_pos() might return None causing this
+        # images and the get_spell_icon_pos() might return None causing this
         # whole method to fail.
         pyag.moveTo(929, 752)
         pyag.click()
 
         spell_name = __get_spell_name(decorated_method.__name__)
-        spell_pos = getattr(cls, f"get_{spell_name}_pos")()
-        if spell_pos is None:
-            return Status.FAILED_TO_GET_SPELL_POS
+        spell_icon_pos = getattr(cls, f"get_{spell_name}_icon_pos")()
+        if spell_icon_pos is None:
+            return Status.FAILED_TO_GET_SPELL_ICON_POS
         
-        pyag.moveTo(*spell_pos)
+        pyag.moveTo(*spell_icon_pos)
         pyag.click()
 
         # Checking within a timer to give the game time to draw the
@@ -132,10 +135,53 @@ def _select_spell(decorated_method):
             if getattr(cls, f"is_{spell_name}_selected")():
                 return Status.SUCCESSFULLY_SELECTED_SPELL
         return Status.FAILED_TO_SELECT_SPELL
+    
     return wrapper
+
+
+def _cast_spell(decorated_method):
+    @wraps(decorated_method)
+    def wrapper(cls, *args, **kwargs):
+        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name_formatted = spell_name.replace("_", " ").title()
+        log.info(f"Attempting to cast: '{spell_name.title()}' ... ")
+
+        log.info(f"Selecting the spell ... ")
+        result = getattr(cls, f"select_{spell_name}")()
+        if (
+            result == Status.FAILED_TO_GET_SPELL_ICON_POS
+            or result == Status.FAILED_TO_SELECT_SPELL
+        ):
+            log.info(f"Failed to cast: '{spell_name_formatted}'. Reason: {result.value.replace('_', ' ')}.")
+            return Status.FAILED_TO_CAST_SPELL
+        log.info(f"Successfully selected.")
+
+        log.info(f"Casting ... ")
+        ap_area_before_casting = ScreenCapture.custom_area(cls.ap_area)
+        pyag.moveTo(*args)
+        pyag.click()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            ap_area_after_casting = ScreenCapture.custom_area(cls.ap_area)
+            rectangle = ImageDetection.find_image(
+                haystack=ap_area_after_casting,
+                needle=ap_area_before_casting,
+                confidence=0.98,
+                method=cv2.TM_CCOEFF_NORMED,
+            )
+            if len(rectangle) <= 0: # If images are different then spell animation has finished.
+                log.info(f"Successfully cast: '{spell_name_formatted}'.")
+                pyag.moveTo(929, 752) # Move mouse off game area.
+                return Status.SUCCESSFULLY_CAST_SPELL
+        log.info(f"Timed out while detecting if '{spell_name_formatted}' was cast successfully.")
+        return Status.TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY
+    
+    return wrapper
+
 
 class Spells:
 
+    ap_area = (456, 611, 29, 25)
     spell_bar_area = (643, 658, 291, 99)
     image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images\\spells"
     # Earthquake
@@ -179,18 +225,18 @@ class Spells:
         pass
 
     @classmethod
-    @_get_spell_pos
-    def get_earthquake_pos(cls):
+    @_get_spell_icon_pos
+    def get_earthquake_icon_pos(cls):
         pass
 
     @classmethod
-    @_get_spell_pos
-    def get_poisoned_wind_pos(cls):
+    @_get_spell_icon_pos
+    def get_poisoned_wind_icon_pos(cls):
         pass
 
     @classmethod
-    @_get_spell_pos
-    def get_sylvan_power_pos(cls):
+    @_get_spell_icon_pos
+    def get_sylvan_power_icon_pos(cls):
         pass
 
     @classmethod
@@ -239,4 +285,19 @@ class Spells:
     @classmethod
     @_select_spell
     def select_sylvan_power(cls):
+        pass
+
+    @classmethod
+    @_cast_spell
+    def cast_earthquake(cls, x, y):
+        pass
+
+    @classmethod
+    @_cast_spell
+    def cast_poisoned_wind(cls, x, y):
+        pass
+
+    @classmethod
+    @_cast_spell
+    def cast_sylvan_power(cls, x, y):
         pass
