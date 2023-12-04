@@ -30,3 +30,4 @@ class Status(Enum):
     FAILED_TO_SELECT_SPELL = "failed_to_select_spell"
     FAILED_TO_CAST_SPELL = "failed_to_cast_spell"
     TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY = "timed_out_while_detecting_if_spell_cast_successfully"
+    SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
