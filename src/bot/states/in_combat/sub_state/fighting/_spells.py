@@ -16,10 +16,10 @@ def is_spell_available(decorated_method):
         return len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.spell_bar_area),
-                needle=getattr(cls, f"spell_{spell_name}_image"),
+                needle=getattr(cls, f"{spell_name}_image"),
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
-                mask=getattr(cls, f"spell_{spell_name}_image_mask")
+                mask=getattr(cls, f"{spell_name}_image_mask")
             )
         ) > 0
     return wrapper
@@ -33,10 +33,10 @@ def get_spell_pos(decorated_method):
         spell_name = decorated_method.__name__[first_underscore_index + 1:last_underscore_index]
         rectangle = ImageDetection.find_image(
             haystack=ScreenCapture.custom_area(cls.spell_bar_area),
-            needle=getattr(cls, f"spell_{spell_name}_image"),
+            needle=getattr(cls, f"{spell_name}_image"),
             confidence=0.99,
             method=cv2.TM_CCORR_NORMED,
-            mask=getattr(cls, f"spell_{spell_name}_image_mask")
+            mask=getattr(cls, f"{spell_name}_image_mask")
         )
         if len(rectangle) > 0:
             return ImageDetection.get_rectangle_center_point((
@@ -51,14 +51,14 @@ def get_spell_pos(decorated_method):
 
 class Spells:
 
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    spell_earthquake_image = load_image(image_folder_path, "spell_earthquake.png")
-    spell_earthquake_image_mask = ImageDetection.create_mask(spell_earthquake_image)
-    spell_poisoned_wind_image = load_image(image_folder_path, "spell_poisoned_wind.png")
-    spell_poisoned_wind_image_mask = ImageDetection.create_mask(spell_poisoned_wind_image)
-    spell_sylvan_power_image = load_image(image_folder_path, "spell_sylvan_power.png")
-    spell_sylvan_power_image_mask = ImageDetection.create_mask(spell_sylvan_power_image)
     spell_bar_area = (643, 658, 291, 99)
+    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images\\spells"
+    earthquake_image = load_image(image_folder_path, "earthquake.png")
+    earthquake_image_mask = ImageDetection.create_mask(earthquake_image)
+    poisoned_wind_image = load_image(image_folder_path, "poisoned_wind.png")
+    poisoned_wind_image_mask = ImageDetection.create_mask(poisoned_wind_image)
+    sylvan_power_image = load_image(image_folder_path, "sylvan_power.png")
+    sylvan_power_image_mask = ImageDetection.create_mask(sylvan_power_image)
 
     @classmethod
     @is_spell_available
