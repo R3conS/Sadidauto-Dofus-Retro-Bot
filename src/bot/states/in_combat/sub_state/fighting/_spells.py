@@ -10,10 +10,11 @@ from src.screen_capture import ScreenCapture
 
 def __get_spell_name(decorated_method_name):
     """Utility function for decorators."""
-    first_underscore_index = decorated_method_name.index("_")
-    last_underscore_index = decorated_method_name.rindex("_")
-    return decorated_method_name[first_underscore_index + 1:last_underscore_index]
-
+    names = ["earthquake", "poisoned_wind", "sylvan_power"]
+    for name in names:
+        if name in decorated_method_name:
+            return name
+    raise ValueError(f"Failed to find allowed spell name in method name: {decorated_method_name}.")
 
 def _is_spell_available(decorated_method):
     @wraps(decorated_method)
@@ -74,6 +75,24 @@ def _is_spell_selected(decorated_method):
             ) > 0:
                 return True
         return False
+    return wrapper
+
+
+def _is_spell_castable_on_pos(decorated_method):
+    @wraps(decorated_method)
+    def wrapper(cls, *args, **kwargs):
+        spell_name = __get_spell_name(decorated_method.__name__)
+        pyag.moveTo(*args)
+        screenshot = ScreenCapture.around_pos(pyag.position(), 75)
+        return len(
+            ImageDetection.find_image(
+                haystack=screenshot,
+                needle=getattr(cls, f"{spell_name}_selected_can_cast_image"),
+                confidence=0.98,
+                method=cv2.TM_CCORR_NORMED,
+                mask=getattr(cls, f"{spell_name}_selected_can_cast_image_mask"),
+            )
+        ) > 0
     return wrapper
 
 
@@ -140,4 +159,22 @@ class Spells:
     @classmethod
     @_is_spell_selected
     def is_sylvan_power_selected(cls):
+        pass
+
+    @classmethod
+    @_is_spell_castable_on_pos
+    def is_earthquake_castable_on_pos(cls, x, y):
+        """For accurate results make sure the spell is selected."""
+        pass
+
+    @classmethod
+    @_is_spell_castable_on_pos
+    def is_poisoned_wind_castable_on_pos(cls, x, y):
+        """For accurate results make sure the spell is selected"""
+        pass
+
+    @classmethod
+    @_is_spell_castable_on_pos
+    def is_sylvan_power_castable_on_pos(cls, x, y):
+        """For accurate results make sure the spell is selected"""
         pass
