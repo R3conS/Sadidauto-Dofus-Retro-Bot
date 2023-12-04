@@ -23,3 +23,7 @@ class Status(Enum):
     FAILED_TO_GET_MODELS_TOGGLE_ICON_POS = "failed_to_get_models_toggle_icon_pos"
     TIMED_OUT_WHILE_DISABLING_MODELS = "timed_out_while_disabling_models"
     MODELS_TOGGLE_ICON_NOT_VISIBLE = "models_toggle_icon_not_visible"
+
+    SUCCESSFULLY_SELECTED_SPELL = "successfully_selected_spell"
+    FAILED_TO_GET_SPELL_POS = "failed_to_get_spell_pos"
+    FAILED_TO_SELECT_SPELL = "failed_to_select_spell"
