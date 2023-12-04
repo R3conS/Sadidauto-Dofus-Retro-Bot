@@ -142,7 +142,7 @@ def _cast_spell(decorated_method):
     def wrapper(cls, *args, **kwargs):
         spell_name = __get_spell_name(decorated_method.__name__)
         spell_name_formatted = spell_name.replace("_", " ").title()
-        log.info(f"Attempting to cast: '{spell_name.title()}' ... ")
+        log.info(f"Attempting to cast: '{spell_name_formatted}' ... ")
 
         log.info(f"Selecting the spell ... ")
         result = getattr(cls, f"select_{spell_name}")()
