@@ -10,7 +10,9 @@ from src.screen_capture import ScreenCapture
 def is_spell_available(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = decorated_method.__name__.split("_")[1]
+        first_underscore_index = decorated_method.__name__.index("_")
+        last_underscore_index = decorated_method.__name__.rindex("_")
+        spell_name = decorated_method.__name__[first_underscore_index + 1:last_underscore_index]
         return len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.spell_bar_area),
@@ -20,6 +22,30 @@ def is_spell_available(decorated_method):
                 mask=getattr(cls, f"spell_{spell_name}_image_mask")
             )
         ) > 0
+    return wrapper
+
+
+def get_spell_pos(decorated_method):
+    @wraps(decorated_method)
+    def wrapper(cls, *args, **kwargs):
+        first_underscore_index = decorated_method.__name__.index("_")
+        last_underscore_index = decorated_method.__name__.rindex("_")
+        spell_name = decorated_method.__name__[first_underscore_index + 1:last_underscore_index]
+        rectangle = ImageDetection.find_image(
+            haystack=ScreenCapture.custom_area(cls.spell_bar_area),
+            needle=getattr(cls, f"spell_{spell_name}_image"),
+            confidence=0.99,
+            method=cv2.TM_CCORR_NORMED,
+            mask=getattr(cls, f"spell_{spell_name}_image_mask")
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point((
+                rectangle[0] + cls.spell_bar_area[0],
+                rectangle[1] + cls.spell_bar_area[1],
+                rectangle[2],
+                rectangle[3]
+            ))
+        return None
     return wrapper
 
 
@@ -47,4 +73,19 @@ class Spells:
     @classmethod
     @is_spell_available
     def is_sylvan_power_available(cls):
+        pass
+
+    @classmethod
+    @get_spell_pos
+    def get_earthquake_pos(cls):
+        pass
+
+    @classmethod
+    @get_spell_pos
+    def get_poisoned_wind_pos(cls):
+        pass
+
+    @classmethod
+    @get_spell_pos
+    def get_sylvan_power_pos(cls):
         pass
