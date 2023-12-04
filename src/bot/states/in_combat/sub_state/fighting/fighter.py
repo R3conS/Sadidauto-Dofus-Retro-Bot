@@ -21,14 +21,6 @@ class Fighter:
     # ToDo: add method to detect red/blue circles if model disabler is off.
     # The icon to turn it off/on disappears after a reconnect.
 
-    # ToDo: keep in mind that after a reconnect the turn count indicator
-    # near the turn bar shrink icon is reset to 0 if the character's turn
-    # ended while disconnected. If character reconnects while it's his turn
-    # the turn count indicator is not reset.
-
-    # ToDo: handle case where model disabler icon is not visible due to
-    # reconnect.
-
     image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
 
     def __init__(self, script: str, character_name: str):
@@ -62,6 +54,9 @@ class Fighter:
                     is_tactical_mode_enabled = True
 
             if TurnDetector.is_first_turn():
+                # ToDo: add CharacterMover class that moves character on first turn.
+                # Or just handle moving and casting on this handler and create
+                # another one for not first turn.
                 result = FirstTurnHandler.handle(self.__script, self.__character_name)
 
             os._exit(0)
