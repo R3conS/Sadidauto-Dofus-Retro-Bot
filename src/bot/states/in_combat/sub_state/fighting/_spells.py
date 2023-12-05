@@ -286,19 +286,19 @@ class Spells:
     @classmethod
     @_is_spell_castable_on_pos
     def is_poisoned_wind_castable_on_pos(cls, x, y):
-        """For accurate results make sure the spell is selected"""
+        """For accurate results make sure the spell is selected."""
         pass
 
     @classmethod
     @_is_spell_castable_on_pos
     def is_sylvan_power_castable_on_pos(cls, x, y):
-        """For accurate results make sure the spell is selected"""
+        """For accurate results make sure the spell is selected."""
         pass
 
     @classmethod
     @_is_spell_castable_on_pos
     def is_bramble_castable_on_pos(cls, x, y):
-        """For accurate results make sure the spell is selected"""
+        """For accurate results make sure the spell is selected."""
         pass
 
     @classmethod

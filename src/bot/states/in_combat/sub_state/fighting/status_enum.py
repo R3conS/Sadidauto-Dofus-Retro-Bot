@@ -31,3 +31,9 @@ class Status(Enum):
     FAILED_TO_CAST_SPELL = "failed_to_cast_spell"
     TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY = "timed_out_while_detecting_if_spell_cast_successfully"
     SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
+
+    FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
+    TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR = "timed_out_while_waiting_for_info_card_to_appear"
+
+    FAILED_TO_HANDLE_FIRST_TURN = "failed_to_handle_first_turn"
+    FAILED_TO_DISABLE_MODELS = "failed_to_disable_models"

@@ -12,13 +12,11 @@ from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image
-from .._fight_preferences.turn_bar import TurnBar
-from ..status_enum import Status
+from ._fight_preferences.turn_bar import TurnBar
+from .status_enum import Status
 
 
 class Finder:
-
-    # ToDo: return Status values instead of raising exceptions in some methods.
 
     image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
     red_circle_image = load_image(image_folder_path, "red_circle.png")
@@ -52,7 +50,8 @@ class Finder:
             pyag.moveTo(location[0], location[1])
             self.wait_for_info_card_to_appear()
             if not self.is_info_card_visible():
-                raise Exception("Timed out while waiting for info card to appear.")
+                log.info("Timed out while waiting for info card to appear.")
+                return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = self.screenshot_name_area_on_info_card()
             if self.read_name_area_screenshot(name_area) == self.character_name:
                 return location
@@ -61,7 +60,8 @@ class Finder:
             pyag.moveTo(location[0], location[1])
             self.wait_for_info_card_to_appear()
             if not self.is_info_card_visible():
-                raise Exception("Timed out while waiting for info card to appear.")
+                log.info("Timed out while waiting for info card to appear.")
+                return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = self.screenshot_name_area_on_info_card()
             if self.read_name_area_screenshot(name_area) == self.character_name:
                 return location
@@ -70,19 +70,24 @@ class Finder:
 
     def find_by_turn_bar(self) -> tuple[int, int]:
         """Find the character's card on the turn bar."""
+        if TurnBar.is_shrunk():
+            if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
+                return None
+
         turn_arrow = self.get_turn_indicator_arrow_location()
         if turn_arrow is None:
-            raise Exception("Failed to detect turn indicator arrow.")
+            log.info("Failed to get turn indicator arrow location.")
+            return Status.FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION
         
         pyag.moveTo(turn_arrow[0], turn_arrow[1])
         pyag.moveRel(-10, 30) # Moving mouse onto the turn card.
         self.wait_for_info_card_to_appear()
         if not self.is_info_card_visible():
-            raise Exception("Timed out while waiting for info card to appear.")
+            log.info("Timed out while waiting for info card to appear.")
+            return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 
         name_area = self.screenshot_name_area_on_info_card()
-        name = self.read_name_area_screenshot(name_area)
-        if name == self.character_name:
+        if self.read_name_area_screenshot(name_area) == self.character_name:
             return pyag.position()
         
         raise Exception(f"Failed to read correct name. Expected: '{self.character_name}', got: '{name}'.")
@@ -123,10 +128,7 @@ class Finder:
 
     @classmethod
     def get_turn_indicator_arrow_location(cls):
-        if TurnBar.is_shrunk():
-            if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
-                return None
-            
+        """Make sure the turn bar is not shrunk for accurate results."""
         rectangle = ImageDetection.find_image(
             haystack=cls.screenshot_turn_bar_area(),
             needle=cls.turn_indicator_arrow_image,
