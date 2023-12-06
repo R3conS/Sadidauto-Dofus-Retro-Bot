@@ -25,15 +25,15 @@ class Mover:
         self.__starting_side_color = StartingSideColorGetter(script).get_starting_side_color(character_pos)
 
     def move(self):
-        coords = self._get_movement_coords()
+        coords = self.get_movement_coords()
         
-        if self._get_distance_between_cells(coords, self.__character_pos) <= 10:
+        if self.get_distance_between_cells(coords, self.__character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
             return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
         
         log.info(f"Attempting to move character ... ")
         pyag.moveTo(coords[0], coords[1])
-        if self._is_cell_highlighted(coords):
+        if self.is_cell_highlighted(coords):
             mp_area_before_moving = ScreenCapture.custom_area(self.mp_area)
             pyag.click()
             start_time = perf_counter()
@@ -54,7 +54,7 @@ class Mover:
         log.info(f"Failed to detect if destination cell is highlighted: {coords}.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
-    def _get_movement_coords(self):
+    def get_movement_coords(self):
         current_map_coords = MapChanger.get_current_map_coords()
         for map_coords, data in self.__movement_data.items():
             if map_coords == current_map_coords:
@@ -71,7 +71,7 @@ class Mover:
                                 )
         raise Exception(f"No in-combat movement data for map '{current_map_coords}'.")
 
-    def _is_cell_highlighted(self, click_coords):
+    def is_cell_highlighted(self, click_coords):
         """
         Checking with a timer to give time for the game to draw orange
         color over the cells after mouse was moved over the destination cell.
@@ -83,5 +83,5 @@ class Mover:
                 return True
         return False
 
-    def _get_distance_between_cells(self, cell_1, cell_2):
+    def get_distance_between_cells(self, cell_1, cell_2):
         return sqrt((cell_2[0] - cell_1[0])**2 + (cell_2[1] - cell_1[1])**2)
