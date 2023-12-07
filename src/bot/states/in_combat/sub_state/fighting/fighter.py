@@ -12,8 +12,9 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from .status_enum import Status
 from ._turn_detector import TurnDetector
-from ._first_turn_handler.handler import Handler as FirstTurnHandler
 from ._fight_preferences.tactical_mode import TacticalMode
+from ._first_turn_handler.handler import Handler as FirstTurnHandler
+from ._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
 
 
 class Fighter:
@@ -46,8 +47,12 @@ class Fighter:
                     is_tactical_mode_enabled = True
 
             if TurnDetector.is_first_turn():
+                # ToDo: add logic that passes turn if actions successfully handled.
                 result = FirstTurnHandler.handle(self.__script, self.__character_name)
                 if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
-                
+            else:
+                result = SubsequentTurnHandler.handle(self.__character_name)
+
+
             os._exit(0)

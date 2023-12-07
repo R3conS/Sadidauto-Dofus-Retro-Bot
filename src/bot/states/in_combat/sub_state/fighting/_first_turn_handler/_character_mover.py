@@ -7,6 +7,7 @@ from math import sqrt
 import cv2
 import pyautogui as pyag
 
+from utilities import move_mouse_off_game_area
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
@@ -47,7 +48,7 @@ class Mover:
                 )
                 if len(rectangle) <= 0: # If images are different then moving animation has finished.
                     log.info(f"Successfully moved character to: {coords}.")
-                    pyag.moveTo(929, 752) # Move mouse off game area.
+                    move_mouse_off_game_area() # To make sure that character is not hovered over.
                     return Status.SUCCESSFULLY_MOVED_CHARACTER
             log.info(f"Timed out while detecting if character moved to: {coords}.")
             return Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED

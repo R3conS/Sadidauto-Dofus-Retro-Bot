@@ -14,7 +14,10 @@ class Status(Enum):
     SUCCESSFULLY_SELECTED_SPELL = "successfully_selected_spell"
     SUCCESSFULLY_CAST_SPELL = "successfully_cast_spell"
     SUCCESSFULLY_TURNED_ON_TACTICAL_MODE = "successfully_turned_on_tactical_mode"
-    
+    SUCCESSFULLY_FINISHED_SUBSEQUENT_TURN_SPELL_CASTING = "successfully_finished_subsequent_turn_spell_casting"
+    SUCCESSFULLY_CAST_CORE_SPELLS = "successfully_cast_core_spells"
+    SUCCESSFULLY_CAST_NON_CORE_SPELLS = "successfully_cast_non_core_spells"
+
     FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
     FAILED_TO_GET_MODELS_TOGGLE_ICON_POS = "failed_to_get_models_toggle_icon_pos"
@@ -30,6 +33,9 @@ class Status(Enum):
     FAILED_TO_HANDLE_FIRST_TURN_ACTIONS = "failed_to_handle_first_turn_actions"
     FAILED_FIRST_TURN_SPELL_CASTING_MODELS_TOGGLE_ICON_VISIBLE = "failed_first_turn_spell_casting_models_toggle_icon_visible"
     FAILED_FIRST_TURN_SPELL_CASTING_MODELS_TOGGLE_ICON_NOT_VISIBLE = "failed_first_turn_spell_casting_models_toggle_icon_not_visible"
+    FAILED_TO_CAST_CORE_SPELLS = "failed_to_cast_core_spells"
+    FAILED_TO_CAST_NON_CORE_SPELLS = "failed_to_cast_non_core_spells"
+    FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS = "failed_to_handle_subsequent_turn_actions"
 
     TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE = "timed_out_while_turning_on_tactical_mode"
     TIMED_OUT_WHILE_DISABLING_MODELS = "timed_out_while_disabling_models"
@@ -44,3 +50,4 @@ class Status(Enum):
     MODELS_TOGGLE_ICON_NOT_VISIBLE = "models_toggle_icon_not_visible"
     CHARACTER_IS_ALREADY_ON_CORRECT_CELL = "character_is_already_on_correct_cell"
     SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
+    NO_SPELLS_AVAILABLE = "no_spells_available"

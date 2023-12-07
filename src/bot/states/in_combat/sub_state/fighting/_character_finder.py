@@ -10,7 +10,7 @@ import pyautogui as pyag
 from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.utilities import load_image
+from src.utilities import load_image, move_mouse_off_game_area
 from ._fight_preferences.turn_bar import TurnBar
 from .status_enum import Status
 
@@ -76,7 +76,7 @@ class Finder:
 
         if TurnBar.is_shrunk():
             if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
-                return None
+                return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
 
         turn_arrow = cls.get_turn_indicator_arrow_location()
         if turn_arrow is None:
@@ -88,7 +88,7 @@ class Finder:
         cls.wait_for_info_card_to_appear()
         if not cls.is_info_card_visible():
             log.info("Timed out while waiting for info card to appear during detection by turn bar.")
-            pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
+            move_mouse_off_game_area() # To stop info card from staying on screen.
             return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 
         name_area = cls.screenshot_name_area_on_info_card()
@@ -96,13 +96,14 @@ class Finder:
         if name == character_name:
             turn_card_pos = pyag.position()
             log.info(f"Found character at: {turn_card_pos[0], turn_card_pos[1]}")
-            pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
+            move_mouse_off_game_area() # To stop info card from staying on screen.
             return turn_card_pos
         
         raise Exception(f"Failed to read correct name. Expected: '{character_name}', got: '{name}'.")
 
     @classmethod
-    def get_red_circle_locations(cls):
+    def get_red_circle_locations(cls) -> list[tuple[int, int]]:
+        """Get red model circle locations."""
         rectangles = ImageDetection.find_image(
             haystack=cls.screenshot_circle_detection_area(),
             needle=cls.red_circle_image,
@@ -119,7 +120,8 @@ class Finder:
         return center_points
 
     @classmethod
-    def get_blue_circle_locations(cls):
+    def get_blue_circle_locations(cls) -> list[tuple[int, int]]:
+        """Get blue model circle locations."""
         rectangles = ImageDetection.find_image(
             haystack=cls.screenshot_circle_detection_area(),
             needle=cls.blue_circle_image,

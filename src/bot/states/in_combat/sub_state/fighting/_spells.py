@@ -7,7 +7,7 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities import load_image
+from src.utilities import load_image, move_mouse_off_game_area
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from .status_enum import Status
@@ -175,7 +175,7 @@ def _cast_spell(decorated_method):
             )
             if len(rectangle) <= 0: # If images are different then spell animation has finished.
                 log.info(f"Successfully cast: '{spell_name_formatted}'.")
-                pyag.moveTo(929, 752) # Move mouse off game area.
+                move_mouse_off_game_area() # To make sure the vision of spell bar is not blocked.
                 return Status.SUCCESSFULLY_CAST_SPELL
         log.info(f"Timed out while detecting if '{spell_name_formatted}' was cast successfully.")
         return Status.TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY
