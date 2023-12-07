@@ -1,7 +1,6 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-import os
 from time import perf_counter
 
 import cv2
@@ -29,15 +28,13 @@ class Finder:
     circle_detection_area = (0, 0, 933, 600)
     turn_bar_area = (0, 516, 933, 81)
 
-    def __init__(self, character_name: str):
-        self.character_name = character_name
-
-    def find_by_circles(self) -> tuple[int, int]:
+    @classmethod
+    def find_by_circles(cls, character_name: str) -> tuple[int, int]:
         """Find character position on the map by red/blue model circles."""
         log.info("Detecting character position by model circles.")
 
-        red_circle_locations = self.get_red_circle_locations()
-        blue_circle_locations = self.get_blue_circle_locations()
+        red_circle_locations = cls.get_red_circle_locations()
+        blue_circle_locations = cls.get_blue_circle_locations()
         if len(red_circle_locations) == 0 or len(blue_circle_locations) == 0:
             raise Exception("Failed to detect circles.")
         
@@ -50,29 +47,30 @@ class Finder:
 
         for location in first_locations_list:
             pyag.moveTo(location[0], location[1])
-            self.wait_for_info_card_to_appear()
-            if not self.is_info_card_visible():
+            cls.wait_for_info_card_to_appear()
+            if not cls.is_info_card_visible():
                 log.info("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
-            name_area = self.screenshot_name_area_on_info_card()
-            if self.read_name_area_screenshot(name_area) == self.character_name:
+            name_area = cls.screenshot_name_area_on_info_card()
+            if cls.read_name_area_screenshot(name_area) == character_name:
                 log.info(f"Found character at: {location}")
                 return location
             
         for location in second_locations_list:
             pyag.moveTo(location[0], location[1])
-            self.wait_for_info_card_to_appear()
-            if not self.is_info_card_visible():
+            cls.wait_for_info_card_to_appear()
+            if not cls.is_info_card_visible():
                 log.info("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
-            name_area = self.screenshot_name_area_on_info_card()
-            if self.read_name_area_screenshot(name_area) == self.character_name:
+            name_area = cls.screenshot_name_area_on_info_card()
+            if cls.read_name_area_screenshot(name_area) == character_name:
                 log.info(f"Found character at: {location}")
                 return location
             
         raise Exception("Failed to find character by circles.")
 
-    def find_by_turn_bar(self) -> tuple[int, int]:
+    @classmethod
+    def find_by_turn_bar(cls, character_name: str) -> tuple[int, int]:
         """Find the character's card on the turn bar."""
         log.info("Detecting character position by turn bar.")
 
@@ -80,28 +78,28 @@ class Finder:
             if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
                 return None
 
-        turn_arrow = self.get_turn_indicator_arrow_location()
+        turn_arrow = cls.get_turn_indicator_arrow_location()
         if turn_arrow is None:
             log.info("Failed to get turn indicator arrow location.")
             return Status.FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION
         
         pyag.moveTo(turn_arrow[0], turn_arrow[1])
         pyag.moveRel(-10, 30) # Moving mouse onto the turn card.
-        self.wait_for_info_card_to_appear()
-        if not self.is_info_card_visible():
+        cls.wait_for_info_card_to_appear()
+        if not cls.is_info_card_visible():
             log.info("Timed out while waiting for info card to appear during detection by turn bar.")
             pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
             return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 
-        name_area = self.screenshot_name_area_on_info_card()
-        name = self.read_name_area_screenshot(name_area)
-        if name == self.character_name:
+        name_area = cls.screenshot_name_area_on_info_card()
+        name = cls.read_name_area_screenshot(name_area)
+        if name == character_name:
             turn_card_pos = pyag.position()
             log.info(f"Found character at: {turn_card_pos[0], turn_card_pos[1]}")
             pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
             return turn_card_pos
         
-        raise Exception(f"Failed to read correct name. Expected: '{self.character_name}', got: '{name}'.")
+        raise Exception(f"Failed to read correct name. Expected: '{character_name}', got: '{name}'.")
 
     @classmethod
     def get_red_circle_locations(cls):
