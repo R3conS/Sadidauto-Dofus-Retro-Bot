@@ -34,6 +34,8 @@ class Finder:
 
     def find_by_circles(self) -> tuple[int, int]:
         """Find character position on the map by red/blue model circles."""
+        log.info("Detecting character position by model circles.")
+
         red_circle_locations = self.get_red_circle_locations()
         blue_circle_locations = self.get_blue_circle_locations()
         if len(red_circle_locations) == 0 or len(blue_circle_locations) == 0:
@@ -50,26 +52,30 @@ class Finder:
             pyag.moveTo(location[0], location[1])
             self.wait_for_info_card_to_appear()
             if not self.is_info_card_visible():
-                log.info("Timed out while waiting for info card to appear.")
+                log.info("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = self.screenshot_name_area_on_info_card()
             if self.read_name_area_screenshot(name_area) == self.character_name:
+                log.info(f"Found character at: {location}")
                 return location
             
         for location in second_locations_list:
             pyag.moveTo(location[0], location[1])
             self.wait_for_info_card_to_appear()
             if not self.is_info_card_visible():
-                log.info("Timed out while waiting for info card to appear.")
+                log.info("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = self.screenshot_name_area_on_info_card()
             if self.read_name_area_screenshot(name_area) == self.character_name:
+                log.info(f"Found character at: {location}")
                 return location
             
         raise Exception("Failed to find character by circles.")
 
     def find_by_turn_bar(self) -> tuple[int, int]:
         """Find the character's card on the turn bar."""
+        log.info("Detecting character position by turn bar.")
+
         if TurnBar.is_shrunk():
             if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
                 return None
@@ -83,12 +89,17 @@ class Finder:
         pyag.moveRel(-10, 30) # Moving mouse onto the turn card.
         self.wait_for_info_card_to_appear()
         if not self.is_info_card_visible():
-            log.info("Timed out while waiting for info card to appear.")
+            log.info("Timed out while waiting for info card to appear during detection by turn bar.")
+            pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
             return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 
         name_area = self.screenshot_name_area_on_info_card()
-        if self.read_name_area_screenshot(name_area) == self.character_name:
-            return pyag.position()
+        name = self.read_name_area_screenshot(name_area)
+        if name == self.character_name:
+            turn_card_pos = pyag.position()
+            log.info(f"Found character at: {turn_card_pos[0], turn_card_pos[1]}")
+            pyag.moveTo(929, 752) # Move mouse off game area to disable turn card.
+            return turn_card_pos
         
         raise Exception(f"Failed to read correct name. Expected: '{self.character_name}', got: '{name}'.")
 

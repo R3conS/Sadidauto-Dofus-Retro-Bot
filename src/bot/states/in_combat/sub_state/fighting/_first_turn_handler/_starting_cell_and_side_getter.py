@@ -9,6 +9,11 @@ class Getter:
     def __init__(self, script: str):
         self.__starting_cells = FightingDataGetter.get_data_object(script).get_starting_cells()
 
+    def get_starting_cell_coords(self, character_pos):
+        map_coords = MapChanger.get_current_map_coords()
+        starting_cells = self.get_starting_cells(map_coords)
+        return self.get_closest_cell(character_pos, starting_cells)
+
     def get_starting_side_color(self, character_pos):
         map_coords = MapChanger.get_current_map_coords()
         starting_cells = self.get_starting_cells(map_coords)

@@ -11,7 +11,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
 from ..data.getter import Getter as FightingDataGetter
-from ._starting_side_color_getter import Getter as StartingSideColorGetter
+from ._starting_cell_and_side_getter import Getter as StartingCellAndSideGetter
 from ..status_enum import Status
 
 
@@ -19,19 +19,19 @@ class Mover:
 
     mp_area = (565, 612, 26, 26)
 
-    def __init__(self, script, character_pos):
-        self.__character_pos = character_pos
+    def __init__(self, script, initial_character_pos):
+        self.__initial_character_pos = initial_character_pos
         self.__movement_data = FightingDataGetter.get_data_object(script).get_movement_data()
-        self.__starting_side_color = StartingSideColorGetter(script).get_starting_side_color(character_pos)
+        self.__starting_side_color = StartingCellAndSideGetter(script).get_starting_side_color(initial_character_pos)
 
     def move(self):
         coords = self.get_movement_coords()
         
-        if self.get_distance_between_cells(coords, self.__character_pos) <= 10:
+        if self.get_distance_between_cells(coords, self.__initial_character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
             return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
         
-        log.info(f"Attempting to move character ... ")
+        log.info(f"Attempting to move character to: {coords} ... ")
         pyag.moveTo(coords[0], coords[1])
         if self.is_cell_highlighted(coords):
             mp_area_before_moving = ScreenCapture.custom_area(self.mp_area)
@@ -46,12 +46,12 @@ class Mover:
                     method=cv2.TM_CCOEFF_NORMED,
                 )
                 if len(rectangle) <= 0: # If images are different then moving animation has finished.
-                    log.info(f"Successfully moved character to cell: {coords}.")
+                    log.info(f"Successfully moved character to: {coords}.")
                     pyag.moveTo(929, 752) # Move mouse off game area.
                     return Status.SUCCESSFULLY_MOVED_CHARACTER
-            log.info(f"Timed out while detecting if character moved to cell: {coords}.")
+            log.info(f"Timed out while detecting if character moved to: {coords}.")
             return Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
-        log.info(f"Failed to detect if destination cell is highlighted: {coords}.")
+        log.info(f"Failed to detect if destination cell {coords} is highlighted.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
     def get_movement_coords(self):
@@ -63,10 +63,10 @@ class Mover:
                             if isinstance(click_coords, tuple):
                                 return click_coords
                             try:
-                                return click_coords[self.__character_pos]
+                                return click_coords[self.__initial_character_pos]
                             except KeyError:
                                 raise Exception(
-                                    f"No movement data for character position {self.__character_pos} "
+                                    f"No movement data for character position {self.__initial_character_pos} "
                                     f"on starting side color '{self.__starting_side_color}' on map '{map_coords}'."
                                 )
         raise Exception(f"No in-combat movement data for map '{current_map_coords}'.")

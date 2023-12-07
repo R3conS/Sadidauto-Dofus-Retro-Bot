@@ -18,19 +18,11 @@ from ._fight_preferences.tactical_mode import TacticalMode
 
 class Fighter:
 
-    # ToDo: add method to detect red/blue circles if model disabler is off.
-    # The icon to turn it off/on disappears after a reconnect.
-
     image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
 
     def __init__(self, script: str, character_name: str):
         self.__script = script
         self.__character_name = character_name
-        fighting_data_getter = FightingDataGetter.get_data_object(script)
-        self.__movement_data = fighting_data_getter.get_movement_data()
-        self.__spell_casting_data = fighting_data_getter.get_spell_casting_data()
-        self.__starting_cells = fighting_data_getter.get_starting_cells()
-        self.__first_turn_handler = FirstTurnHandler(script, character_name)
 
     def fight(self):
         is_tactical_mode_enabled = False
@@ -54,9 +46,8 @@ class Fighter:
                     is_tactical_mode_enabled = True
 
             if TurnDetector.is_first_turn():
-                # ToDo: add CharacterMover class that moves character on first turn.
-                # Or just handle moving and casting on this handler and create
-                # another one for not first turn.
                 result = FirstTurnHandler.handle(self.__script, self.__character_name)
-
+                if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
+                    return Status.FAILED_TO_FINISH_FIGHTING
+                
             os._exit(0)
