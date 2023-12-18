@@ -78,6 +78,7 @@ class Caster:
 
     def _handle_bramble(self):
         # ToDo: Implement. Logic is in .drawio file in "Downloads".
+        # Or maybe in google drive folder.
         pass
 
     @classmethod
