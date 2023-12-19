@@ -17,6 +17,8 @@ class Status(Enum):
     SUCCESSFULLY_FINISHED_SUBSEQUENT_TURN_SPELL_CASTING = "successfully_finished_subsequent_turn_spell_casting"
     SUCCESSFULLY_CAST_CORE_SPELLS = "successfully_cast_core_spells"
     SUCCESSFULLY_CAST_NON_CORE_SPELLS = "successfully_cast_non_core_spells"
+    SUCCESSFULLY_HANDLED_BRAMBLE = "successfully_handled_bramble"
+    SUCCESSFULLY_HANDLED_SUBSEQUENT_TURN_ACTIONS = "successfully_handled_subsequent_turn_actions"
 
     FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"

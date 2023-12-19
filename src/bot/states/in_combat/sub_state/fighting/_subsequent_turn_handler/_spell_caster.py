@@ -70,7 +70,7 @@ class Caster:
     @classmethod
     def _handle_non_core_spells(cls, character_name: str):
         result = cls._handle_bramble(character_name)
-        if result != Status.SUCCESSFULLY_CAST_NON_CORE_SPELLS:
+        if result != Status.SUCCESSFULLY_HANDLED_BRAMBLE:
             return Status.FAILED_TO_CAST_NON_CORE_SPELLS
         return Status.SUCCESSFULLY_CAST_NON_CORE_SPELLS
         
@@ -93,7 +93,7 @@ class Caster:
             else:
                 break
         move_mouse_off_game_area()
-        return Status.SUCCESSFULLY_CAST_NON_CORE_SPELLS
+        return Status.SUCCESSFULLY_HANDLED_BRAMBLE
                 
     @classmethod
     def _get_monster_locations(cls, character_name: str):
