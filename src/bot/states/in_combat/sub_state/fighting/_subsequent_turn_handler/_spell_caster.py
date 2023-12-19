@@ -91,11 +91,13 @@ class Caster:
             if not CharacterFinder.is_info_card_visible():
                 log.info("Timed out while waiting for info card to appear while getting monster locations.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
+            
             name_area = CharacterFinder.screenshot_name_area_on_info_card()
             if CharacterFinder.read_name_area_screenshot(name_area) == character_name:
                 turn_card_locations.remove(location)
                 monster_locations = turn_card_locations
                 break
+            
         move_mouse_off_game_area() # To prevent info card from blocking spell bar.
         return monster_locations
 
