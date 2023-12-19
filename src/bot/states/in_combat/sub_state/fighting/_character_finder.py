@@ -192,7 +192,7 @@ class Finder:
     @classmethod
     def wait_for_info_card_to_appear(cls):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 3:
+        while perf_counter() - start_time <= 1.5:
             if cls.is_info_card_visible():
                 return True
         return False
