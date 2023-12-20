@@ -1,4 +1,3 @@
-from .._character_finder import Finder as CharacterFinder
 from ..status_enum import Status
 from .._spells import Spells
 from ._spell_caster import Caster as SpellCaster

@@ -52,6 +52,7 @@ class Fighter:
                 if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
             else:
+                # ToDo: add logic that passes turn if actions successfully handled.
                 result = SubsequentTurnHandler.handle(self.__character_name)
                 if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
