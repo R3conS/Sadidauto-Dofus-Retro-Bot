@@ -1,3 +1,6 @@
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+
 from ..status_enum import Status
 from .._spells import Spells
 from ._spell_caster import Caster as SpellCaster
@@ -8,6 +11,8 @@ class Handler:
 
     @classmethod
     def handle(cls, character_name: str):
+        log.info("Handling subsequent turn actions ...")
+
         if not cls.is_any_spell_available():
             return Status.NO_SPELLS_AVAILABLE
         

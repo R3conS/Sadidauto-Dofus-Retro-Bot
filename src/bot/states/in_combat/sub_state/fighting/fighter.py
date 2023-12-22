@@ -7,7 +7,7 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities import load_image, move_mouse_off_game_area
+from src.utilities import load_image
 from .data.getter import Getter as FightingDataGetter
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
@@ -62,16 +62,13 @@ class Fighter:
                 result = SubsequentTurnHandler.handle(self.__character_name)
                 if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
-
-            if self._pass_turn() == Status.FAILED_TO_PASS_TURN:
+                    
+            result = TurnDetector.pass_turn(self.__character_name)
+            if result == Status.FAILED_TO_PASS_TURN:
                 return Status.FAILED_TO_FINISH_FIGHTING
 
     @classmethod
     def _close_fight_results_window(cls):
-        if not cls._is_close_button_visible():
-            log.error("Failed to close 'Fight Results' window because the close button is not visible.")
-            return Status.FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW
-
         close_button_pos = cls._get_close_button_pos()
         if close_button_pos is None:
             log.error("Failed to close 'Fight Results' screen because the close button's position was not found.")
@@ -93,8 +90,8 @@ class Fighter:
         rectangle = ImageDetection.find_image(
             haystack=ScreenCapture.game_window(),
             needle=cls.close_button_image,
-            confidence=0.98,
-            method=cv2.TM_CCOEFF_NORMED
+            confidence=0.99,
+            method=cv2.TM_SQDIFF_NORMED,
         )
         if len(rectangle) <= 0:
             return None
@@ -106,21 +103,7 @@ class Fighter:
             ImageDetection.find_image(
                 haystack=ScreenCapture.game_window(),
                 needle=cls.close_button_image,
-                confidence=0.98,
-                method=cv2.TM_CCOEFF_NORMED,
+                confidence=0.99,
+                method=cv2.TM_SQDIFF_NORMED,
             )
         ) > 0
-
-    @staticmethod
-    def _pass_turn():
-        pyag.moveTo(618, 726)
-        pyag.click()
-        move_mouse_off_game_area()
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 3:
-            if not pyag.pixelMatchesColor(542, 630, (255, 102, 0)):
-                log.info("Successfully passed turn.")
-                return Status.SUCCESSFULLY_PASSED_TURN
-        else:
-            log.error("Timed out while detecting if turn was passed.")
-            return Status.FAILED_TO_PASS_TURN

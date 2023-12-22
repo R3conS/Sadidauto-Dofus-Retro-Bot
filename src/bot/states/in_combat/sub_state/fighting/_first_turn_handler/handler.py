@@ -14,6 +14,8 @@ class Handler:
 
     @classmethod
     def handle(cls, script: str, character_name: str):
+        log.info("Handling first turn actions ...")
+        
         if not TurnBar.is_shrunk():
             log.info("Shrinking turn bar.")
             result = TurnBar.shrink()

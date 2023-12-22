@@ -10,7 +10,7 @@ import pyautogui as pyag
 from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.utilities import load_image
+from src.utilities import load_image, move_mouse_off_game_area
 from .status_enum import Status
 
 
@@ -25,19 +25,15 @@ class TurnDetector:
 
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
+        log.info("Waiting for character's turn ...")
         check_if_on_login_screen_timer = perf_counter()
         check_if_ap_counter_visible_timer = perf_counter()
         start_time = perf_counter()
         while perf_counter() - start_time <= 120:
-            if cls._is_turn_illustration_visible():
-                name_area_image = cls._screenshot_name_area()
-                name_area_image = cls._preprocess_image(name_area_image)
-                name = OCR.get_text_from_image(name_area_image, ocr_engine="tesserocr")
-                if name is not None and name != "":
-                    if name.strip() == character_name:
-                        log.info("Successfully detected character's turn.")
-                        return Status.SUCCESSFULLY_DETECTED_TURN
-            elif cls._is_turn_timer_filling_up():
+            if (
+                cls._is_character_turn_illustration_visible(character_name)
+                or cls._is_turn_timer_filling_up()
+            ):
                 log.info("Successfully detected character's turn.")
                 return Status.SUCCESSFULLY_DETECTED_TURN
             
@@ -66,6 +62,24 @@ class TurnDetector:
             return Status.TIMED_OUT_WHILE_DETECTING_TURN
 
     @classmethod
+    def pass_turn(cls, character_name: str):
+        pyag.moveTo(618, 726)
+        pyag.click()
+        move_mouse_off_game_area()
+
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if (
+                not cls._is_character_turn_illustration_visible(character_name)
+                and not cls._is_turn_timer_filling_up()
+            ):
+                log.info("Successfully passed turn.")
+                return Status.SUCCESSFULLY_PASSED_TURN
+        else:
+            log.error("Timed out while detecting if turn was passed.")
+            return Status.FAILED_TO_PASS_TURN
+
+    @classmethod
     def is_first_turn(cls):
         return len(
             ImageDetection.find_image(
@@ -75,6 +89,17 @@ class TurnDetector:
                 method=cv2.TM_CCOEFF_NORMED,
             )
         ) > 0
+
+    @classmethod
+    def _is_character_turn_illustration_visible(cls, character_name: str):
+        if cls._is_turn_illustration_visible():
+            name_area_image = cls._screenshot_name_area()
+            name_area_image = cls._preprocess_image(name_area_image)
+            name = OCR.get_text_from_image(name_area_image, ocr_engine="tesserocr")
+            if name is not None and name != "":
+                if name.strip() == character_name:
+                    return True
+        return False
 
     @staticmethod
     def _is_turn_illustration_visible():
@@ -109,8 +134,8 @@ class TurnDetector:
             ImageDetection.find_image(
                 haystack=ScreenCapture.game_window(),
                 needle=cls.close_button_image,
-                confidence=0.98,
-                method=cv2.TM_CCOEFF_NORMED,
+                confidence=0.99,
+                method=cv2.TM_SQDIFF_NORMED,
             )
         ) > 0
 
@@ -139,3 +164,4 @@ class TurnDetector:
                 mask=cls.ap_counter_image_mask
             )
         ) > 0
+

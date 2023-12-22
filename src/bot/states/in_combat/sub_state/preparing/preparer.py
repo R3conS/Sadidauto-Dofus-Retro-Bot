@@ -9,6 +9,7 @@ import numpy as np
 import pyautogui as pyag
 from PIL import Image
 
+from src.utilities import move_mouse_off_game_area
 from .status_enum import Status
 from .map_data.getter import Getter as MapDataGetter
 from src.bot.map_changer.map_changer import MapChanger
@@ -159,6 +160,7 @@ class Preparer:
         
         pyag.moveTo(*ready_button_pos)
         pyag.click()
+        move_mouse_off_game_area()
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:

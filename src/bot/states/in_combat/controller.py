@@ -8,6 +8,7 @@ import cv2
 from .sub_state.preparing.preparer import Preparer
 from .sub_state.fighting.fighter import Fighter
 from .sub_state.preparing.status_enum import Status as PreparingStatus
+from .sub_state.fighting.status_enum import Status as FightingStatus
 from src.bot.main_states_enum import State as MainBotStates
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
@@ -44,8 +45,15 @@ class Controller:
                     return
                 
             elif sub_state == _SubStates.FIGHTING:
-                log.critical("Fighting is not implemented yet.")
-                os._exit(1)
+                result = self.__fighter.fight()
+                if result == FightingStatus.SUCCESSFULLY_FINISHED_FIGHTING:
+                    log.info(f"Successfully finished fighting.")
+                    self.__set_main_bot_state_callback(MainBotStates.OUT_OF_COMBAT)
+                    return
+                elif result == FightingStatus.FAILED_TO_FINISH_FIGHTING:
+                    log.info(f"Failed to finish fighting. Attempting to recover ...")
+                    self.__set_main_bot_state_callback(MainBotStates.RECOVERY)
+                    return
 
             elif sub_state == _SubStates.RECOVERY:
                 log.info("'In Combat' controller failed to determine its sub state. Attempting to recover ...")

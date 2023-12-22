@@ -30,6 +30,7 @@ class Mover:
         
         if self.get_distance_between_cells(coords, self.__initial_character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
+            move_mouse_off_game_area() # To make sure that character is not hovered over and info card is not blocking spell bar.
             return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
         
         log.info(f"Attempting to move character to: {coords} ... ")
