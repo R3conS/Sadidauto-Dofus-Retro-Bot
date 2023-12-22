@@ -20,6 +20,7 @@ class Status(Enum):
     SUCCESSFULLY_HANDLED_BRAMBLE = "successfully_handled_bramble"
     SUCCESSFULLY_HANDLED_SUBSEQUENT_TURN_ACTIONS = "successfully_handled_subsequent_turn_actions"
     SUCCESSFULLY_CLOSED_FIGHT_RESULTS_WINDOW = "successfully_closed_fight_results_window"
+    SUCCESSFULLY_PASSED_TURN = "successfully_passed_turn"
 
     FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
@@ -41,6 +42,7 @@ class Status(Enum):
     FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS = "failed_to_handle_subsequent_turn_actions"
     FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW = "failed_to_close_fight_results_window"
     FAILED_TO_DETECT_AP_COUNTER = "failed_to_detect_ap_counter"
+    FAILED_TO_PASS_TURN = "failed_to_pass_turn"
 
     TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE = "timed_out_while_turning_on_tactical_mode"
     TIMED_OUT_WHILE_DISABLING_MODELS = "timed_out_while_disabling_models"

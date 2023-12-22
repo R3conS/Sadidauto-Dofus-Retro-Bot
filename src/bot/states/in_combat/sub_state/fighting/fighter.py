@@ -7,7 +7,7 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities import load_image
+from src.utilities import load_image, move_mouse_off_game_area
 from .data.getter import Getter as FightingDataGetter
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
@@ -55,18 +55,16 @@ class Fighter:
                     is_tactical_mode_enabled = True
 
             if TurnDetector.is_first_turn():
-                # ToDo: add logic that passes turn if actions successfully handled.
                 result = FirstTurnHandler.handle(self.__script, self.__character_name)
                 if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
             else:
-                # ToDo: add logic that passes turn if actions successfully handled.
-                # Maybe connect these two together.
                 result = SubsequentTurnHandler.handle(self.__character_name)
                 if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
 
-            os._exit(0)
+            if self._pass_turn() == Status.FAILED_TO_PASS_TURN:
+                return Status.FAILED_TO_FINISH_FIGHTING
 
     @classmethod
     def _close_fight_results_window(cls):
@@ -112,3 +110,17 @@ class Fighter:
                 method=cv2.TM_CCOEFF_NORMED,
             )
         ) > 0
+
+    @staticmethod
+    def _pass_turn():
+        pyag.moveTo(618, 726)
+        pyag.click()
+        move_mouse_off_game_area()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 3:
+            if not pyag.pixelMatchesColor(542, 630, (255, 102, 0)):
+                log.info("Successfully passed turn.")
+                return Status.SUCCESSFULLY_PASSED_TURN
+        else:
+            log.error("Timed out while detecting if turn was passed.")
+            return Status.FAILED_TO_PASS_TURN
