@@ -19,6 +19,7 @@ class Status(Enum):
     SUCCESSFULLY_CAST_NON_CORE_SPELLS = "successfully_cast_non_core_spells"
     SUCCESSFULLY_HANDLED_BRAMBLE = "successfully_handled_bramble"
     SUCCESSFULLY_HANDLED_SUBSEQUENT_TURN_ACTIONS = "successfully_handled_subsequent_turn_actions"
+    SUCCESSFULLY_CLOSED_FIGHT_RESULTS_WINDOW = "successfully_closed_fight_results_window"
 
     FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
@@ -38,6 +39,8 @@ class Status(Enum):
     FAILED_TO_CAST_CORE_SPELLS = "failed_to_cast_core_spells"
     FAILED_TO_CAST_NON_CORE_SPELLS = "failed_to_cast_non_core_spells"
     FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS = "failed_to_handle_subsequent_turn_actions"
+    FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW = "failed_to_close_fight_results_window"
+    FAILED_TO_DETECT_AP_COUNTER = "failed_to_detect_ap_counter"
 
     TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE = "timed_out_while_turning_on_tactical_mode"
     TIMED_OUT_WHILE_DISABLING_MODELS = "timed_out_while_disabling_models"
@@ -53,3 +56,5 @@ class Status(Enum):
     CHARACTER_IS_ALREADY_ON_CORRECT_CELL = "character_is_already_on_correct_cell"
     SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
     NO_SPELLS_AVAILABLE = "no_spells_available"
+    FIGHT_RESULTS_WINDOW_DETECTED = "fight_results_window_detected"
+    LOGIN_SCREEN_DETECTED = "login_screen_detected"
