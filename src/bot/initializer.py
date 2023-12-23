@@ -5,7 +5,7 @@ import os
 
 import pygetwindow as gw
 
-from src.bot.interfaces import Interfaces
+from src.bot.interfaces.interfaces import Interfaces
 from screen_capture import ScreenCapture
 from src.ocr.ocr import OCR
 

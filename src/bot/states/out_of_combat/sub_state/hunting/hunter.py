@@ -8,7 +8,7 @@ import cv2
 import pyautogui as pyag
 
 from image_detection import ImageDetection
-from src.bot.interfaces import Interfaces
+from src.bot.interfaces.interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
 from screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
