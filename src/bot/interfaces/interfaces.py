@@ -6,30 +6,34 @@ from time import perf_counter
 
 from pyautogui import moveTo, click, pixelMatchesColor
 
-import data
 from image_detection import ImageDetection
 from screen_capture import ScreenCapture
+from src.utilities import load_image
+
+
+def _handle_interface_action(decorated_method):
+    @wraps(decorated_method)
+    def wrapper(cls, *args, **kwargs):
+        decorated_method(*args, **kwargs)
+        method_name_parts = decorated_method.__name__.split('_', 1)
+        is_open_method = getattr(cls, f"is_{method_name_parts[1]}_open")
+        action = "clos" if method_name_parts[0] == "close" else "open"
+        interface_name = method_name_parts[1].replace("_", " ").title()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 4:
+            if (action == "open" and is_open_method()) or (action == "clos" and not is_open_method()):
+                log.info(f"Successfully {action}ed '{interface_name}' interface!")
+                return True
+        log.error(f"Timed out while {action}ing '{interface_name}' interface!")
+        return False
+    return wrapper
 
 
 class Interfaces:
 
-    def _handle_interface_action(decorated_method):
-        """Decorator to handle interface actions."""
-        @wraps(decorated_method)
-        def wrapper(*args, **kwargs):
-            decorated_method(*args, **kwargs)
-            method_name_parts = decorated_method.__name__.split('_', 1)
-            is_open_method = getattr(Interfaces, f"is_{method_name_parts[1]}_open")
-            action = "clos" if method_name_parts[0] == "close" else "open"
-            interface_name = method_name_parts[1].replace("_", " ").title()
-            start_time = perf_counter()
-            while perf_counter() - start_time <= 4:
-                if (action == "open" and is_open_method()) or (action == "clos" and not is_open_method()):
-                    log.info(f"Successfully {action}ed '{interface_name}' interface!")
-                    return True
-            log.error(f"Timed out while {action}ing '{interface_name}' interface!")
-            return False
-        return wrapper
+    _image_folder_path = "src/bot/interfaces/images"
+    dofus_logo_image = load_image(_image_folder_path, "dofus_logo.png")
+    rcm_flash_quality_image = load_image(_image_folder_path, "rcm_flash_quality.png")
 
     @staticmethod
     @_handle_interface_action
@@ -137,22 +141,22 @@ class Interfaces:
             pixelMatchesColor(465, 269, (81, 74, 60))
         ))
 
-    @staticmethod
-    def is_login_screen_open():
+    @classmethod
+    def is_login_screen_open(cls):
         return len(
             ImageDetection.find_image(
                 ScreenCapture.game_window(),
-                data.images.Interface.dofus_logo,
-                confidence=0.995
+                cls.dofus_logo_image,
+                confidence=0.99
             )
         ) > 0
 
-    @staticmethod
-    def is_right_click_menu_open():
+    @classmethod
+    def is_right_click_menu_open(cls):
         return len(
             ImageDetection.find_image(
                 ScreenCapture.game_window(),
-                data.images.Interface.right_click_menu,
+                cls.rcm_flash_quality_image,
                 confidence=0.995
             )
         ) > 0
