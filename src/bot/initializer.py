@@ -60,7 +60,7 @@ class Initializer:
         Interfaces.open_characteristics()
         if Interfaces.is_characteristics_open():
             sc = ScreenCapture.custom_area((685, 93, 205, 26))
-            if self._character_name == OCR.get_text_from_image(sc, ocr_engine="tesserocr"):
+            if self._character_name == OCR.get_text_from_image(sc):
                 log.info("Successfully verified character's name!")
                 Interfaces.close_characteristics()
                 if not Interfaces.is_characteristics_open():

@@ -172,10 +172,7 @@ class Finder:
 
     @staticmethod
     def read_name_area_screenshot(screenshot: np.ndarray):
-        return OCR.get_text_from_image(
-            OCR.convert_to_grayscale(screenshot), 
-            ocr_engine="tesserocr"
-        )
+        return OCR.get_text_from_image(OCR.convert_to_grayscale(screenshot))
 
     @staticmethod
     def is_info_card_visible():

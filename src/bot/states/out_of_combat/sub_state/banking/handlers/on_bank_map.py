@@ -232,6 +232,6 @@ class Handler:
             bar = OCR.resize_image(bar, bar.shape[1] * 2, bar.shape[0] * 3)
             bar = OCR.invert_image(bar)
             bar = OCR.binarize_image(bar, 127)
-            if len(OCR.get_text_from_image(bar, ocr_engine="tesserocr")) > 0:
+            if len(OCR.get_text_from_image(bar)) > 0:
                 return True
         return False

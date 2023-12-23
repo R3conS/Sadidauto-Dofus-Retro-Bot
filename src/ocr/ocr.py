@@ -4,64 +4,28 @@ os.environ["TESSDATA_PREFIX"] = "src\\ocr"
 import cv2
 import numpy as np
 from PIL import Image
-from paddleocr import PaddleOCR
 from tesserocr import PyTessBaseAPI
 
 
 class OCR:
 
     @classmethod
-    def get_text_from_image(
-            cls,
-            image: Image.Image | np.ndarray | str,
-            ocr_engine: str
-        ):
+    def get_text_from_image(cls, image: Image.Image | np.ndarray | str):
         if isinstance(image, str):
             if not os.path.exists(image):
                 raise FileNotFoundError(f"File {image} not found!")
-            if ocr_engine == "tesserocr":
-                return cls._read_text_tesserocr(Image.open(image))
-            elif ocr_engine == "paddleocr":
-                return cls._read_text_paddleocr(cv2.imread(image, cv2.IMREAD_UNCHANGED))
-            else:
-                raise ValueError(f"Invalid OCR engine: {ocr_engine}")
-
-        if isinstance(image, Image.Image):
-            if ocr_engine == "tesserocr":
-                return cls._read_text_tesserocr(image)
-            elif ocr_engine == "paddleocr":
-                return cls._read_text_paddleocr(np.array(image))
-            else:
-                raise ValueError(f"Invalid OCR engine: {ocr_engine}")
-
-        if isinstance(image, np.ndarray):
-            if ocr_engine == "tesserocr":
-                return cls._read_text_tesserocr(Image.fromarray(image))
-            elif ocr_engine == "paddleocr":
-                return cls._read_text_paddleocr(image)
-            else:
-                raise ValueError(f"Invalid OCR engine: {ocr_engine}")
-            
+            return cls._read_text_from_image(Image.open(image))
+        elif isinstance(image, Image.Image):
+            return cls._read_text_from_image(image)
+        elif isinstance(image, np.ndarray):
+            return cls._read_text_from_image(Image.fromarray(image))
         raise TypeError(f"Invalid image type: {type(image)}")
 
     @staticmethod
-    def _read_text_tesserocr(image: Image):
+    def _read_text_from_image(image: Image):
         with PyTessBaseAPI() as api:
             api.SetImage(image)
             return api.GetUTF8Text().strip()
-
-    @staticmethod
-    def _read_text_paddleocr(
-        image_path: np.ndarray | str,
-        lang: str = "en",
-        use_angle_cls: bool = False,
-        show_log: bool = False
-    ):
-        if isinstance(image_path, str):
-            image_path = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-        ocr = PaddleOCR(lang=lang, use_angle_cls=use_angle_cls, show_log=show_log)
-        results = ocr.ocr(image_path, cls=use_angle_cls)
-        return [result[1][0] for result in results]
 
     @staticmethod
     def convert_to_grayscale(image: np.ndarray):

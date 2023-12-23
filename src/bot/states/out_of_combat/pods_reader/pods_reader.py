@@ -231,7 +231,7 @@ class PodsReader:
         tooltip = OCR.dilate_image(tooltip, 2)
         tooltip = OCR.binarize_image(tooltip, 145)
         tooltip = cv2.GaussianBlur(tooltip, (3, 3), 0)
-        return OCR.get_text_from_image(tooltip, ocr_engine="tesserocr")
+        return OCR.get_text_from_image(tooltip)
 
     @staticmethod
     def parse_tooltip_text(extracted_tooltip_text) -> tuple[int, int]:

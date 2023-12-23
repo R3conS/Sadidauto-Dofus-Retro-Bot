@@ -87,7 +87,7 @@ class TurnDetector:
         if cls._is_turn_illustration_visible():
             name_area_image = cls._screenshot_name_area()
             name_area_image = cls._preprocess_image(name_area_image)
-            name = OCR.get_text_from_image(name_area_image, ocr_engine="tesserocr")
+            name = OCR.get_text_from_image(name_area_image)
             if name is not None and name != "":
                 if name.strip() == character_name:
                     return True
