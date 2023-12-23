@@ -13,10 +13,10 @@ from src.utilities import load_image
 
 def _handle_interface_action(decorated_method):
     @wraps(decorated_method)
-    def wrapper(cls, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         decorated_method(*args, **kwargs)
         method_name_parts = decorated_method.__name__.split('_', 1)
-        is_open_method = getattr(cls, f"is_{method_name_parts[1]}_open")
+        is_open_method = getattr(Interfaces, f"is_{method_name_parts[1]}_open")
         action = "clos" if method_name_parts[0] == "close" else "open"
         interface_name = method_name_parts[1].replace("_", " ").title()
         start_time = perf_counter()
