@@ -5,26 +5,19 @@ import os
 from time import perf_counter, sleep
 
 import cv2
-import numpy as np
 import pyautogui as pyag
 
 from image_detection import ImageDetection
 from screen_capture import ScreenCapture
-
-
-def _load_map_image_data() -> dict[str, np.ndarray]:
-    folder_path = "src\\bot\\map_changer\\map_images"
-    image_names = [name for name in os.listdir(folder_path) if name.endswith(".png")]
-    loaded_images = {}
-    for map_image_name in image_names:
-        map_image_path = os.path.join(folder_path, map_image_name)
-        loaded_images[map_image_name.replace(".png", "")] = cv2.imread(map_image_path, cv2.IMREAD_UNCHANGED)
-    return loaded_images
+from src.utilities import load_image
 
 
 class MapChanger:
 
-    map_data = _load_map_image_data()
+    _image_dir_path = "src\\bot\\map_changer\\map_images"
+    map_data = {}
+    for image_name in [name for name in os.listdir(_image_dir_path) if name.endswith(".png")]:
+        map_data[image_name.replace(".png", "")] = load_image(_image_dir_path, image_name)
 
     @classmethod
     def get_current_map_coords(cls):
@@ -83,4 +76,3 @@ class MapChanger:
             pyag.pixelMatchesColor(364, 419, (0, 0, 0)),
             pyag.pixelMatchesColor(691, 424, (0, 0, 0))
         ))
-
