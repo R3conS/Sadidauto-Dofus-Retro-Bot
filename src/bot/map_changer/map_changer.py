@@ -49,7 +49,7 @@ class MapChanger:
         pyag.moveTo(sun_x, sun_y)
         # When moving downwards need to wait for health bar to disappear
         # before clicking.
-        if sun_y < 560: 
+        if sun_y >= 560: 
             sleep(0.5)
         pyag.click()
         pyag.keyUp("e")
