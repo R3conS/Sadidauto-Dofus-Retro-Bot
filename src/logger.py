@@ -56,7 +56,7 @@ class Logger:
         - If `logger_name` already exists, get the logger with all of 
         it's configurations (log_folder, log_filename, log_level, 
         formatters, handlers).
-        - Else initialize a new logger object using `__create_logger()`.
+        - Else initialize a new logger object using `_create_logger()`.
 
         Parameters
         ----------
@@ -80,7 +80,7 @@ class Logger:
         if logger_name in logging.Logger.manager.loggerDict:
             return logging.getLogger(logger_name)
         else:
-            return cls.__create_logger(
+            return cls._create_logger(
                 logger_name,
                 log_level, 
                 log_to_console,
@@ -88,7 +88,7 @@ class Logger:
             )
 
     @classmethod
-    def __create_logger(
+    def _create_logger(
             cls, 
             logger_name: str, 
             log_level: int, 
@@ -120,13 +120,13 @@ class Logger:
         logger.setLevel(log_level)
         logger.propagate = False
         if log_to_file:
-            logger.addHandler(cls.__create_file_handler(logger_name))
+            logger.addHandler(cls._create_file_handler(logger_name))
         if log_to_console:
-            logger.addHandler(cls.__create_stream_handler())
+            logger.addHandler(cls._create_stream_handler())
         return logger
 
     @classmethod
-    def __create_file_handler(cls, logger_name):
+    def _create_file_handler(cls, logger_name):
         folder_path = os.path.join(cls.LOGS_DIR_PATH, logger_name)
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
@@ -142,7 +142,7 @@ class Logger:
         return file_handler
     
     @classmethod
-    def __create_stream_handler(cls):
+    def _create_stream_handler(cls):
         stream_formatter = logging.Formatter(
             fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
             datefmt="%H:%M:%S"

@@ -16,39 +16,39 @@ class Controller:
             script: str,
             game_window_title: str,
         ):
-        self.__set_main_bot_state_callback = set_bot_state_callback
-        self.__hunter = Hunter(script, game_window_title)
-        self.__banker = Banker(script, game_window_title)
+        self._set_main_bot_state_callback = set_bot_state_callback
+        self._hunter = Hunter(script, game_window_title)
+        self._banker = Banker(script, game_window_title)
 
     def run(self):
         sub_state = _SubStates.HUNTING
         while True:
             if sub_state == _SubStates.HUNTING:
-                status = self.__hunter.hunt()
+                status = self._hunter.hunt()
                 if status == HunterStatus.REACHED_PODS_LIMIT:
                     sub_state = _SubStates.BANKING
                     continue
                 elif status == HunterStatus.SUCCESSFULLY_FINISHED_HUNTING:
-                    self.__set_main_bot_state_callback(MainBotStates.IN_COMBAT)
+                    self._set_main_bot_state_callback(MainBotStates.IN_COMBAT)
                     return
                 elif status == HunterStatus.FAILED_TO_FINISH_HUNTING:
                     log.info(f"Failed to finish hunting. Attempting to recover ...")
-                    self.__set_main_bot_state_callback(MainBotStates.RECOVERY)
+                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
 
             elif sub_state == _SubStates.BANKING:
-                status = self.__banker.bank()
+                status = self._banker.bank()
                 if status == BankerStatus.SUCCESSFULLY_FINISHED_BANKING:
                     sub_state = _SubStates.HUNTING
                     continue
                 elif status == BankerStatus.FAILED_TO_FINISH_BANKING:
                     log.info(f"Failed to finish banking. Attempting to recover ...")
-                    self.__set_main_bot_state_callback(MainBotStates.RECOVERY)
+                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
                 
             elif sub_state == _SubStates.RECOVERY:
                 log.info("'Out of Combat' controller failed to determine its sub state. Attempting to recover ...")
-                self.__set_main_bot_state_callback(MainBotStates.RECOVERY)
+                self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                 return
 
 

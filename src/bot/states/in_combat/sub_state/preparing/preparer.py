@@ -1,7 +1,6 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-import os
 from time import perf_counter
 
 import cv2
@@ -9,7 +8,7 @@ import numpy as np
 import pyautogui as pyag
 from PIL import Image
 
-from src.utilities import move_mouse_off_game_area
+from src.utilities import move_mouse_off_game_area, load_image
 from .status_enum import Status
 from .map_data.getter import Getter as MapDataGetter
 from src.bot.map_changer.map_changer import MapChanger
@@ -17,46 +16,39 @@ from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 
 
-def _load_image(image_folder_path: str, image_name: str):
-    image_path = os.path.join(image_folder_path, image_name)
-    if not os.path.exists(image_path) and not os.path.isfile(image_path):
-        raise FileNotFoundError(f"Image '{image_name}' not found in '{image_folder_path}'.")
-    return cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-
-
 class Preparer:
 
     RED = "red"
     BLUE = "blue"
     image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\preparing\\images"
-    fight_lock_off_icon = _load_image(image_folder_path, "fight_lock_off.png")
+    fight_lock_off_icon = load_image(image_folder_path, "fight_lock_off.png")
     fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
-    fight_lock_on_icon = _load_image(image_folder_path, "fight_lock_on.png")
+    fight_lock_on_icon = load_image(image_folder_path, "fight_lock_on.png")
     fight_lock_on_icon_mask = ImageDetection.create_mask(fight_lock_on_icon)
-    tactical_mode_off_icon = _load_image(image_folder_path, "tactical_mode_off.png")
+    tactical_mode_off_icon = load_image(image_folder_path, "tactical_mode_off.png")
     tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
-    tactical_mode_on_icon = _load_image(image_folder_path, "tactical_mode_on.png")
+    tactical_mode_on_icon = load_image(image_folder_path, "tactical_mode_on.png")
     tactical_mode_on_icon_mask = ImageDetection.create_mask(tactical_mode_on_icon)
     icon_area = (693, 506, 241, 40)
-    ready_button_lit_image = _load_image(image_folder_path, "ready_button_lit.png")
+    ready_button_lit_image = load_image(image_folder_path, "ready_button_lit.png")
     ready_button_lit_image_mask = ImageDetection.create_mask(ready_button_lit_image)
-    ready_button_dim_image = _load_image(image_folder_path, "ready_button_dim.png")
+    ready_button_dim_image = load_image(image_folder_path, "ready_button_dim.png")
     ready_button_dim_image_mask = ImageDetection.create_mask(ready_button_dim_image)
     ready_button_area = (678, 507, 258, 91)
 
     def __init__(self, script: str):
-        self.__starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
-        self.__dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
+        self._starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
+        self._dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
 
     def prepare(self):
-        result = self.handle_fight_lock()
+        result = self._handle_fight_lock()
         if (
             result == Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
             or result == Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
         ):
             return Status.FAILED_TO_FINISH_PREPARING
         
-        result = self.handle_tactical_mode()
+        result = self._handle_tactical_mode()
         if (
             result == Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
             or result == Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
@@ -66,18 +58,18 @@ class Preparer:
         map_coords = MapChanger.get_current_map_coords()
         
         dummy_cell_color = None
-        result = self.handle_dummy_cells(map_coords)
+        result = self._handle_dummy_cells(map_coords)
         if result == Status.FAILED_TO_MOVE_TO_DUMMY_CELLS:
             return Status.FAILED_TO_FINISH_PREPARING
         else:
             if isinstance(result, str):
                 dummy_cell_color = result
         
-        result = self.handle_starting_cells(map_coords, dummy_cell_color)
+        result = self._handle_starting_cells(map_coords, dummy_cell_color)
         if result == Status.FAILED_TO_MOVE_TO_STARTING_CELLS:
             return Status.FAILED_TO_FINISH_PREPARING
         
-        result = self.handle_clicking_ready()
+        result = self._handle_clicking_ready()
         if (
             result == Status.FAILED_TO_GET_READY_BUTTON_POS
             or result == Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
@@ -87,25 +79,25 @@ class Preparer:
         return Status.SUCCESSFULLY_FINISHED_PREPARING
 
     @classmethod
-    def handle_fight_lock(cls):
-        if cls.is_fight_lock_icon_checked():
+    def _handle_fight_lock(cls):
+        if cls._is_fight_lock_icon_checked():
             log.info("Fight lock is on.")
             return Status.FIGHT_LOCK_IS_ALREADY_ON
         log.info("Fight lock is off.")
-        return cls.turn_on_fight_lock()
+        return cls._turn_on_fight_lock()
 
     @classmethod
-    def handle_tactical_mode(cls):
-        if cls.is_tactical_mode_icon_checked():
+    def _handle_tactical_mode(cls):
+        if cls._is_tactical_mode_icon_checked():
             log.info("Tactical mode is on.")
             return Status.TACTICAL_MODE_IS_ALREADY_ON
         log.info("Tactical mode is off.")
-        return cls.turn_on_tactical_mode()
+        return cls._turn_on_tactical_mode()
 
-    def handle_dummy_cells(self, map_coords: str):
+    def _handle_dummy_cells(self, map_coords: str):
         log.info(f"Checking for dummy cells on map: {map_coords} ... ")
-        red_dummy_cells = self.get_free_dummy_cells(self.RED, map_coords)
-        blue_dummy_cells = self.get_free_dummy_cells(self.BLUE, map_coords)
+        red_dummy_cells = self._get_free_dummy_cells(self.RED, map_coords)
+        blue_dummy_cells = self._get_free_dummy_cells(self.BLUE, map_coords)
         if len(red_dummy_cells) == 0 and len(blue_dummy_cells) == 0:
             log.info("No dummy cells found on this map.")
             return Status.NO_DUMMY_CELLS_ON_THIS_MAP
@@ -113,12 +105,12 @@ class Preparer:
         log.info("Dummy cells found. Attempting to move ... ")
 
         for cell_coords in red_dummy_cells:
-            status = self.move_char_to_cell(*cell_coords)
+            status = self._move_char_to_cell(*cell_coords)
             if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully moved to red side dummy cell: {cell_coords}.")
                 return self.RED
         for cell_coords in blue_dummy_cells:
-            status = self.move_char_to_cell(*cell_coords)
+            status = self._move_char_to_cell(*cell_coords)
             if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully moved to blue side dummy cell: {cell_coords}.")
                 return self.BLUE
@@ -126,17 +118,17 @@ class Preparer:
         log.error("Failed to move to dummy cells.")
         return Status.FAILED_TO_MOVE_TO_DUMMY_CELLS
 
-    def handle_starting_cells(self, map_coords: str, dummy_cell_color: str = None):
+    def _handle_starting_cells(self, map_coords: str, dummy_cell_color: str = None):
         log.info(f"Attempting to move to a starting cell on map: {map_coords} ... ")
         if dummy_cell_color is not None:
-            starting_cells = self.get_free_starting_cells(dummy_cell_color, map_coords)
+            starting_cells = self._get_free_starting_cells(dummy_cell_color, map_coords)
         else:
-            red_starting_cells = self.get_free_starting_cells(self.RED, map_coords)
-            blue_starting_cells = self.get_free_starting_cells(self.BLUE, map_coords)
+            red_starting_cells = self._get_free_starting_cells(self.RED, map_coords)
+            blue_starting_cells = self._get_free_starting_cells(self.BLUE, map_coords)
             starting_cells = red_starting_cells + blue_starting_cells
 
         for cell_coords in starting_cells:
-            result = self.move_char_to_cell(*cell_coords)
+            result = self._move_char_to_cell(*cell_coords)
             if result == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 if dummy_cell_color is not None:
                     log.info(f"Successfully moved to {dummy_cell_color} side starting cell: {cell_coords}.")
@@ -151,9 +143,9 @@ class Preparer:
         return Status.FAILED_TO_MOVE_TO_STARTING_CELLS
 
     @classmethod
-    def handle_clicking_ready(cls):
+    def _handle_clicking_ready(cls):
         log.info("Clicking ready ... ")
-        ready_button_pos = cls.get_ready_button_pos()
+        ready_button_pos = cls._get_ready_button_pos()
         if ready_button_pos is None:
             log.info("Failed to get ready button position.")
             return Status.FAILED_TO_GET_READY_BUTTON_POS
@@ -164,53 +156,53 @@ class Preparer:
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            if not cls.is_ready_button_visible():
+            if not cls._is_ready_button_visible():
                 log.info("Successfully clicked ready button.")
                 return Status.SUCCESSFULLY_CLICKED_READY_BUTTON
         log.info("Timed out while clicking ready button.")
         return Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
 
-    def move_char_to_cell(self, cell_x, cell_y):
-        screenshot_before_clicking_cell = self.screenshot_cell_area(cell_x, cell_y)
-        self.click_cell(cell_x, cell_y)
-        if self.did_char_move(cell_x, cell_y, screenshot_before_clicking_cell):
+    def _move_char_to_cell(self, cell_x, cell_y):
+        screenshot_before_clicking_cell = self._screenshot_cell_area(cell_x, cell_y)
+        self._click_cell(cell_x, cell_y)
+        if self._did_char_move(cell_x, cell_y, screenshot_before_clicking_cell):
             return Status.SUCCESSFULLY_MOVED_TO_CELL
         return Status.FAILED_TO_MOVE_TO_CELL
 
-    def get_dummy_cells(self, map_coords: str, color: str):
+    def _get_dummy_cells(self, map_coords: str, color: str):
         if color not in [self.RED, self.BLUE]:
             raise ValueError(f"Invalid cell color: '{color}'.")
-        for map, cell_data in self.__dummy_cell_data.items():
+        for map, cell_data in self._dummy_cell_data.items():
             if map == map_coords:
                 return cell_data[color]
         return []
 
-    def get_free_dummy_cells(self, map_coords: str, color: str):
+    def _get_free_dummy_cells(self, map_coords: str, color: str):
         free_cells = []
-        for cell_coords in self.get_dummy_cells(color, map_coords):
+        for cell_coords in self._get_dummy_cells(color, map_coords):
             game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
-            if self.is_cell_free(*cell_coords, game_window_screenshot):
+            if self._is_cell_free(*cell_coords, game_window_screenshot):
                 free_cells.append(cell_coords)
         return free_cells
 
-    def get_starting_cells(self, map_coords: str, color: str):
+    def _get_starting_cells(self, map_coords: str, color: str):
         if color not in [self.RED, self.BLUE]:
             raise ValueError(f"Invalid cell color: '{color}'.")
-        for map, cell_data in self.__starting_cell_data.items():
+        for map, cell_data in self._starting_cell_data.items():
             if map == map_coords:
                 return cell_data[color]
         return []
 
-    def get_free_starting_cells(self, map_coords: str, color: str):
+    def _get_free_starting_cells(self, map_coords: str, color: str):
         free_cells = []
-        for cell_coords in self.get_starting_cells(color, map_coords):
+        for cell_coords in self._get_starting_cells(color, map_coords):
             game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
-            if self.is_cell_free(*cell_coords, game_window_screenshot):
+            if self._is_cell_free(*cell_coords, game_window_screenshot):
                 free_cells.append(cell_coords)
         return free_cells
 
     @staticmethod
-    def is_cell_free(cell_x, cell_y, game_window_screenshot: Image.Image):
+    def _is_cell_free(cell_x, cell_y, game_window_screenshot: Image.Image):
         if game_window_screenshot is None:
             game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
         for color in [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]:
@@ -219,7 +211,7 @@ class Preparer:
         return False
 
     @staticmethod
-    def are_images_same(before, after):
+    def _are_images_same(before, after):
         return len(
             ImageDetection.find_image(
                 haystack=before,
@@ -230,27 +222,27 @@ class Preparer:
         ) > 0
 
     @staticmethod
-    def screenshot_cell_area(cell_x, cell_y):
+    def _screenshot_cell_area(cell_x, cell_y):
         return ScreenCapture.around_pos((cell_x, cell_y), 30)
 
     @staticmethod
-    def click_cell(cell_x, cell_y):
+    def _click_cell(cell_x, cell_y):
         pyag.moveTo(cell_x, cell_y)
         pyag.click()
 
     @classmethod
-    def did_char_move(cls, cell_x, cell_y, cell_area_before_moving: np.ndarray):
+    def _did_char_move(cls, cell_x, cell_y, cell_area_before_moving: np.ndarray):
         start_time = perf_counter()
         while perf_counter() - start_time <= 0.25:
-            if not cls.are_images_same(
+            if not cls._are_images_same(
                 cell_area_before_moving, 
-                cls.screenshot_cell_area(cell_x, cell_y)
+                cls._screenshot_cell_area(cell_x, cell_y)
             ):
                 return True
         return False
 
     @classmethod
-    def is_fight_lock_icon_checked(cls):
+    def _is_fight_lock_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
@@ -262,7 +254,7 @@ class Preparer:
         ) > 0
 
     @classmethod
-    def is_tactical_mode_icon_checked(cls):
+    def _is_tactical_mode_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
@@ -274,7 +266,7 @@ class Preparer:
         ) > 0
 
     @classmethod
-    def is_ready_button_visible(cls):
+    def _is_ready_button_visible(cls):
         is_lit_visible = len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.ready_button_area),
@@ -296,7 +288,7 @@ class Preparer:
         return is_lit_visible or is_dim_visible
 
     @classmethod
-    def get_fight_lock_icon_pos(cls):
+    def _get_fight_lock_icon_pos(cls):
         images_to_search = [
             (cls.fight_lock_on_icon, cls.fight_lock_on_icon_mask),
             (cls.fight_lock_off_icon, cls.fight_lock_off_icon_mask)
@@ -319,7 +311,7 @@ class Preparer:
         return None
 
     @classmethod
-    def get_tactical_mode_icon_pos(cls):
+    def _get_tactical_mode_icon_pos(cls):
         images_to_search = [
             (cls.tactical_mode_on_icon, cls.tactical_mode_on_icon_mask),
             (cls.tactical_mode_off_icon, cls.tactical_mode_off_icon_mask)
@@ -342,7 +334,7 @@ class Preparer:
         return None
 
     @classmethod
-    def get_ready_button_pos(cls):
+    def _get_ready_button_pos(cls):
         images_to_search = [
             (cls.ready_button_lit_image, cls.ready_button_lit_image_mask),
             (cls.ready_button_dim_image, cls.ready_button_dim_image_mask)
@@ -365,9 +357,9 @@ class Preparer:
         return None
 
     @classmethod
-    def turn_on_fight_lock(cls):
+    def _turn_on_fight_lock(cls):
         log.info("Turning on fight lock ... ")
-        fight_lock_icon_pos = cls.get_fight_lock_icon_pos()
+        fight_lock_icon_pos = cls._get_fight_lock_icon_pos()
         if fight_lock_icon_pos is None:
             log.info("Failed to get fight lock icon position.")
             return Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
@@ -377,16 +369,16 @@ class Preparer:
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            if cls.is_fight_lock_icon_checked():
+            if cls._is_fight_lock_icon_checked():
                 log.info("Successfully turned on fight lock.")
                 return Status.SUCCESSFULLY_TURNED_ON_FIGHT_LOCK
         log.info("Timed out while turning on fight lock.")
         return Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
 
     @classmethod
-    def turn_on_tactical_mode(cls):
+    def _turn_on_tactical_mode(cls):
         log.info("Turning on tactical mode ... ")
-        tactical_mode_icon_pos = cls.get_tactical_mode_icon_pos()
+        tactical_mode_icon_pos = cls._get_tactical_mode_icon_pos()
         if tactical_mode_icon_pos is None:
             log.info("Failed to get tactical mode icon position.")
             return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
@@ -398,8 +390,8 @@ class Preparer:
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if (
-                cls.is_tactical_mode_icon_checked()
-                and not cls.are_images_same(sc_before_clicking_icon, ScreenCapture.game_window())
+                cls._is_tactical_mode_icon_checked()
+                and not cls._are_images_same(sc_before_clicking_icon, ScreenCapture.game_window())
             ):
                 log.info("Successfully turned on tactical mode.")
                 return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE

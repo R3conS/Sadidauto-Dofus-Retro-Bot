@@ -22,13 +22,13 @@ class Fighter:
     close_button_image = load_image(image_folder_path, "close_button.png")
 
     def __init__(self, script: str, character_name: str):
-        self.__script = script
-        self.__character_name = character_name
+        self._script = script
+        self._character_name = character_name
 
     def fight(self):
         is_tactical_mode_enabled = False
         while True:
-            result = TurnDetector.detect_start_of_turn(self.__character_name)
+            result = TurnDetector.detect_start_of_turn(self._character_name)
             if result == Status.FIGHT_RESULTS_WINDOW_DETECTED:
                 result = self._close_fight_results_window()
                 if result == Status.FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW:
@@ -52,15 +52,15 @@ class Fighter:
                     is_tactical_mode_enabled = True
 
             if TurnDetector.is_first_turn():
-                result = FirstTurnHandler.handle(self.__script, self.__character_name)
+                result = FirstTurnHandler.handle(self._script, self._character_name)
                 if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
             else:
-                result = SubsequentTurnHandler.handle(self.__character_name)
+                result = SubsequentTurnHandler.handle(self._character_name)
                 if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
                     return Status.FAILED_TO_FINISH_FIGHTING
                     
-            result = TurnDetector.pass_turn(self.__character_name)
+            result = TurnDetector.pass_turn(self._character_name)
             if result == Status.FAILED_TO_PASS_TURN:
                 return Status.FAILED_TO_FINISH_FIGHTING
 

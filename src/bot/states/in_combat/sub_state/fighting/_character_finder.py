@@ -78,7 +78,7 @@ class Finder:
             if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
                 return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
 
-        turn_arrow = cls.get_turn_indicator_arrow_location()
+        turn_arrow = cls._get_turn_indicator_arrow_location()
         if turn_arrow is None:
             log.info("Failed to get turn indicator arrow location.")
             return Status.FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION
@@ -105,7 +105,7 @@ class Finder:
     def get_red_circle_locations(cls) -> list[tuple[int, int]]:
         """Get red model circle locations."""
         rectangles = ImageDetection.find_image(
-            haystack=cls.screenshot_circle_detection_area(),
+            haystack=cls._screenshot_circle_detection_area(),
             needle=cls.red_circle_image,
             method=cv2.TM_SQDIFF,
             confidence=0.9,
@@ -123,7 +123,7 @@ class Finder:
     def get_blue_circle_locations(cls) -> list[tuple[int, int]]:
         """Get blue model circle locations."""
         rectangles = ImageDetection.find_image(
-            haystack=cls.screenshot_circle_detection_area(),
+            haystack=cls._screenshot_circle_detection_area(),
             needle=cls.blue_circle_image,
             method=cv2.TM_SQDIFF,
             confidence=0.9,
@@ -138,10 +138,10 @@ class Finder:
         return center_points
 
     @classmethod
-    def get_turn_indicator_arrow_location(cls):
+    def _get_turn_indicator_arrow_location(cls):
         """Make sure the turn bar is not shrunk for accurate results."""
         rectangle = ImageDetection.find_image(
-            haystack=cls.screenshot_turn_bar_area(),
+            haystack=cls._screenshot_turn_bar_area(),
             needle=cls.turn_indicator_arrow_image,
             method=cv2.TM_CCORR_NORMED,
             confidence=0.9,
@@ -162,12 +162,12 @@ class Finder:
         return ScreenCapture.custom_area(cls.info_card_name_area)    
 
     @classmethod
-    def screenshot_circle_detection_area(cls):
+    def _screenshot_circle_detection_area(cls):
         """No chat, no minimap, no spell & item bars."""
         return ScreenCapture.custom_area(cls.circle_detection_area)
 
     @classmethod
-    def screenshot_turn_bar_area(cls):
+    def _screenshot_turn_bar_area(cls):
         return ScreenCapture.custom_area(cls.turn_bar_area)
 
     @staticmethod

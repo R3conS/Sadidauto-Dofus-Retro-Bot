@@ -13,7 +13,7 @@ from screen_capture import ScreenCapture
 
 class Interfaces:
 
-    def __handle_interface_action(decorated_method):
+    def _handle_interface_action(decorated_method):
         """Decorator to handle interface actions."""
         @wraps(decorated_method)
         def wrapper(*args, **kwargs):
@@ -32,49 +32,49 @@ class Interfaces:
         return wrapper
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def open_characteristics():
         log.info("Opening 'Characteristics' interface ... ")
         moveTo(613, 622)
         click()
     
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def close_characteristics():
         log.info("Closing 'Characteristics' interface ... ")
         moveTo(613, 622)
         click()
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def open_inventory():
         log.info("Opening 'Inventory' interface ... ")
         moveTo(690, 622)
         click()
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def close_inventory():
         log.info("Closing 'Inventory' interface ... ")
         moveTo(690, 622)
         click()
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def close_right_click_menu():
         log.info("Closing 'Right Click Menu' interface ... ")
         moveTo(929, 51)
         click(clicks=2)
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def close_offer_or_invite():
         log.info("Ignoring player ... ")
         moveTo(466, 387) # Move to 'Ignore for the session' button
         click()
 
     @staticmethod
-    @__handle_interface_action
+    @_handle_interface_action
     def close_information():
         log.info("Closing 'Information' interface ... ")
         moveTo(468, 377)

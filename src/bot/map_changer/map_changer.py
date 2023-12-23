@@ -59,7 +59,7 @@ class MapChanger:
         log.info(f"Waiting for loading screen ... ")
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
-            if MapChanger.__is_loading_screen_visible():
+            if MapChanger._is_loading_screen_visible():
                 log.info(f"Loading screen detected ... ")
                 break
         else:
@@ -68,7 +68,7 @@ class MapChanger:
         
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
-            if not MapChanger.__is_loading_screen_visible():
+            if not MapChanger._is_loading_screen_visible():
                 log.info(f"Loading screen finished.")
                 return True
         else:
@@ -76,7 +76,7 @@ class MapChanger:
             return False
 
     @staticmethod
-    def __is_loading_screen_visible():
+    def _is_loading_screen_visible():
         return all((
             pyag.pixelMatchesColor(529, 491, (0, 0, 0)),
             pyag.pixelMatchesColor(531, 429, (0, 0, 0)),

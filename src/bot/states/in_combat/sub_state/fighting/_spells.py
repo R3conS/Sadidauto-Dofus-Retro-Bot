@@ -16,7 +16,7 @@ from .status_enum import Status
 AVAILABLE_SPELLS = ["earthquake", "poisoned_wind", "sylvan_power", "bramble"]
 
 
-def __get_spell_name(decorated_method_name):
+def _get_spell_name(decorated_method_name):
     """Utility function for decorators."""
     for name in AVAILABLE_SPELLS:
         if name in decorated_method_name:
@@ -30,7 +30,7 @@ def _is_spell_available(decorated_method):
         return len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.spell_bar_area),
-                needle=getattr(cls, f"{__get_spell_name(decorated_method.__name__)}_image"),
+                needle=getattr(cls, f"{_get_spell_name(decorated_method.__name__)}_image"),
                 confidence=0.99,
                 method=cv2.TM_SQDIFF_NORMED,
             )
@@ -41,7 +41,7 @@ def _is_spell_available(decorated_method):
 def _get_spell_icon_pos(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__)
         images_and_masks = [
             (getattr(cls, f"{spell_name}_image"), None),
             (getattr(cls, f"{spell_name}_on_cooldown_image"), getattr(cls, f"{spell_name}_on_cooldown_image_mask"))
@@ -70,7 +70,7 @@ def _get_spell_icon_pos(decorated_method):
 def _is_spell_selected(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__)
         screenshot = ScreenCapture.around_pos(pyag.position(), 75)
         images_and_masks = [
             (getattr(cls, f"{spell_name}_selected_cannot_cast_image"), getattr(cls, f"{spell_name}_selected_cannot_cast_image_mask")),
@@ -94,7 +94,7 @@ def _is_spell_selected(decorated_method):
 def _is_spell_castable_on_pos(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__)
         pyag.moveTo(*args)
         screenshot = ScreenCapture.around_pos(pyag.position(), 75)
         return len(
@@ -118,7 +118,7 @@ def _select_spell(decorated_method):
         pyag.moveTo(929, 752)
         pyag.click()
 
-        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__)
         spell_icon_pos = getattr(cls, f"get_{spell_name}_icon_pos")()
         if spell_icon_pos is None:
             return Status.FAILED_TO_GET_SPELL_ICON_POS
@@ -140,7 +140,7 @@ def _select_spell(decorated_method):
 def _cast_spell(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = __get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__)
         spell_name_formatted = spell_name.replace("_", " ").title()
         log.info(f"Attempting to cast: '{spell_name_formatted}' ... ")
 

@@ -13,7 +13,7 @@ class Handler:
     def handle(cls, character_name: str):
         log.info("Handling subsequent turn actions ...")
 
-        if not cls.is_any_spell_available():
+        if not cls._is_any_spell_available():
             return Status.NO_SPELLS_AVAILABLE
         
         if TurnBar.is_shrunk():
@@ -31,7 +31,7 @@ class Handler:
         return Status.SUCCESSFULLY_HANDLED_SUBSEQUENT_TURN_ACTIONS
             
     @staticmethod
-    def is_any_spell_available():
+    def _is_any_spell_available():
         return (
             Spells.is_earthquake_available()
             or Spells.is_poisoned_wind_available()

@@ -21,21 +21,21 @@ class Mover:
     mp_area = (565, 612, 26, 26)
 
     def __init__(self, script, initial_character_pos):
-        self.__initial_character_pos = initial_character_pos
-        self.__movement_data = FightingDataGetter.get_data_object(script).get_movement_data()
-        self.__starting_side_color = StartingCellAndSideGetter(script).get_starting_side_color(initial_character_pos)
+        self._initial_character_pos = initial_character_pos
+        self._movement_data = FightingDataGetter.get_data_object(script).get_movement_data()
+        self._starting_side_color = StartingCellAndSideGetter(script).get_starting_side_color(initial_character_pos)
 
     def move(self):
-        coords = self.get_movement_coords()
+        coords = self._get_movement_coords()
         
-        if self.get_distance_between_cells(coords, self.__initial_character_pos) <= 10:
+        if self._get_distance_between_cells(coords, self._initial_character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
             move_mouse_off_game_area() # To make sure that character is not hovered over and info card is not blocking spell bar.
             return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
         
         log.info(f"Attempting to move character to: {coords} ... ")
         pyag.moveTo(coords[0], coords[1])
-        if self.is_cell_highlighted(coords):
+        if self._is_cell_highlighted(coords):
             mp_area_before_moving = ScreenCapture.custom_area(self.mp_area)
             pyag.click()
             start_time = perf_counter()
@@ -56,24 +56,24 @@ class Mover:
         log.info(f"Failed to detect if destination cell {coords} is highlighted.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
-    def get_movement_coords(self):
+    def _get_movement_coords(self):
         current_map_coords = MapChanger.get_current_map_coords()
-        for map_coords, data in self.__movement_data.items():
+        for map_coords, data in self._movement_data.items():
             if map_coords == current_map_coords:
                 for side_color, click_coords in data.items():
-                    if side_color == self.__starting_side_color:
+                    if side_color == self._starting_side_color:
                             if isinstance(click_coords, tuple):
                                 return click_coords
                             try:
-                                return click_coords[self.__initial_character_pos]
+                                return click_coords[self._initial_character_pos]
                             except KeyError:
                                 raise Exception(
-                                    f"No movement data for character position {self.__initial_character_pos} "
-                                    f"on starting side color '{self.__starting_side_color}' on map '{map_coords}'."
+                                    f"No movement data for character position {self._initial_character_pos} "
+                                    f"on starting side color '{self._starting_side_color}' on map '{map_coords}'."
                                 )
         raise Exception(f"No in-combat movement data for map '{current_map_coords}'.")
 
-    def is_cell_highlighted(self, click_coords):
+    def _is_cell_highlighted(self, click_coords):
         """
         Checking with a timer to give time for the game to draw orange
         color over the cells after mouse was moved over the destination cell.
@@ -85,5 +85,5 @@ class Mover:
                 return True
         return False
 
-    def get_distance_between_cells(self, cell_1, cell_2):
+    def _get_distance_between_cells(self, cell_1, cell_2):
         return sqrt((cell_2[0] - cell_1[0])**2 + (cell_2[1] - cell_1[1])**2)

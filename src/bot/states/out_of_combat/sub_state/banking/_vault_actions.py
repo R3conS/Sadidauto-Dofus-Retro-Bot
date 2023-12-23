@@ -3,12 +3,12 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from functools import wraps
 from time import perf_counter
-import os
 
 import cv2
 import numpy as np
 import pyautogui as pyag
 
+from src.utilities import load_image
 from .status_enum import Status
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
@@ -79,13 +79,6 @@ def _handle_tab_depositing(decorated_method):
     return wrapper
 
 
-def _load_image(image_folder_path: str, image_name: str):
-    image_path = os.path.join(image_folder_path, image_name)
-    if not os.path.exists(image_path) and not os.path.isfile(image_path):
-        raise FileNotFoundError(f"Image '{image_name}' not found in '{image_folder_path}'.")
-    return cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-
-
 def _load_forbidden_items(
         folder_path: str, 
         forbidden_items: dict[float, list[str]]
@@ -94,7 +87,7 @@ def _load_forbidden_items(
     for confidence, item_names in forbidden_items.items():
         loaded_images = []
         for item_name in item_names:
-            loaded_images.append(_load_image(folder_path, item_name))
+            loaded_images.append(load_image(folder_path, item_name))
         loaded_forbidden_items[confidence] = loaded_images
     return loaded_forbidden_items
 
@@ -102,13 +95,13 @@ def _load_forbidden_items(
 class VaultActions:
 
     image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images"
-    empty_slot_image = _load_image(image_folder_path, "empty_slot.png")
-    tab_equipment_open_image = _load_image(image_folder_path, "tab_equipment_open.png")
-    tab_equipment_closed_image = _load_image(image_folder_path, "tab_equipment_closed.png")
-    tab_resources_open_image = _load_image(image_folder_path, "tab_resources_open.png")
-    tab_resources_closed_image = _load_image(image_folder_path, "tab_resources_closed.png")
-    tab_misc_open_image = _load_image(image_folder_path, "tab_misc_open.png")
-    tab_misc_closed_image = _load_image(image_folder_path, "tab_misc_closed.png")
+    empty_slot_image = load_image(image_folder_path, "empty_slot.png")
+    tab_equipment_open_image = load_image(image_folder_path, "tab_equipment_open.png")
+    tab_equipment_closed_image = load_image(image_folder_path, "tab_equipment_closed.png")
+    tab_resources_open_image = load_image(image_folder_path, "tab_resources_open.png")
+    tab_resources_closed_image = load_image(image_folder_path, "tab_resources_closed.png")
+    tab_misc_open_image = load_image(image_folder_path, "tab_misc_open.png")
+    tab_misc_closed_image = load_image(image_folder_path, "tab_misc_closed.png")
 
     inventory_slot_coords = { # Middle of each slot.
        "row_1" : [(712, 276), (752, 276), (792, 276), (832, 276), (872, 276)],

@@ -12,7 +12,7 @@ class DisturbanceChecker(threading.Thread):
     def __init__(self):
         super().__init__()
         self.daemon = True
-        self.__check_interval = 0.5
+        self._check_interval = 0.5
 
     def run(self):
         log.info("Disturbance checker started!")
@@ -29,4 +29,4 @@ class DisturbanceChecker(threading.Thread):
                 if Interfaces.is_information_open():
                     # ToDo: Implement this when recovery state is implemented
                     pass 
-            sleep(self.__check_interval)
+            sleep(self._check_interval)

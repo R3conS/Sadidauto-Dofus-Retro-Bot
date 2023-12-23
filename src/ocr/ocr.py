@@ -20,38 +20,38 @@ class OCR:
             if not os.path.exists(image):
                 raise FileNotFoundError(f"File {image} not found!")
             if ocr_engine == "tesserocr":
-                return cls.__read_text_tesserocr(Image.open(image))
+                return cls._read_text_tesserocr(Image.open(image))
             elif ocr_engine == "paddleocr":
-                return cls.__read_text_paddleocr(cv2.imread(image, cv2.IMREAD_UNCHANGED))
+                return cls._read_text_paddleocr(cv2.imread(image, cv2.IMREAD_UNCHANGED))
             else:
                 raise ValueError(f"Invalid OCR engine: {ocr_engine}")
 
         if isinstance(image, Image.Image):
             if ocr_engine == "tesserocr":
-                return cls.__read_text_tesserocr(image)
+                return cls._read_text_tesserocr(image)
             elif ocr_engine == "paddleocr":
-                return cls.__read_text_paddleocr(np.array(image))
+                return cls._read_text_paddleocr(np.array(image))
             else:
                 raise ValueError(f"Invalid OCR engine: {ocr_engine}")
 
         if isinstance(image, np.ndarray):
             if ocr_engine == "tesserocr":
-                return cls.__read_text_tesserocr(Image.fromarray(image))
+                return cls._read_text_tesserocr(Image.fromarray(image))
             elif ocr_engine == "paddleocr":
-                return cls.__read_text_paddleocr(image)
+                return cls._read_text_paddleocr(image)
             else:
                 raise ValueError(f"Invalid OCR engine: {ocr_engine}")
             
         raise TypeError(f"Invalid image type: {type(image)}")
 
     @staticmethod
-    def __read_text_tesserocr(image: Image):
+    def _read_text_tesserocr(image: Image):
         with PyTessBaseAPI() as api:
             api.SetImage(image)
             return api.GetUTF8Text().strip()
 
     @staticmethod
-    def __read_text_paddleocr(
+    def _read_text_paddleocr(
         image_path: np.ndarray | str,
         lang: str = "en",
         use_angle_cls: bool = False,

@@ -5,4 +5,4 @@ __pycache__/
 m-tst.py
 logs
 tst.png
-src/state/out_of_combat/pods_reader/reading_failed_images
+src/bot/states/out_of_combat/pods_reader/reading_failed_images/

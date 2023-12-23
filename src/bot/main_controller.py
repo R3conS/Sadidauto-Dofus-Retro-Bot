@@ -19,32 +19,32 @@ class Controller(threading.Thread):
     def __init__(self, script: str, character_name: str):
         super().__init__()
         self.daemon = True
-        self.__state = None
-        self.__stopped = False
-        self.disturbance_checker = DisturbanceChecker()
-        self.disturbance_checker.start()
+        self._state = None
+        self._stopped = False
+        self._disturbance_checker = DisturbanceChecker()
+        self._disturbance_checker.start()
         initializer = Initializer(script, character_name)
-        self.ooc_controller = OOC_Controller(self.set_state, script, initializer.window_title)
-        self.ic_controller = IC_Controller(self.set_state, script, character_name)
+        self._ooc_controller = OOC_Controller(self.set_state, script, initializer.window_title)
+        self._ic_controller = IC_Controller(self.set_state, script, character_name)
 
     def run(self):
         try:
             self.determine_state()
-            while not self.__stopped:
-                if self.__state == MainBotStates.OUT_OF_COMBAT:
-                    self.ooc_controller.run()
-                elif self.__state == MainBotStates.IN_COMBAT:
-                    self.ic_controller.run()
+            while not self._stopped:
+                if self._state == MainBotStates.OUT_OF_COMBAT:
+                    self._ooc_controller.run()
+                elif self._state == MainBotStates.IN_COMBAT:
+                    self._ic_controller.run()
         except:
             log.exception("An exception occured!")
             log.critical("Exiting ... ")
             os._exit(1)
 
     def stop(self):
-        self.__stopped = True
+        self._stopped = True
 
     def set_state(self, state):
-        self.__state = state
+        self._state = state
 
     def determine_state(self):
         image_folder = "src\\bot\\images"
