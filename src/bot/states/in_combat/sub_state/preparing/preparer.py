@@ -88,7 +88,7 @@ class Preparer:
 
     @classmethod
     def handle_fight_lock(cls):
-        if cls.is_fight_lock_on():
+        if cls.is_fight_lock_icon_checked():
             log.info("Fight lock is on.")
             return Status.FIGHT_LOCK_IS_ALREADY_ON
         log.info("Fight lock is off.")
@@ -96,7 +96,7 @@ class Preparer:
 
     @classmethod
     def handle_tactical_mode(cls):
-        if cls.is_tactical_mode_on():
+        if cls.is_tactical_mode_icon_checked():
             log.info("Tactical mode is on.")
             return Status.TACTICAL_MODE_IS_ALREADY_ON
         log.info("Tactical mode is off.")
@@ -123,7 +123,7 @@ class Preparer:
                 log.info(f"Successfully moved to blue side dummy cell: {cell_coords}.")
                 return self.BLUE
         
-        log.info("Failed to move to dummy cells.")
+        log.error("Failed to move to dummy cells.")
         return Status.FAILED_TO_MOVE_TO_DUMMY_CELLS
 
     def handle_starting_cells(self, map_coords: str, dummy_cell_color: str = None):
@@ -147,7 +147,7 @@ class Preparer:
                         log.info(f"Successfully moved to blue side starting cell: {cell_coords}.")
                 return Status.SUCCESSFULLY_MOVED_TO_CELL
         
-        log.info("Failed to move to a starting cell.")
+        log.error("Failed to move to a starting cell.")
         return Status.FAILED_TO_MOVE_TO_STARTING_CELLS
 
     @classmethod
@@ -250,7 +250,7 @@ class Preparer:
         return False
 
     @classmethod
-    def is_fight_lock_on(cls):
+    def is_fight_lock_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
@@ -262,7 +262,7 @@ class Preparer:
         ) > 0
 
     @classmethod
-    def is_tactical_mode_on(cls):
+    def is_tactical_mode_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
@@ -377,7 +377,7 @@ class Preparer:
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            if cls.is_fight_lock_on():
+            if cls.is_fight_lock_icon_checked():
                 log.info("Successfully turned on fight lock.")
                 return Status.SUCCESSFULLY_TURNED_ON_FIGHT_LOCK
         log.info("Timed out while turning on fight lock.")
@@ -391,12 +391,16 @@ class Preparer:
             log.info("Failed to get tactical mode icon position.")
             return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
 
+        sc_before_clicking_icon = ScreenCapture.game_window()
         pyag.moveTo(*tactical_mode_icon_pos)
         pyag.click()
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            if cls.is_tactical_mode_on():
+            if (
+                cls.is_tactical_mode_icon_checked()
+                and not cls.are_images_same(sc_before_clicking_icon, ScreenCapture.game_window())
+            ):
                 log.info("Successfully turned on tactical mode.")
                 return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
         log.info("Timed out while turning on tactical mode.")
