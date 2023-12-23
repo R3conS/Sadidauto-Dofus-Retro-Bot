@@ -37,8 +37,7 @@ class Fighter:
                     return Status.FAILED_TO_FINISH_FIGHTING
                 return Status.SUCCESSFULLY_FINISHED_FIGHTING
             elif (
-                result == Status.LOGIN_SCREEN_DETECTED
-                or result == Status.FAILED_TO_DETECT_AP_COUNTER
+                result == Status.FAILED_TO_DETECT_AP_COUNTER
                 or result == Status.TIMED_OUT_WHILE_DETECTING_TURN
             ):
                 return Status.FAILED_TO_FINISH_FIGHTING

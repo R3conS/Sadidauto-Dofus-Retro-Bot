@@ -59,4 +59,3 @@ class Status(Enum):
     SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
     NO_SPELLS_AVAILABLE = "no_spells_available"
     FIGHT_RESULTS_WINDOW_DETECTED = "fight_results_window_detected"
-    LOGIN_SCREEN_DETECTED = "login_screen_detected"

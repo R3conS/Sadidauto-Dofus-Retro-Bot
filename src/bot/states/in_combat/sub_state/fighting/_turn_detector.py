@@ -26,7 +26,6 @@ class TurnDetector:
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
         log.info("Waiting for character's turn ...")
-        check_if_on_login_screen_timer = perf_counter()
         check_if_ap_counter_visible_timer = perf_counter()
         start_time = perf_counter()
         while perf_counter() - start_time <= 120:
@@ -41,16 +40,9 @@ class TurnDetector:
                 log.info("Detected 'Fight Results' window.")
                 return Status.FIGHT_RESULTS_WINDOW_DETECTED               
 
-            # Check if a disconnect occured.
-            if perf_counter() - check_if_on_login_screen_timer >= 10:
-                if cls._is_on_login_screen():
-                    log.error("Detected 'Login' screen while trying to detect character's turn.")
-                    return Status.LOGIN_SCREEN_DETECTED
-                check_if_on_login_screen_timer = perf_counter()
-
             # Periodically check if AP counter is visible. Allows to break
-            # out of the loop if fight somehow ended without detecting the
-            # 'Fight Results' window.
+            # out of the loop if account gets disconnected or fight somehow 
+            # ends without detecting 'Fight Results' window via close button.
             if perf_counter() - check_if_ap_counter_visible_timer >= 10:
                 if not cls._is_ap_counter_visible():
                     log.error("Failed to detect AP counter while trying to detect character's turn.")
@@ -144,17 +136,6 @@ class TurnDetector:
         return pyag.pixelMatchesColor(542, 630, (255, 102, 0))
 
     @classmethod
-    def _is_on_login_screen(cls):
-        return len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.game_window(),
-                needle=cls.dofus_logo_image,
-                confidence=0.9,
-                method=cv2.TM_CCOEFF_NORMED,
-            )
-        ) > 0
-
-    @classmethod
     def _is_ap_counter_visible(cls):
         return len(
             ImageDetection.find_image(
@@ -164,4 +145,3 @@ class TurnDetector:
                 mask=cls.ap_counter_image_mask
             )
         ) > 0
-
