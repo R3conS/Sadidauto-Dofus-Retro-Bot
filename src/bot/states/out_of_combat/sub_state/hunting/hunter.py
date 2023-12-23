@@ -38,6 +38,9 @@ class Hunter:
                     self._consecutive_fights_counter = 0
                     if pods_percentage >= self._pods_percentage_limit:
                         log.info(f"Reached pods limit of: {self._pods_percentage_limit}%. Going to bank ... ")
+                        # Setting these values to equal so that pods are checked on the 
+                        # first call to 'hunt()' after banking.
+                        self._consecutive_fights_counter = self._check_pods_every_x_fights
                         return Status.REACHED_PODS_LIMIT
                 else:
                     return Status.FAILED_TO_FINISH_HUNTING
