@@ -47,7 +47,7 @@ class Controller(threading.Thread):
         self.__state = state
 
     def determine_state(self):
-        image_folder = "src\\bot\\main_states_determiner_images"
+        image_folder = "src\\bot\\images"
         image_names = ["cc_lit.png", "cc_dim.png"]
         game_window_image = ScreenCapture.game_window()
         for name in image_names:
