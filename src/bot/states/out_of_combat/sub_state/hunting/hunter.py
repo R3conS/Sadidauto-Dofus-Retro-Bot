@@ -30,14 +30,6 @@ class Hunter:
         self._monster_detection_data = self._get_monster_detection_data()
         self._join_sword_detection_data = self._get_join_sword_detection_data()
 
-    def _is_at_pods_limit(self):
-        pods_percentage = self._get_pods_percentage()
-        if pods_percentage is not None:
-            if pods_percentage >= self._pods_percentage_limit:
-                log.info(f"Reached pods limit of: {self._pods_percentage_limit}%. Going to bank ... ")
-                return True
-        return False
-
     def hunt(self):
         while True:
             if self._consecutive_fights_counter >= self._check_pods_every_x_fights:

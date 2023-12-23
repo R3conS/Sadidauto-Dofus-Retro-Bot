@@ -30,6 +30,7 @@ class Controller:
         self.__mp_icon_image = _load_image(image_folder_path, "sub_state_verifier_2.png")
         self.__preparer = Preparer(script)
         self.__fighter = Fighter(script, character_name)
+        self._fight_counter = 0
 
     def run(self):
         while True:
@@ -47,7 +48,8 @@ class Controller:
             elif sub_state == _SubStates.FIGHTING:
                 result = self.__fighter.fight()
                 if result == FightingStatus.SUCCESSFULLY_FINISHED_FIGHTING:
-                    log.info(f"Successfully finished fighting.")
+                    self._fight_counter += 1
+                    log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
                     self.__set_main_bot_state_callback(MainBotStates.OUT_OF_COMBAT)
                     return
                 elif result == FightingStatus.FAILED_TO_FINISH_FIGHTING:
