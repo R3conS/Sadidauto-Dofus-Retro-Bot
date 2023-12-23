@@ -62,7 +62,7 @@ class Models:
     def disable(cls):
         fight_lock_icon_pos = cls.get_icon_pos()
         if fight_lock_icon_pos is None:
-            log.info("Failed to get models toggle icon position.")
+            log.error("Failed to get models toggle icon position.")
             return Status.FAILED_TO_GET_MODELS_TOGGLE_ICON_POS
 
         pyag.moveTo(*fight_lock_icon_pos)
@@ -73,7 +73,7 @@ class Models:
             if cls.are_disabled():
                 log.info("Successfully disabled models.")
                 return Status.SUCCESSFULLY_DISABLED_MODELS
-        log.info("Timed out while disabling models.")
+        log.error("Timed out while disabling models.")
         return Status.TIMED_OUT_WHILE_DISABLING_MODELS
 
     @classmethod

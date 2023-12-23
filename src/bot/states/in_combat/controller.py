@@ -31,7 +31,7 @@ class Controller:
                 if status == PreparingStatus.SUCCESSFULLY_FINISHED_PREPARING:
                     continue
                 elif status == PreparingStatus.FAILED_TO_FINISH_PREPARING:
-                    log.info(f"Failed to finish preparing. Attempting to recover ...")
+                    log.error(f"Failed to finish preparing. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
                 
@@ -43,12 +43,12 @@ class Controller:
                     self._set_main_bot_state_callback(MainBotStates.OUT_OF_COMBAT)
                     return
                 elif result == FightingStatus.FAILED_TO_FINISH_FIGHTING:
-                    log.info(f"Failed to finish fighting. Attempting to recover ...")
+                    log.error(f"Failed to finish fighting. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
 
             elif sub_state == _SubStates.RECOVERY:
-                log.info("'In Combat' controller failed to determine its sub state. Attempting to recover ...")
+                log.error("'In Combat' controller failed to determine its sub state. Attempting to recover ...")
                 self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                 return
 

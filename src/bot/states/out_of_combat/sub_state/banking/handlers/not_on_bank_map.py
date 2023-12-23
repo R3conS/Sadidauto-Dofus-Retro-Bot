@@ -32,7 +32,7 @@ class Handler:
                         log.info("Successfully recalled.")
                         return Status.SUCCESSFULLY_RECALLED
                 else:
-                    log.info("Failed to detect loading screen after recalling.")
+                    log.error("Failed to detect loading screen after recalling.")
                     return Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_RECALL
             else:
                 log.info("Character does not have a recall potion.")
@@ -52,7 +52,7 @@ class Handler:
             MapChanger.change_map(map_coords, self._movement_data)
             if MapChanger.has_loading_screen_passed():
                 continue
-            log.info("Failed to detect loading screen after changing map.")
+            log.error("Failed to detect loading screen after changing map.")
             return Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_CHANGE_MAP
 
     def _is_char_on_no_recall_map(self):

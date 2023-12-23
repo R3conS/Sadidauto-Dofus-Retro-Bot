@@ -81,7 +81,7 @@ class Hunter:
         MapChanger.change_map(map_coords, self._movement_data)
         if MapChanger.has_loading_screen_passed():
             return Status.SUCCESSFULLY_TRAVERSED_MAP
-        log.info("Failed to detect loading screen after changing map.")
+        log.error("Failed to detect loading screen after changing map.")
         return Status.FAILED_TO_TRAVERSE_MAP
 
     def _handle_fightable_map(self, map_coords):
@@ -100,7 +100,7 @@ class Hunter:
                 # click missed. Clicks can miss if the monster moves away.
                 sleep(0.25) # Maybe increase this to 0.5?
                 if Interfaces.is_right_click_menu_open():
-                    log.info("Failed to attack monster because it moved away. Skipping ... ")
+                    log.error("Failed to attack monster because it moved away. Skipping ... ")
                     Interfaces.close_right_click_menu()
                     continue
 
@@ -117,7 +117,7 @@ class Hunter:
                         if MapChanger.has_loading_screen_passed():
                             log.info("Successfully left 'Lumberjack's Workshop'.")
                             continue
-                        log.info("Failed to leave 'Lumberjack's Workshop'.")
+                        log.error("Failed to leave 'Lumberjack's Workshop'.")
                         return Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
 
         log.info(f"Map {map_coords} fully searched. Changing map ... ")
@@ -208,7 +208,7 @@ class Hunter:
             ) > 0:
                 log.info("Attack successful.")
                 return True
-        log.info("Attack failed.")
+        log.error("Attack failed.")
         return False  
 
     def _is_join_sword_on_pos(self, x, y):

@@ -49,7 +49,7 @@ class Finder:
             pyag.moveTo(location[0], location[1])
             cls.wait_for_info_card_to_appear()
             if not cls.is_info_card_visible():
-                log.info("Timed out while waiting for info card to appear during detection by circles.")
+                log.error("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = cls.screenshot_name_area_on_info_card()
             if cls.read_name_area_screenshot(name_area) == character_name:
@@ -60,7 +60,7 @@ class Finder:
             pyag.moveTo(location[0], location[1])
             cls.wait_for_info_card_to_appear()
             if not cls.is_info_card_visible():
-                log.info("Timed out while waiting for info card to appear during detection by circles.")
+                log.error("Timed out while waiting for info card to appear during detection by circles.")
                 return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
             name_area = cls.screenshot_name_area_on_info_card()
             if cls.read_name_area_screenshot(name_area) == character_name:
@@ -80,14 +80,14 @@ class Finder:
 
         turn_arrow = cls._get_turn_indicator_arrow_location()
         if turn_arrow is None:
-            log.info("Failed to get turn indicator arrow location.")
+            log.error("Failed to get turn indicator arrow location.")
             return Status.FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION
         
         pyag.moveTo(turn_arrow[0], turn_arrow[1])
         pyag.moveRel(-10, 30) # Moving mouse onto the turn card.
         cls.wait_for_info_card_to_appear()
         if not cls.is_info_card_visible():
-            log.info("Timed out while waiting for info card to appear during detection by turn bar.")
+            log.error("Timed out while waiting for info card to appear during detection by turn bar.")
             move_mouse_off_game_area() # To stop info card from staying on screen.
             return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 

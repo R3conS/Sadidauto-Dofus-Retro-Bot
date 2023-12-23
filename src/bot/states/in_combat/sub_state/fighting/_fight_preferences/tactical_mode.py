@@ -74,7 +74,7 @@ class TacticalMode:
 
         tactical_mode_icon_pos = cls.get_icon_pos()
         if tactical_mode_icon_pos is None:
-            log.info("Failed to get tactical mode toggle icon position.")
+            log.error("Failed to get tactical mode toggle icon position.")
             return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
 
         pyag.moveTo(*tactical_mode_icon_pos)
@@ -85,5 +85,5 @@ class TacticalMode:
             if cls.is_on():
                 log.info("Successfully turned on tactical mode.")
                 return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
-        log.info("Timed out while turning on tactical mode.")
+        log.error("Timed out while turning on tactical mode.")
         return Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE

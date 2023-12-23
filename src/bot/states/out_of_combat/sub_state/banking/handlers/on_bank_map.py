@@ -53,10 +53,10 @@ class Handler:
                 log.info("Successfully entered the bank.")
                 return Status.SUCCESSFULLY_ENTERED_BANK
             else:
-                log.info("Failed to enter the bank.")
+                log.error("Failed to enter the bank.")
                 return Status.FAILED_TO_ENTER_BANK
         else:
-            log.info("Failed to detect loading screen after trying to enter the bank.")
+            log.error("Failed to detect loading screen after trying to enter the bank.")
             return Status.FAILED_TO_ENTER_BANK
 
     def _handle_vault_closed(self):
@@ -74,16 +74,16 @@ class Handler:
                         log.info("Item sprites have loaded.")
                         return Status.SUCCESSFULLY_OPENED_BANK_VAULT
                     else:
-                        log.info("Failed to detect if item sprites have loaded.")
+                        log.error("Failed to detect if item sprites have loaded.")
                         return Status.FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED
                 else:
-                    log.info("Failed to open bank vault.")
+                    log.error("Failed to open bank vault.")
                     return Status.FAILED_TO_OPEN_BANK_VAULT
             else:
-                log.info("Failed to open banker dialogue.")
+                log.error("Failed to open banker dialogue.")
                 return Status.FAILED_TO_OPEN_BANKER_DIALOGUE
         else:
-            log.info("Failed to detect banker NPC.")
+            log.error("Failed to detect banker NPC.")
             return Status.FAILED_TO_DETECT_BANKER_NPC
         
     def _handle_vault_open(self):
@@ -101,12 +101,12 @@ class Handler:
                     log.info("Successfully left the bank.")
                     return Status.SUCCESSFULLY_LEFT_BANK
                 else:
-                    log.info("Failed to leave the bank.")
+                    log.error("Failed to leave the bank.")
                     return Status.FAILED_TO_LEAVE_BANK
             else:
-                log.info("Failed to detect loading screen after trying to leave the bank.")
+                log.error("Failed to detect loading screen after trying to leave the bank.")
                 return Status.FAILED_TO_LEAVE_BANK
-        log.info("Failed to close the bank vault.")
+        log.error("Failed to close the bank vault.")
         return Status.FAILED_TO_CLOSE_BANK_VAULT
 
     @staticmethod

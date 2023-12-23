@@ -47,10 +47,10 @@ def _handle_tab_opening(decorated_method):
                     log.info(f"Successfully opened '{tab_name.capitalize()}' tab.")
                     return True
                 
-            log.info(f"Timed out while opening '{tab_name.capitalize()}' tab.")
+            log.error(f"Timed out while opening '{tab_name.capitalize()}' tab.")
             return False
         
-        log.info(f"Failed to find '{tab_name.capitalize()}' tab icon.")
+        log.error(f"Failed to find '{tab_name.capitalize()}' tab icon.")
         return False
     
     return wrapper
@@ -63,7 +63,7 @@ def _handle_tab_depositing(decorated_method):
         tab_name = decorated_method.__name__.split("_")[1]
         getattr(VaultActions, f"open_{tab_name}_tab")()
         if not getattr(VaultActions, f"is_{tab_name}_tab_open")():
-            log.info(f"Failed to open '{tab_name.capitalize()}' tab.")
+            log.error(f"Failed to open '{tab_name.capitalize()}' tab.")
             return Status.FAILED_TO_OPEN_TAB
 
         if getattr(VaultActions, f"does_{tab_name}_tab_have_forbidden_items_loaded")():
@@ -184,12 +184,12 @@ class VaultActions:
             log.info(f"Depositing {occupied_slots_amount} items ...")
             pods_before_deposit = PodsReader.get_occupied_bank_pods()
             if pods_before_deposit is None:
-                log.info("Failed to get occupied bank pods.")
+                log.error("Failed to get occupied bank pods.")
                 return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
             cls.deposit_visible_items(occupied_slots_amount)
             pods_after_deposit = PodsReader.get_occupied_bank_pods()
             if pods_after_deposit is None:
-                log.info("Failed to get occupied bank pods.")
+                log.error("Failed to get occupied bank pods.")
                 return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
 
             if pods_after_deposit < pods_before_deposit:
@@ -198,7 +198,7 @@ class VaultActions:
                     f"Pods freed: {pods_before_deposit - pods_after_deposit}."
                 )
             else:
-                log.info("Failed to deposit items.")
+                log.error("Failed to deposit items.")
                 return Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
 
     @classmethod
@@ -209,7 +209,7 @@ class VaultActions:
     ):
         pods_before_deposit = PodsReader.get_occupied_bank_pods()
         if pods_before_deposit is None:
-            log.info("Failed to get occupied bank pods.")
+            log.error("Failed to get occupied bank pods.")
             return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
         
         slot_coords = cls.inventory_slot_coords["row_1"][0]
@@ -218,7 +218,7 @@ class VaultActions:
             if cls.is_slot_empty(*slot_coords):
                 pods_after_deposit = PodsReader.get_occupied_bank_pods()
                 if pods_after_deposit is None:
-                    log.info("Failed to get occupied bank pods.")
+                    log.error("Failed to get occupied bank pods.")
                     return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
                 log.info(
                     f"Successfully deposited all items in the tab! "
@@ -232,7 +232,7 @@ class VaultActions:
                 if cls.was_slot_deposited(*slot_coords, next_slot_screenshot):
                     deposited_items_count += 1
                     continue
-                log.info("Failed to deposit slot.")
+                log.error("Failed to deposit slot.")
                 return Status.FAILED_TO_DEPOSIT_SLOT
             else:
                 name = cls.get_forbidden_item_name(*slot_coords, loaded_forbidden_items, forbidden_items)

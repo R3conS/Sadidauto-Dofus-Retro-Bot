@@ -32,7 +32,7 @@ class Controller:
                     self._set_main_bot_state_callback(MainBotStates.IN_COMBAT)
                     return
                 elif status == HunterStatus.FAILED_TO_FINISH_HUNTING:
-                    log.info(f"Failed to finish hunting. Attempting to recover ...")
+                    log.error(f"Failed to finish hunting. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
 
@@ -42,12 +42,12 @@ class Controller:
                     sub_state = _SubStates.HUNTING
                     continue
                 elif status == BankerStatus.FAILED_TO_FINISH_BANKING:
-                    log.info(f"Failed to finish banking. Attempting to recover ...")
+                    log.error(f"Failed to finish banking. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
                 
             elif sub_state == _SubStates.RECOVERY:
-                log.info("'Out of Combat' controller failed to determine its sub state. Attempting to recover ...")
+                log.error("'Out of Combat' controller failed to determine its sub state. Attempting to recover ...")
                 self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                 return
 

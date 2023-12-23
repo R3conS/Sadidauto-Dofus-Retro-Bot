@@ -48,7 +48,7 @@ def _get_pods_numbers(decorated_method):
                     tooltip = cls.crop_tooltip_from_image(tooltip_area, tooltip_rectangle)
                     text = cls.read_tooltip_text(tooltip)
                     return cls.parse_tooltip_text(text)
-        log.info(f"Timed out while getting {tooltip_name} pods numbers.")
+        log.error(f"Timed out while getting {tooltip_name} pods numbers.")
         cls.save_images_for_debug()
         return None
     return wrapper

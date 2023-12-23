@@ -147,7 +147,7 @@ class Preparer:
         log.info("Clicking ready ... ")
         ready_button_pos = cls._get_ready_button_pos()
         if ready_button_pos is None:
-            log.info("Failed to get ready button position.")
+            log.error("Failed to get ready button position.")
             return Status.FAILED_TO_GET_READY_BUTTON_POS
         
         pyag.moveTo(*ready_button_pos)
@@ -159,7 +159,7 @@ class Preparer:
             if not cls._is_ready_button_visible():
                 log.info("Successfully clicked ready button.")
                 return Status.SUCCESSFULLY_CLICKED_READY_BUTTON
-        log.info("Timed out while clicking ready button.")
+        log.error("Timed out while clicking ready button.")
         return Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
 
     def _move_char_to_cell(self, cell_x, cell_y):
@@ -361,7 +361,7 @@ class Preparer:
         log.info("Turning on fight lock ... ")
         fight_lock_icon_pos = cls._get_fight_lock_icon_pos()
         if fight_lock_icon_pos is None:
-            log.info("Failed to get fight lock icon position.")
+            log.error("Failed to get fight lock icon position.")
             return Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
 
         pyag.moveTo(*fight_lock_icon_pos)
@@ -372,7 +372,7 @@ class Preparer:
             if cls._is_fight_lock_icon_checked():
                 log.info("Successfully turned on fight lock.")
                 return Status.SUCCESSFULLY_TURNED_ON_FIGHT_LOCK
-        log.info("Timed out while turning on fight lock.")
+        log.error("Timed out while turning on fight lock.")
         return Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
 
     @classmethod
@@ -380,7 +380,7 @@ class Preparer:
         log.info("Turning on tactical mode ... ")
         tactical_mode_icon_pos = cls._get_tactical_mode_icon_pos()
         if tactical_mode_icon_pos is None:
-            log.info("Failed to get tactical mode icon position.")
+            log.error("Failed to get tactical mode icon position.")
             return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
 
         sc_before_clicking_icon = ScreenCapture.game_window()
@@ -395,5 +395,5 @@ class Preparer:
             ):
                 log.info("Successfully turned on tactical mode.")
                 return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
-        log.info("Timed out while turning on tactical mode.")
+        log.error("Timed out while turning on tactical mode.")
         return Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE

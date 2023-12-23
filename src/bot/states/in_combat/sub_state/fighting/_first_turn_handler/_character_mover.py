@@ -51,9 +51,9 @@ class Mover:
                     log.info(f"Successfully moved character to: {coords}.")
                     move_mouse_off_game_area() # To make sure that character is not hovered over.
                     return Status.SUCCESSFULLY_MOVED_CHARACTER
-            log.info(f"Timed out while detecting if character moved to: {coords}.")
+            log.error(f"Timed out while detecting if character moved to: {coords}.")
             return Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
-        log.info(f"Failed to detect if destination cell {coords} is highlighted.")
+        log.error(f"Failed to detect if destination cell {coords} is highlighted.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
     def _get_movement_coords(self):

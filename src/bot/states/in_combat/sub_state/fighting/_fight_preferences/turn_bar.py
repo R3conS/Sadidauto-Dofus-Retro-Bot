@@ -33,7 +33,7 @@ class TurnBar:
             if cls.is_shrunk():
                 log.info("Successfully shrunk turn bar.")
                 return Status.SUCCESSFULLY_SHRUNK_TURN_BAR
-        log.info("Timed out while shrinking turn bar.")
+        log.error("Timed out while shrinking turn bar.")
         return Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR
 
     @classmethod
@@ -47,5 +47,5 @@ class TurnBar:
             if not cls.is_shrunk():
                 log.info("Successfully unshrunk turn bar.")
                 return Status.SUCCESSFULLY_UNSHRUNK_TURN_BAR
-        log.info("Timed out while unshrinking turn bar.")
+        log.error("Timed out while unshrinking turn bar.")
         return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR

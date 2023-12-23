@@ -150,7 +150,7 @@ def _cast_spell(decorated_method):
             result == Status.FAILED_TO_GET_SPELL_ICON_POS
             or result == Status.FAILED_TO_SELECT_SPELL
         ):
-            log.info(f"Failed to cast: '{spell_name_formatted}'. Reason: {result.value.replace('_', ' ')}.")
+            log.error(f"Failed to cast: '{spell_name_formatted}'. Reason: {result.value.replace('_', ' ')}.")
             return Status.FAILED_TO_CAST_SPELL
         log.info(f"Successfully selected.")
         
@@ -177,7 +177,7 @@ def _cast_spell(decorated_method):
                 log.info(f"Successfully cast: '{spell_name_formatted}'.")
                 move_mouse_off_game_area() # To make sure the vision of spell bar is not blocked.
                 return Status.SUCCESSFULLY_CAST_SPELL
-        log.info(f"Timed out while detecting if '{spell_name_formatted}' was cast successfully.")
+        log.error(f"Timed out while detecting if '{spell_name_formatted}' was cast successfully.")
         return Status.TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY
     
     return wrapper
