@@ -1,14 +1,12 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-import os
 from time import perf_counter
 
 import cv2
 import pyautogui as pyag
 
 from src.utilities import load_image
-from .data.getter import Getter as FightingDataGetter
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from .status_enum import Status
