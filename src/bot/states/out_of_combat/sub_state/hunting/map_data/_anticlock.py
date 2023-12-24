@@ -43,13 +43,26 @@ class AntiClock:
             "-1,-23" : (926, 274),
             "0,-23"  : (901, 343),
             "1,-23"  : (926, 410),
-            "2,-23"  : (901, 308),
+            "2,-23"  : (901, 308)
         }
 
     @staticmethod
     def get_map_type_data():
         return {
             # Astrub Bank map
+            "2,-24"  : "fightable",
+            "2,-25"  : "fightable",
+            "2,-26"  : "fightable",
+            "3,-26"  : "fightable",
+            "2,-28"  : "fightable",
+            "1,-28"  : "fightable",
+            "1,-25"  : "fightable",
+            "1,-24"  : "fightable",
+            "-2,-28" : "fightable",
+            "-2,-26" : "fightable",
+            "-2,-24" : "fightable",
+            "-1,-23" : "fightable",
+            "1,-23"  : "fightable",
             "4,-16"  : "traversable",
             "4,-17"  : "traversable",
             "4,-18"  : "traversable",
@@ -62,33 +75,12 @@ class AntiClock:
             "4,-23"  : "traversable",
             "3,-23"  : "traversable",
             "3,-24"  : "traversable",
-            "3,-25"  : "fightable",
-            "3,-26"  : "fightable",
-            "2,-26"  : "fightable",
-            "2,-27"  : "fightable",
-            "2,-28"  : "fightable",
-            "1,-28"  : "fightable",
-            "1,-27"  : "fightable",
-            "1,-26"  : "fightable",
-            "1,-25"  : "fightable",
-            "2,-25"  : "fightable",
-            "2,-24"  : "fightable",
-            "1,-24"  : "fightable",
-            "0,-24"  : "fightable",
-            "0,-25"  : "fightable",
             "0,-26"  : "traversable",
             "0,-27"  : "traversable",
-            "0,-28"  : "fightable",
             "-1,-28" : "traversable",
-            "-2,-28" : "fightable",
             "-2,-27" : "traversable",
-            "-2,-26" : "fightable",
             "-2,-25" : "traversable",
-            "-2,-24" : "fightable",
             "-1,-24" : "traversable",
-            "-1,-23" : "fightable",
             "0,-23"  : "traversable",
-            "1,-23"  : "fightable",
-            "2,-23"  : "traversable",
+            "2,-23"  : "traversable"
         }
-

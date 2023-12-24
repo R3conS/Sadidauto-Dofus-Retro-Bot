@@ -26,7 +26,7 @@ class Mover:
         self._starting_side_color = StartingCellAndSideGetter(script).get_starting_side_color(initial_character_pos)
 
     def move(self):
-        coords = self._get_movement_coords()
+        coords = self.get_destination_cell_coords()
         
         if self._get_distance_between_cells(coords, self._initial_character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
@@ -56,23 +56,39 @@ class Mover:
         log.error(f"Failed to detect if destination cell {coords} is highlighted.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
-    def _get_movement_coords(self):
+    def get_destination_cell_coords(self):
         current_map_coords = MapChanger.get_current_map_coords()
         for map_coords, data in self._movement_data.items():
             if map_coords == current_map_coords:
                 for side_color, click_coords in data.items():
                     if side_color == self._starting_side_color:
-                            if isinstance(click_coords, tuple):
-                                return click_coords
-                            try:
-                                return click_coords[self._initial_character_pos]
-                            except KeyError:
+                        if isinstance(click_coords, tuple):
+                            return click_coords
+                        try:
+                            return click_coords[self._initial_character_pos]
+                        except KeyError:
+                            # Sometimes 'self._initial_character_pos' is not
+                            # an exact match as a key for 'click_coords' due to
+                            # how 'find_by_circles()' works, but if there's a key in 'click_coords'
+                            # that is within 10 pixels of 'self._initial_character_pos' 
+                            # then it's the one that needs to be used to unlock
+                            # the destination cell coords.
+                            closest_key = None
+                            min_distance = float('inf')
+                            for coords in click_coords.keys():
+                                distance = self._get_distance_between_cells(coords, self._initial_character_pos)
+                                if distance < min_distance and distance <= 10:
+                                    min_distance = distance
+                                    closest_key = coords
+                            if closest_key is not None:
+                                return click_coords[closest_key]
+                            else:
                                 raise Exception(
                                     f"No movement data for character position {self._initial_character_pos} "
                                     f"on starting side color '{self._starting_side_color}' on map '{map_coords}'."
                                 )
         raise Exception(f"No in-combat movement data for map '{current_map_coords}'.")
-
+    
     def _is_cell_highlighted(self, click_coords):
         """
         Checking with a timer to give time for the game to draw orange
