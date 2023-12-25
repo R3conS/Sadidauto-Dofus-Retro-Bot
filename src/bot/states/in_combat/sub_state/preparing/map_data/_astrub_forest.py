@@ -1,4 +1,4 @@
-class AntiClock:
+class AstrubForest:
 
     @staticmethod
     def get_starting_cells():

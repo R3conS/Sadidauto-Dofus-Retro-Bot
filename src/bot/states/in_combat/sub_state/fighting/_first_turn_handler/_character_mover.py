@@ -11,7 +11,7 @@ from utilities import move_mouse_off_game_area
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
-from ..data.getter import Getter as FightingDataGetter
+from ..map_data.getter import Getter as FightingDataGetter
 from ._starting_cell_and_side_getter import Getter as StartingCellAndSideGetter
 from ..status_enum import Status
 

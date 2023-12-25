@@ -1,7 +1,7 @@
 from math import sqrt
 
 from src.bot.map_changer.map_changer import MapChanger
-from ..data.getter import Getter as FightingDataGetter
+from ..map_data.getter import Getter as FightingDataGetter
 
 
 class Getter:

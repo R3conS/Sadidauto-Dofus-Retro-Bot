@@ -1,4 +1,4 @@
-class AntiClock:
+class Anticlock:
 
     @staticmethod
     def get_pathing_data():
