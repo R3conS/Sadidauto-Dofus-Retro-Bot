@@ -4,6 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from datetime import datetime
 import os
 from time import perf_counter
+import re
 
 from functools import wraps
 
@@ -218,8 +219,8 @@ class PodsReader:
         x, y, w, h = rectangle
         return screenshot[y:y+h, x:x+w]
 
-    @staticmethod
-    def read_tooltip_text(tooltip: np.ndarray):
+    @classmethod
+    def read_tooltip_text(cls, tooltip: np.ndarray):
         """
         For best results the `tooltip` has to be cropped out with 
         `crop_tooltip_from_image()`, which has to get its `rectangle`
@@ -229,13 +230,24 @@ class PodsReader:
         tooltip = OCR.invert_image(tooltip)
         tooltip = OCR.resize_image(tooltip, tooltip.shape[1] * 5, tooltip.shape[0] * 5)
         tooltip = OCR.dilate_image(tooltip, 2)
-        tooltip = OCR.binarize_image(tooltip, 145)
-        tooltip = cv2.GaussianBlur(tooltip, (3, 3), 0)
-        return OCR.get_text_from_image(tooltip)
+
+        binarization_value = 145
+        while True:
+            tooltip = OCR.binarize_image(tooltip, binarization_value)
+            tooltip = cv2.GaussianBlur(tooltip, (3, 3), 0)
+            text = OCR.get_text_from_image(tooltip)
+            text = text.replace(" ", "")
+            if re.match(r"\d+podsoutof\d+", text):
+                return text
+            binarization_value += 5
+            if binarization_value > 255:
+                log.critical("Failed to read tooltip text.")
+                cls.save_images_for_debug()
+                os._exit(1)
 
     @staticmethod
     def parse_tooltip_text(extracted_tooltip_text) -> tuple[int, int]:
-        split_text = extracted_tooltip_text.split("pods out of")
+        split_text = extracted_tooltip_text.split("podsoutof")
         numbers = []
         for text in split_text:
             text = text.strip()
