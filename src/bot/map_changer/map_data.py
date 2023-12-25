@@ -1,6 +1,6 @@
 DATA = {
-    # "current_map": {"above": (x, y), "below": (x, y), "left": (x, y), "right": (x, y)}
-    # None = no map change (sun) icon in that direction.
+    # "map_coords": {"top_sun": (x, y), "bot_sun": (x, y), "left_sun": (x, y), "right_sun": (x, y)}
+    # If a key has a value of None, it means that the map change plot (sun) doesn't exist in that direction.
     "4,-16" : {"4,-17" : (465, 72), "4,-15" : (494, 590), "3,-16" : (3, 342), "5,-16" : (929, 375)},
     "4,-17" : {"4,-18" : (432, 56), "4,-16" : (431, 594), "3,-17" : (3, 343), "5,-17" : (929, 309)},
     "4,-18" : {"4,-19" : (498, 55), "4,-17" : (365, 594), "3,-18" : (5, 341), "5,-18" : (929, 375)},

@@ -2,6 +2,10 @@ class AstrubForest:
 
     @staticmethod
     def get_movement_data():
+        # Format:
+        # "map_coords": {"side_color": (move_to_x, move_to_y)}
+        # OR
+        # "map_coords": {"side_color": {(start_cell_x, start_cell_y): (move_to_x, move_to_y)}
         return {
             "2,-24" : {"red" : (527, 393), "blue": (660, 428)},
             "2,-25" : {"red" : (395, 225), "blue": (433, 342)},

@@ -27,7 +27,6 @@ class Mover:
 
     def move(self):
         coords = self.get_destination_cell_coords()
-        
         if self._get_distance_between_cells(coords, self._initial_character_pos) <= 10:
             log.info(f"Character is already on the correct cell.")
             move_mouse_off_game_area() # To make sure that character is not hovered over and info card is not blocking spell bar.
