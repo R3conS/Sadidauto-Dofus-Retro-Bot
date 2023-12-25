@@ -9,6 +9,8 @@ class Status(Enum):
     SUCCESSFULLY_TURNED_ON_TACTICAL_MODE = "successfully_turned_on_tactical_mode"
     SUCCESSFULLY_FINISHED_PREPARING = "successfully_finished_preparing"
     SUCCESSFULLY_CLICKED_READY_BUTTON = "successfully_clicked_ready_button"
+    SUCCESSFULLY_DETECTED_START_OF_COMBAT = "successfully_detected_start_of_combat"
+
     FAILED_TO_MOVE_TO_DUMMY_CELLS = "failed_to_move_to_dummy_cells"
     FAILED_TO_MOVE_TO_STARTING_CELLS = "failed_to_move_to_starting_cells"
     FAILED_TO_MOVE_TO_CELL = "failed_to_move_to_cell"
@@ -18,9 +20,12 @@ class Status(Enum):
     FAILED_TO_GET_FIGHT_LOCK_ICON_POS = "failed_to_get_fight_lock_icon_pos"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
     FAILED_TO_GET_READY_BUTTON_POS = "failed_to_get_ready_button_pos"
+    
     TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK = "timed_out_while_turning_on_fight_lock"
     TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE = "timed_out_while_turning_on_tactical_mode"
     TIMED_OUT_WHILE_CLICKING_READY_BUTTON = "timed_out_while_clicking_ready_button"
+    TIMED_OUT_WHILE_DETECTING_START_OF_COMBAT = "timed_out_while_detecting_start_of_combat"
+
     FIGHT_LOCK_IS_ALREADY_ON = "fight_lock_is_already_on"
     TACTICAL_MODE_IS_ALREADY_ON = "tactical_mode_is_already_on"
     NO_DUMMY_CELLS_ON_THIS_MAP = "no_dummy_cells_on_this_map"

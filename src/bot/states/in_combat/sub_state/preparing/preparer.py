@@ -35,6 +35,9 @@ class Preparer:
     ready_button_dim_image = load_image(image_folder_path, "ready_button_dim.png")
     ready_button_dim_image_mask = ImageDetection.create_mask(ready_button_dim_image)
     ready_button_area = (678, 507, 258, 91)
+    ap_counter_image = load_image(image_folder_path, "ap_counter_image.png")
+    ap_counter_image_mask = ImageDetection.create_mask(ap_counter_image)
+    ap_counter_area = (452, 598, 41, 48)
 
     def __init__(self, script: str):
         self._starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
@@ -76,6 +79,10 @@ class Preparer:
         ):
             return Status.FAILED_TO_FINISH_PREPARING
         
+        result = self._has_combat_started()
+        if result == Status.TIMED_OUT_WHILE_DETECTING_START_OF_COMBAT:
+            return Status.FAILED_TO_FINISH_PREPARING
+
         return Status.SUCCESSFULLY_FINISHED_PREPARING
 
     @classmethod
@@ -114,6 +121,11 @@ class Preparer:
             if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully moved to blue side dummy cell: {cell_coords}.")
                 return self.BLUE
+        
+        if len(red_dummy_cells) == 0:
+            return self.RED
+        elif len(blue_dummy_cells) == 0:
+            return self.BLUE
         
         log.error("Failed to move to dummy cells.")
         return Status.FAILED_TO_MOVE_TO_DUMMY_CELLS
@@ -397,3 +409,24 @@ class Preparer:
                 return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
         log.error("Timed out while turning on tactical mode.")
         return Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
+
+    @classmethod
+    def _is_ap_counter_visible(cls):
+        return len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area(cls.ap_counter_area),
+                needle=cls.ap_counter_image,
+                confidence=0.99,
+                mask=cls.ap_counter_image_mask
+            )
+        ) > 0
+    
+    @classmethod
+    def _has_combat_started(cls):
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if cls._is_ap_counter_visible():
+                log.info("Successfully detected the start of combat.")
+                return Status.SUCCESSFULLY_DETECTED_START_OF_COMBAT
+        log.error("Timed out while detecting the start of combat.")
+        return Status.TIMED_OUT_WHILE_DETECTING_START_OF_COMBAT

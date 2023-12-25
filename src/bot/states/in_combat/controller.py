@@ -23,12 +23,12 @@ class Controller:
         self._fight_counter = 0
 
     def run(self):
+        sub_state = self._determine_sub_state()
         while True:
-            sub_state = self._determine_sub_state()
-
             if sub_state == _SubStates.PREPARING:
                 status = self._preparer.prepare()
                 if status == PreparingStatus.SUCCESSFULLY_FINISHED_PREPARING:
+                    sub_state = _SubStates.FIGHTING
                     continue
                 elif status == PreparingStatus.FAILED_TO_FINISH_PREPARING:
                     log.error(f"Failed to finish preparing. Attempting to recover ...")
