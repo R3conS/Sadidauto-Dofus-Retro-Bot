@@ -17,9 +17,13 @@ from src.screen_capture import ScreenCapture
 
 class Handler:
 
+    _image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
+    _npc_images = []
+    for image in os.listdir(_image_folder_path):
+        _npc_images.append(load_image(_image_folder_path, image))
+
     def __init__(self, game_window_title: str):
         self._game_window_title = game_window_title
-        self._npc_images = self._load_npc_images()
 
     def handle(self):
         if not self._is_char_inside_astrub_bank():
@@ -126,9 +130,10 @@ class Handler:
             pyag.pixelMatchesColor(31, 568, (213, 207, 170)),
         ))
 
-    def _is_banker_npc_detected(self):
+    @classmethod
+    def _is_banker_npc_detected(cls):
         astrub_bank_interior = ScreenCapture.game_window()
-        for banker_image in self._npc_images:
+        for banker_image in cls._npc_images:
             result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
                 needle=banker_image,
@@ -138,9 +143,10 @@ class Handler:
                 return True
         return False
     
-    def _get_banker_npc_coords(self):
+    @classmethod
+    def _get_banker_npc_coords(cls):
         astrub_bank_interior = ScreenCapture.game_window()
-        for banker_image in self._npc_images:
+        for banker_image in cls._npc_images:
             result = ImageDetection.find_image(
                 haystack=astrub_bank_interior,
                 needle=banker_image,
@@ -177,13 +183,6 @@ class Handler:
             if cls._is_bank_vault_open():
                 return True
         return False
-
-    def _load_npc_images(self):
-        image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images\\astrub_banker_npc"
-        loaded_images = []
-        for image in os.listdir(image_folder_path):
-            loaded_images.append(load_image(image_folder_path, image))
-        return loaded_images
 
     @staticmethod
     def _is_char_inside_astrub_bank():

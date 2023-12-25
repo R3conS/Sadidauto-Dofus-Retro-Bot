@@ -25,7 +25,7 @@ class Hunter:
         self._pods_percentage_limit = 90
         # Map data
         map_data = MapDataGetter.get_data_object(script)
-        self._movement_data = map_data.get_movement_data()
+        self._pathing_data = map_data.get_pathing_data()
         self._map_type_data = map_data.get_map_type_data()
         self._monster_detection_data = self._get_monster_detection_data()
         self._join_sword_detection_data = self._get_join_sword_detection_data()
@@ -46,10 +46,6 @@ class Hunter:
                     return Status.FAILED_TO_FINISH_HUNTING
 
             map_coords = MapChanger.get_current_map_coords()
-            log.info(f"Current map coordinates: {map_coords}")
-            if not self._are_map_coords_valid(map_coords, self._movement_data):
-                raise KeyError(f"Map coordinates {map_coords} are not in movement data!")
-
             map_type = self._map_type_data[map_coords]
             if map_type == "traversable":
                 if self._handle_traversable_map(map_coords) == Status.FAILED_TO_TRAVERSE_MAP:
@@ -59,6 +55,8 @@ class Hunter:
                 status = self._handle_fightable_map(map_coords)
                 if status == Status.SUCCESSFULLY_STARTED_COMBAT:
                     return Status.SUCCESSFULLY_FINISHED_HUNTING
+                elif status == Status.FAILED_TO_CHANGE_MAP_BACK_TO_ORIGINAL:
+                    return Status.FAILED_TO_FINISH_HUNTING
                 elif (
                     status == Status.FAILED_TO_CHANGE_MAP
                     or status == Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
@@ -81,7 +79,7 @@ class Hunter:
         return None
 
     def _handle_traversable_map(self, map_coords):
-        MapChanger.change_map(map_coords, self._movement_data)
+        MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         if MapChanger.has_loading_screen_passed():
             return Status.SUCCESSFULLY_TRAVERSED_MAP
         log.error("Failed to detect loading screen after changing map.")
@@ -112,8 +110,14 @@ class Hunter:
                     return Status.SUCCESSFULLY_STARTED_COMBAT
                 else:
                     if map_coords != MapChanger.get_current_map_coords():
-                        log.info("Map was changed during the attack.")
-                        return Status.ACCIDENTALLY_CHANGED_MAP_DURING_ATTACK
+                        log.error("Map was accidentally changed during the attack.")
+                        log.info("Attempting to change map back to original ...")
+                        MapChanger.change_map(MapChanger.get_current_map_coords(), map_coords)
+                        if MapChanger.has_loading_screen_passed():
+                            log.info("Successfully changed map back to original!")
+                            continue
+                        log.error("Failed to change map back to original map.")
+                        return Status.FAILED_TO_CHANGE_MAP_BACK_TO_ORIGINAL
                     elif self._is_char_in_lumberjack_workshop():
                         log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                         self._leave_lumberjacks_workshop()
@@ -124,7 +128,7 @@ class Hunter:
                         return Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
 
         log.info(f"Map {map_coords} fully searched. Changing map ... ")
-        MapChanger.change_map(map_coords, self._movement_data)
+        MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         if MapChanger.has_loading_screen_passed():
             return Status.MAP_FULLY_SEARCHED
         return Status.FAILED_TO_CHANGE_MAP
@@ -201,7 +205,7 @@ class Hunter:
 
     def _is_attack_successful(self):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
+        while perf_counter() - start_time <= 6:
             if len(
                 ImageDetection.find_images(
                     ScreenCapture.game_window(), 
@@ -227,11 +231,6 @@ class Hunter:
             )
             if len(result) > 0:
                 return True
-        return False
-
-    def _are_map_coords_valid(self, map_coords, movement_data):
-        if map_coords in movement_data.keys():
-            return True
         return False
 
     def _is_char_in_lumberjack_workshop(self):

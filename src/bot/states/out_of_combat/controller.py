@@ -18,7 +18,7 @@ class Controller:
         ):
         self._set_main_bot_state_callback = set_bot_state_callback
         self._hunter = Hunter(script, game_window_title)
-        self._banker = Banker(script, game_window_title)
+        self._banker = Banker(game_window_title)
 
     def run(self):
         sub_state = _SubStates.HUNTING

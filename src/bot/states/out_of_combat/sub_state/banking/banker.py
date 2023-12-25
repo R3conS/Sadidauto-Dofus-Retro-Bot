@@ -9,13 +9,12 @@ from src.bot.map_changer.map_changer import MapChanger
 
 class Banker:
 
-    def __init__(self, script: str, game_window_title: str):
-        self._script = script
+    def __init__(self, game_window_title: str):
         self._game_window_title = game_window_title
 
     def bank(self):
         if not self._is_char_on_astrub_bank_map():
-            status = Handler_NotOnBankMap(self._script).handle()
+            status = Handler_NotOnBankMap.handle()
             if status == Status.FAILED_TO_RECALL:
                 return Status.FAILED_TO_FINISH_BANKING
 
