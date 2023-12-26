@@ -26,7 +26,6 @@ class TurnDetector:
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
         log.info("Waiting for character's turn ...")
-        check_if_ap_counter_visible_timer = perf_counter()
         start_time = perf_counter()
         while perf_counter() - start_time <= 120:
             if (
@@ -35,19 +34,15 @@ class TurnDetector:
             ):
                 log.info("Successfully detected character's turn.")
                 return Status.SUCCESSFULLY_DETECTED_TURN
-            
-            if cls._is_close_button_visible():
-                log.info("Detected 'Fight Results' window.")
-                return Status.FIGHT_RESULTS_WINDOW_DETECTED               
 
-            # Periodically check if AP counter is visible. Allows to break
-            # out of the loop if account gets disconnected or fight somehow 
-            # ends without detecting 'Fight Results' window via close button.
-            if perf_counter() - check_if_ap_counter_visible_timer >= 10:
-                if not cls._is_ap_counter_visible():
-                    log.error("Failed to detect AP counter while trying to detect character's turn.")
-                    return Status.FAILED_TO_DETECT_AP_COUNTER
-                check_if_ap_counter_visible_timer = perf_counter()
+            if not cls.is_ap_counter_visible():
+                if cls._is_close_button_visible():
+                    log.info("Detected 'Fight Results' window.")
+                    return Status.FIGHT_RESULTS_WINDOW_DETECTED
+                # If code reaches this point it most likely means that the
+                # account got disconnected.
+                log.error("Failed to detect AP counter while trying to detect character's turn.")
+                return Status.FAILED_TO_DETECT_AP_COUNTER
             
         else:
             log.error("Timed out while trying to detect character's turn.")
@@ -79,6 +74,17 @@ class TurnDetector:
                 needle=cls.first_turn_indicator_image,
                 confidence=0.98,
                 method=cv2.TM_CCOEFF_NORMED,
+            )
+        ) > 0
+
+    @classmethod
+    def is_ap_counter_visible(cls):
+        return len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area((452, 598, 41, 48)),
+                needle=cls.ap_counter_image,
+                confidence=0.99,
+                mask=cls.ap_counter_image_mask
             )
         ) > 0
 
@@ -122,26 +128,21 @@ class TurnDetector:
 
     @classmethod
     def _is_close_button_visible(cls):
-        return len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.game_window(),
-                needle=cls.close_button_image,
-                confidence=0.99,
-                method=cv2.TM_SQDIFF_NORMED,
-            )
-        ) > 0
+        # Detecting within a time frame because it takes some time for the game
+        # to fully render/draw the button on the screen.
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if len(
+                ImageDetection.find_image(
+                    haystack=ScreenCapture.game_window(),
+                    needle=cls.close_button_image,
+                    confidence=0.99,
+                    method=cv2.TM_SQDIFF_NORMED,
+                )
+            ) > 0:
+                return True
+        return False
 
     @staticmethod
     def _is_turn_timer_filling_up():
         return pyag.pixelMatchesColor(542, 630, (255, 102, 0))
-
-    @classmethod
-    def _is_ap_counter_visible(cls):
-        return len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area((452, 598, 41, 48)),
-                needle=cls.ap_counter_image,
-                confidence=0.99,
-                mask=cls.ap_counter_image_mask
-            )
-        ) > 0

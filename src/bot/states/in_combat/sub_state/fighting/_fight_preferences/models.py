@@ -45,7 +45,7 @@ class Models:
             rectangle = ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area(cls.icon_area),
                 needle=needle,
-                confidence=0.9,
+                confidence=0.89,
                 method=cv2.TM_CCORR_NORMED,
                 mask=mask
             )

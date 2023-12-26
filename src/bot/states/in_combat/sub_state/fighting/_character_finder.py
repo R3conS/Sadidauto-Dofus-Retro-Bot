@@ -107,8 +107,8 @@ class Finder:
         rectangles = ImageDetection.find_image(
             haystack=cls._screenshot_circle_detection_area(),
             needle=cls.red_circle_image,
-            method=cv2.TM_SQDIFF,
-            confidence=0.9,
+            method=cv2.TM_CCORR_NORMED,
+            confidence=0.85,
             mask=cls.red_circle_image_mask,
             get_best_match_only=False
         )
@@ -125,8 +125,8 @@ class Finder:
         rectangles = ImageDetection.find_image(
             haystack=cls._screenshot_circle_detection_area(),
             needle=cls.blue_circle_image,
-            method=cv2.TM_SQDIFF,
-            confidence=0.9,
+            method=cv2.TM_CCORR_NORMED,
+            confidence=0.85,
             mask=cls.blue_circle_image_mask,
             get_best_match_only=False
         )

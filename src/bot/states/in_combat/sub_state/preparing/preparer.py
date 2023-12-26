@@ -217,7 +217,14 @@ class Preparer:
     def _is_cell_free(cell_x, cell_y, game_window_screenshot: Image.Image):
         if game_window_screenshot is None:
             game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
-        for color in [(255, 0, 0), (154, 0, 0), (0, 0, 255), (0, 0, 154)]:
+        colors = [
+            # There are multiple shades of red and blue because on some maps
+            # the "You started a fight!" message makes the cell colors a 
+            # bit darker.
+            (255, 0, 0), (154, 0, 0), (77, 0, 0), (38, 0, 0),
+            (0, 0, 255), (0, 0, 154)
+        ]
+        for color in colors:
             if game_window_screenshot.getpixel((cell_x, cell_y)) == color:
                 return True
         return False

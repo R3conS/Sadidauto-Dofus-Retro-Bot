@@ -32,7 +32,7 @@ class Handler:
             ):
                 return Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS
         else:
-            log.info("Models toggle icon is not visible.")
+            log.error("Models toggle icon is not visible.")
             result = cls._handle_models_toggle_icon_not_visible(character_name)
             if (
                 result == Status.FAILED_TO_GET_CHARACTER_POS_BY_TURN_BAR

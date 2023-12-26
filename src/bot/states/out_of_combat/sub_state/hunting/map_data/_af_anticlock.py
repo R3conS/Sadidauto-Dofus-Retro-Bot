@@ -75,7 +75,7 @@ class Anticlock:
             "0,-25" : "traversable",
             "0,-26" : "traversable",
             "0,-27" : "traversable",
-            "0,-28" : "fightable",
+            "0,-28" : "traversable",
             "-1,-28": "traversable",
             "-2,-28": "fightable",
             "-2,-27": "traversable",

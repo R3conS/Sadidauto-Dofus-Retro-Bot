@@ -4,10 +4,10 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import pyautogui as pyag
 
 from utilities import move_mouse_off_game_area
+from .._character_finder import Finder as CharacterFinder
 from .._spells import Spells
 from ..status_enum import Status
-from .._character_finder import Finder as CharacterFinder
-
+from .._turn_detector import TurnDetector
 
 class Caster:
 
@@ -73,28 +73,30 @@ class Caster:
         if result != Status.SUCCESSFULLY_HANDLED_BRAMBLE:
             return Status.FAILED_TO_CAST_NON_CORE_SPELLS
         return Status.SUCCESSFULLY_CAST_NON_CORE_SPELLS
-        
+
     @classmethod
     def _handle_bramble(cls, character_name: str):
-        monster_locations = cls._get_monster_locations(character_name)
-        loc_i = 0
-        while loc_i < len(monster_locations):
-            if Spells.is_bramble_available():
-                result = Spells.cast_bramble(monster_locations[loc_i][0], monster_locations[loc_i][1])
+        while True:
+            if not Spells.is_bramble_available():
+                break
+
+            monster_locations = cls._get_monster_locations(character_name)
+            if monster_locations is None: # Fight ended.
+                break
+                
+            for x, y in monster_locations:
+                result = Spells.cast_bramble(x, y)
                 if result == Status.SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS:
-                    loc_i += 1
                     continue
                 elif result == Status.SUCCESSFULLY_CAST_SPELL:
                     move_mouse_off_game_area()
-                    monster_locations = cls._get_monster_locations(character_name)
-                    loc_i = 0
+                    break
                 else:
                     return result
-            else:
-                break
+                
         move_mouse_off_game_area()
         return Status.SUCCESSFULLY_HANDLED_BRAMBLE
-                
+
     @classmethod
     def _get_monster_locations(cls, character_name: str):
         monster_locations = []
@@ -104,6 +106,8 @@ class Caster:
             pyag.moveTo(circle[0], circle[1])
             CharacterFinder.wait_for_info_card_to_appear()
             if not CharacterFinder.is_info_card_visible():
+                if not TurnDetector.is_ap_counter_visible():
+                    return None # Fight ended.
                 log.error("Timed out while waiting for info card to appear while getting monster locations. Continuing to next circle ... ")
                 continue
             
