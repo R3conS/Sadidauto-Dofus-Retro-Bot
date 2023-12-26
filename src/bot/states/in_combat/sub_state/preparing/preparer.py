@@ -175,9 +175,9 @@ class Preparer:
         return Status.TIMED_OUT_WHILE_CLICKING_READY_BUTTON
 
     def _move_char_to_cell(self, cell_x, cell_y):
-        screenshot_before_clicking_cell = self._screenshot_cell_area(cell_x, cell_y)
+        px_color_before_clicking_cell = pyag.pixel(cell_x, cell_y)
         self._click_cell(cell_x, cell_y)
-        if self._did_char_move(cell_x, cell_y, screenshot_before_clicking_cell):
+        if self._did_char_move(cell_x, cell_y, px_color_before_clicking_cell):
             return Status.SUCCESSFULLY_MOVED_TO_CELL
         return Status.FAILED_TO_MOVE_TO_CELL
 
@@ -250,13 +250,10 @@ class Preparer:
         pyag.click()
 
     @classmethod
-    def _did_char_move(cls, cell_x, cell_y, cell_area_before_moving: np.ndarray):
+    def _did_char_move(cls, cell_x, cell_y, px_color_before_moving: tuple):
         start_time = perf_counter()
         while perf_counter() - start_time <= 0.25:
-            if not cls._are_images_same(
-                cell_area_before_moving, 
-                cls._screenshot_cell_area(cell_x, cell_y)
-            ):
+            if not pyag.pixelMatchesColor(cell_x, cell_y, px_color_before_moving):
                 return True
         return False
 

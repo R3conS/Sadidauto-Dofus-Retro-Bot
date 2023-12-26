@@ -88,15 +88,11 @@ class Mover:
         return False
 
     def _is_char_already_on_destination_cell(self):
-        for map_coords, data in self._starting_cells_data.items():
-            if map_coords == self._current_map_coords:
-                for _, starting_cells_coords in data.items():
-                    for coords in starting_cells_coords:
-                        if self._get_distance_between_cells(
-                            self._get_destination_cell_coords(), 
-                            coords
-                        ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
-                            return True
+        if self._get_distance_between_cells(
+            self._get_destination_cell_coords(), 
+            self._character_pos
+        ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
+            return True
         return False
 
     def _get_destination_cell_coords(self):
