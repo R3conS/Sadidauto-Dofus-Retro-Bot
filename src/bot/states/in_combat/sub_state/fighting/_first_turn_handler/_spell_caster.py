@@ -8,19 +8,19 @@ from ..status_enum import Status
 class Caster:
 
     @staticmethod
-    def cast_spells(character_pos: tuple[int, int]):
+    def cast_spells(cast_coords: tuple[int, int]):
         log.info("Casting spells.")
         while True:
             if Spells.is_earthquake_available():
-                result = Spells.cast_earthquake(character_pos[0], character_pos[1])
+                result = Spells.cast_earthquake(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
                     return Status.FAILED_TO_CAST_SPELL
             elif Spells.is_poisoned_wind_available():
-                result = Spells.cast_poisoned_wind(character_pos[0], character_pos[1])
+                result = Spells.cast_poisoned_wind(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
                     return Status.FAILED_TO_CAST_SPELL
             elif Spells.is_sylvan_power_available():
-                result = Spells.cast_sylvan_power(character_pos[0], character_pos[1])
+                result = Spells.cast_sylvan_power(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
                     return Status.FAILED_TO_CAST_SPELL
             if (

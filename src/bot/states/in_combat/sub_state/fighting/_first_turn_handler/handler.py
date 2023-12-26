@@ -27,7 +27,6 @@ class Handler:
             if (
                 result == Status.FAILED_TO_DISABLE_MODELS
                 or result == Status.FAILED_TO_GET_CHARACTER_POS_BY_CIRCLES
-                or result == Status.FAILED_TO_MOVE_CHARACTER_DURING_FIRST_TURN
                 or result == Status.FAILED_TO_CAST_SPELL
             ):
                 return Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS
@@ -51,22 +50,28 @@ class Handler:
                 or result == Status.TIMED_OUT_WHILE_DISABLING_MODELS
             ):
                 return Status.FAILED_TO_DISABLE_MODELS
-
-        initial_character_pos = CharacterFinder.find_by_circles(character_name)
-        if initial_character_pos == Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR:
+        
+        character_pos = CharacterFinder.find_by_circles(character_name)
+        if character_pos == Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR:
             return Status.FAILED_TO_GET_CHARACTER_POS_BY_CIRCLES
         
-        char_mover = CharacterMover(script, initial_character_pos)
-        result = char_mover.move()
+        mover = CharacterMover(script, character_name, character_pos)
+
+        result = mover.move()
         if (
-            result == Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
+            result == Status.SUCCESSFULLY_MOVED_CHARACTER
+            or result == Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
+        ):
+            cast_coords = mover._get_destination_cell_coords()
+        elif (
+            result == Status.CHARACTER_DID_NOT_START_FIRST_TURN_ON_VALID_CELL
+            or result == Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
             or result == Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
         ):
-            return Status.FAILED_TO_MOVE_CHARACTER_DURING_FIRST_TURN
+            cast_coords = character_pos
         
-        result = SpellCaster.cast_spells(char_mover.get_destination_cell_coords())
-        if result == Status.FAILED_TO_CAST_SPELL:
-            return result
+        if SpellCaster.cast_spells(cast_coords) == Status.FAILED_TO_CAST_SPELL:
+            return Status.FAILED_TO_CAST_SPELL
 
         return Status.SUCCESSFULLY_HANDLED_FIRST_TURN_ACTIONS
 

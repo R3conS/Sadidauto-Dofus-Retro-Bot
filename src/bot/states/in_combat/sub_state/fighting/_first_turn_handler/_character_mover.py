@@ -12,34 +12,41 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
 from ..map_data.getter import Getter as FightingDataGetter
-from ._starting_cell_and_side_getter import Getter as StartingCellAndSideGetter
 from ..status_enum import Status
 
 
 class Mover:
 
-    mp_area = (565, 612, 26, 26)
+    MP_AREA = (565, 612, 26, 26)
+    MAX_DISTANCE_BETWEEN_CELLS = 14
 
-    def __init__(self, script, initial_character_pos):
-        self._initial_character_pos = initial_character_pos
+    def __init__(self, script: str, character_name: str, current_character_pos: tuple[int, int]):
+        self._script = script
+        self._character_name = character_name
+        self._character_pos = current_character_pos
+        self._current_map_coords = MapChanger.get_current_map_coords()
+        self._starting_cells_data = FightingDataGetter.get_data_object(script).get_starting_cells()
         self._movement_data = FightingDataGetter.get_data_object(script).get_movement_data()
-        self._starting_side_color = StartingCellAndSideGetter(script).get_starting_side_color(initial_character_pos)
 
     def move(self):
-        coords = self.get_destination_cell_coords()
-        if self._get_distance_between_cells(coords, self._initial_character_pos) <= 10:
+        if not self._is_valid_starting_position():
+            log.error(f"Character did not start first turn on a valid starting cell.")
+            return Status.CHARACTER_DID_NOT_START_FIRST_TURN_ON_VALID_CELL
+
+        if self._is_char_already_on_destination_cell():
             log.info(f"Character is already on the correct cell.")
-            move_mouse_off_game_area() # To make sure that character is not hovered over and info card is not blocking spell bar.
+            move_mouse_off_game_area() # To make sure that info card is not blocking spell bar.
             return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
         
-        log.info(f"Attempting to move character to: {coords} ... ")
-        pyag.moveTo(coords[0], coords[1])
-        if self._is_cell_highlighted(coords):
-            mp_area_before_moving = ScreenCapture.custom_area(self.mp_area)
+        destination_coords = self._get_destination_cell_coords()
+        log.info(f"Attempting to move character to: {destination_coords} ... ")
+        pyag.moveTo(destination_coords[0], destination_coords[1])
+        if self._is_cell_highlighted(destination_coords):
+            mp_area_before_moving = ScreenCapture.custom_area(self.MP_AREA)
             pyag.click()
             start_time = perf_counter()
             while perf_counter() - start_time <= 5:
-                mp_area_after = ScreenCapture.custom_area(self.mp_area)
+                mp_area_after = ScreenCapture.custom_area(self.MP_AREA)
                 rectangle = ImageDetection.find_image(
                     haystack=mp_area_after,
                     needle=mp_area_before_moving,
@@ -47,48 +54,16 @@ class Mover:
                     method=cv2.TM_CCOEFF_NORMED,
                 )
                 if len(rectangle) <= 0: # If images are different then moving animation has finished.
-                    log.info(f"Successfully moved character to: {coords}.")
+                    log.info(f"Successfully moved character to: {destination_coords}.")
                     move_mouse_off_game_area() # To make sure that character is not hovered over.
                     return Status.SUCCESSFULLY_MOVED_CHARACTER
-            log.error(f"Timed out while detecting if character moved to: {coords}.")
+            log.error(f"Timed out while detecting if character moved to: {destination_coords}.")
             return Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
-        log.error(f"Failed to detect if destination cell {coords} is highlighted.")
+        log.error(f"Failed to detect if destination cell {destination_coords} is highlighted.")
         return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
     
-    def get_destination_cell_coords(self):
-        current_map_coords = MapChanger.get_current_map_coords()
-        for map_coords, data in self._movement_data.items():
-            if map_coords == current_map_coords:
-                for side_color, click_coords in data.items():
-                    if side_color == self._starting_side_color:
-                        if isinstance(click_coords, tuple):
-                            return click_coords
-                        try:
-                            return click_coords[self._initial_character_pos]
-                        except KeyError:
-                            # Sometimes 'self._initial_character_pos' is not
-                            # an exact match as a key for 'click_coords' due to
-                            # how 'find_by_circles()' works, but if there's a key in 'click_coords'
-                            # that is within 10 pixels of 'self._initial_character_pos' 
-                            # then it's the one that needs to be used to unlock
-                            # the destination cell coords.
-                            closest_key = None
-                            min_distance = float('inf')
-                            for coords in click_coords.keys():
-                                distance = self._get_distance_between_cells(coords, self._initial_character_pos)
-                                if distance < min_distance and distance <= 10:
-                                    min_distance = distance
-                                    closest_key = coords
-                            if closest_key is not None:
-                                return click_coords[closest_key]
-                            else:
-                                raise Exception(
-                                    f"No movement data for character position {self._initial_character_pos} "
-                                    f"on starting side color '{self._starting_side_color}' on map '{map_coords}'."
-                                )
-        raise Exception(f"No in-combat movement data for map '{current_map_coords}'.")
-    
-    def _is_cell_highlighted(self, click_coords):
+    @staticmethod
+    def _is_cell_highlighted(click_coords):
         """
         Checking with a timer to give time for the game to draw orange
         color over the cells after mouse was moved over the destination cell.
@@ -100,5 +75,101 @@ class Mover:
                 return True
         return False
 
-    def _get_distance_between_cells(self, cell_1, cell_2):
+    def _is_valid_starting_position(self):
+        for map_coords, data in self._starting_cells_data.items():
+            if map_coords == self._current_map_coords:
+                for _, starting_cells_coords in data.items():
+                    for coords in starting_cells_coords:
+                        if self._get_distance_between_cells(
+                            self._character_pos, 
+                            coords
+                        ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
+                            return True
+        return False
+
+    def _is_char_already_on_destination_cell(self):
+        for map_coords, data in self._starting_cells_data.items():
+            if map_coords == self._current_map_coords:
+                for _, starting_cells_coords in data.items():
+                    for coords in starting_cells_coords:
+                        if self._get_distance_between_cells(
+                            self._get_destination_cell_coords(), 
+                            coords
+                        ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
+                            return True
+        return False
+
+    def _get_destination_cell_coords(self):
+        if not self._are_map_coords_in_data(self._current_map_coords, self._movement_data):
+            raise Exception(
+                f"Failed to determine destination coords because map '{self._current_map_coords}' "
+                "is not in movement data."
+            )
+        for map_coords, data in self._movement_data.items():
+            if map_coords == self._current_map_coords:
+                for starting_side_color, starting_cells_coords in data.items():
+                    if starting_side_color == self._get_starting_side_color():
+                        starting_cell_coords = self._get_starting_cell_coords()
+                        try:
+                            return starting_cells_coords[starting_cell_coords]
+                        except KeyError:
+                            raise KeyError(
+                                f"Key '{starting_cell_coords}' doesn't exist in movement data for map "
+                                f"'{self._current_map_coords}' and starting side color '{starting_side_color}'."
+                            )
+
+    def _get_starting_side_color(self):
+        if not self._are_map_coords_in_data(self._current_map_coords, self._starting_cells_data):
+            raise Exception(
+                f"Failed to determine starting side color because map '{self._current_map_coords}' "
+                "is not in starting cells data."
+            )
+        for map_coords, data in self._starting_cells_data.items():
+            if map_coords == self._current_map_coords:
+                for side_color, starting_cells_coords in data.items():
+                    for coords in starting_cells_coords:
+                        if self._get_distance_between_cells(
+                            self._character_pos, 
+                            coords
+                        ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
+                            return side_color
+        raise Exception(
+            f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
+            f"of the given character position '{self._character_pos}' on map "
+            f"'{self._current_map_coords}' to determine the starting side color. This most "
+            "likely means that the character is not positioned on a valid starting cell."
+        )
+
+    def _get_starting_cell_coords(self):
+        if not self._are_map_coords_in_data(self._current_map_coords, self._starting_cells_data):
+            raise Exception(
+                f"Failed to determine starting cell coords because map '{self._current_map_coords}' "
+                "is not in starting cells data."
+            )
+        for map_coords, data in self._starting_cells_data.items():
+            if map_coords == self._current_map_coords:
+                for starting_side_color, starting_cells_coords in data.items():
+                    if starting_side_color == self._get_starting_side_color():
+                        for coords in starting_cells_coords:
+                            if self._get_distance_between_cells(
+                                self._character_pos, 
+                                coords
+                            ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
+                                return coords
+        raise Exception(
+            f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
+            f"of the given character position '{self._character_pos}' on map "
+            f"'{self._current_map_coords}' to determine the starting cell coords. This most "
+            "likely means that the character is not positioned on a valid starting cell."
+        )
+
+    @staticmethod
+    def _get_distance_between_cells(cell_1: tuple[int, int], cell_2: tuple[int, int]):
         return sqrt((cell_2[0] - cell_1[0])**2 + (cell_2[1] - cell_1[1])**2)
+
+    @staticmethod
+    def _are_map_coords_in_data(map_coords: str, data: dict):
+        for coords in data.keys():
+            if coords == map_coords:
+                return True
+        return False

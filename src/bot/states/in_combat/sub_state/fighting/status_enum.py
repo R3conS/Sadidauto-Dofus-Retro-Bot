@@ -32,7 +32,6 @@ class Status(Enum):
     FAILED_TO_DISABLE_MODELS = "failed_to_disable_models"
     FAILED_TO_GET_CHARACTER_POS_BY_CIRCLES = "failed_to_get_character_pos_by_circles"
     FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED = "failed_to_detect_if_destination_cell_is_highighted"
-    FAILED_TO_MOVE_CHARACTER_DURING_FIRST_TURN = "failed_to_move_character_during_first_turn"
     FAILED_TO_GET_CHARACTER_POS_BY_TURN_BAR = "failed_to_get_character_pos_by_turn_bar"
     FAILED_TO_HANDLE_FIRST_TURN_ACTIONS = "failed_to_handle_first_turn_actions"
     FAILED_FIRST_TURN_SPELL_CASTING_MODELS_TOGGLE_ICON_VISIBLE = "failed_first_turn_spell_casting_models_toggle_icon_visible"
@@ -59,3 +58,4 @@ class Status(Enum):
     SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS = "spell_is_not_castable_on_provided_pos"
     NO_SPELLS_AVAILABLE = "no_spells_available"
     FIGHT_RESULTS_WINDOW_DETECTED = "fight_results_window_detected"
+    CHARACTER_DID_NOT_START_FIRST_TURN_ON_VALID_CELL = "character_did_not_start_first_turn_on_valid_cell"
