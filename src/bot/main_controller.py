@@ -24,7 +24,7 @@ class Controller(threading.Thread):
         self._disturbance_checker = DisturbanceChecker()
         self._disturbance_checker.start()
         initializer = Initializer(script, character_name)
-        self._ooc_controller = OOC_Controller(self.set_state, script, initializer.window_title)
+        self._ooc_controller = OOC_Controller(self.set_state, script, initializer.WINDOW_TITLE)
         self._ic_controller = IC_Controller(self.set_state, script, character_name)
 
     def run(self):

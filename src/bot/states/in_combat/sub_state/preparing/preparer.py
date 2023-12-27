@@ -18,26 +18,26 @@ from src.image_detection import ImageDetection
 
 class Preparer:
 
-    RED = "red"
-    BLUE = "blue"
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\preparing\\images"
-    fight_lock_off_icon = load_image(image_folder_path, "fight_lock_off.png")
-    fight_lock_off_icon_mask = ImageDetection.create_mask(fight_lock_off_icon)
-    fight_lock_on_icon = load_image(image_folder_path, "fight_lock_on.png")
-    fight_lock_on_icon_mask = ImageDetection.create_mask(fight_lock_on_icon)
-    tactical_mode_off_icon = load_image(image_folder_path, "tactical_mode_off.png")
-    tactical_mode_off_icon_mask = ImageDetection.create_mask(tactical_mode_off_icon)
-    tactical_mode_on_icon = load_image(image_folder_path, "tactical_mode_on.png")
-    tactical_mode_on_icon_mask = ImageDetection.create_mask(tactical_mode_on_icon)
-    icon_area = (693, 506, 241, 40)
-    ready_button_lit_image = load_image(image_folder_path, "ready_button_lit.png")
-    ready_button_lit_image_mask = ImageDetection.create_mask(ready_button_lit_image)
-    ready_button_dim_image = load_image(image_folder_path, "ready_button_dim.png")
-    ready_button_dim_image_mask = ImageDetection.create_mask(ready_button_dim_image)
-    ready_button_area = (678, 507, 258, 91)
-    ap_counter_image = load_image(image_folder_path, "ap_counter_image.png")
-    ap_counter_image_mask = ImageDetection.create_mask(ap_counter_image)
-    ap_counter_area = (452, 598, 41, 48)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\preparing\\images"
+    _ICON_AREA = (693, 506, 241, 40)
+    _FIGHT_LOCK_OFF_ICON = load_image(_IMAGE_FOLDER_PATH, "fight_lock_off.png")
+    _FIGHT_LOCK_OFF_ICON_MASK = ImageDetection.create_mask(_FIGHT_LOCK_OFF_ICON)
+    _FIGHT_LOCK_ON_ICON = load_image(_IMAGE_FOLDER_PATH, "fight_lock_on.png")
+    _FIGHT_LOCK_ON_ICON_MASK = ImageDetection.create_mask(_FIGHT_LOCK_ON_ICON)
+    _TACTICAL_MODE_OFF_ICON = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_off.png")
+    _TACTICAL_MODE_OFF_ICON_MASK = ImageDetection.create_mask(_TACTICAL_MODE_OFF_ICON)
+    _TACTICAL_MODE_ON_ICON = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_on.png")
+    _TACTICAL_MODE_ON_ICON_MASK = ImageDetection.create_mask(_TACTICAL_MODE_ON_ICON)
+    _READY_BUTTON_AREA = (678, 507, 258, 91)
+    _READY_BUTTON_LIT_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ready_button_lit.png")
+    _READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(_READY_BUTTON_LIT_IMAGE)
+    _READY_BUTTON_DIM_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ready_button_dim.png")
+    _READY_BUTTON_DIM_IMAGE_MASK = ImageDetection.create_mask(_READY_BUTTON_DIM_IMAGE)
+    _AP_COUNTER_AREA = (452, 598, 41, 48)
+    _AP_COUNTER_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ap_counter_image.png")
+    _AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(_AP_COUNTER_IMAGE)
+    _RED = "red"
+    _BLUE = "blue"
 
     def __init__(self, script: str):
         self._starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
@@ -103,8 +103,8 @@ class Preparer:
 
     def _handle_dummy_cells(self, map_coords: str):
         log.info(f"Checking for dummy cells on map: {map_coords} ... ")
-        red_dummy_cells = self._get_free_dummy_cells(self.RED, map_coords)
-        blue_dummy_cells = self._get_free_dummy_cells(self.BLUE, map_coords)
+        red_dummy_cells = self._get_free_dummy_cells(self._RED, map_coords)
+        blue_dummy_cells = self._get_free_dummy_cells(self._BLUE, map_coords)
         if len(red_dummy_cells) == 0 and len(blue_dummy_cells) == 0:
             log.info("No dummy cells found on this map.")
             return Status.NO_DUMMY_CELLS_ON_THIS_MAP
@@ -115,17 +115,17 @@ class Preparer:
             status = self._move_char_to_cell(*cell_coords)
             if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully moved to red side dummy cell: {cell_coords}.")
-                return self.RED
+                return self._RED
         for cell_coords in blue_dummy_cells:
             status = self._move_char_to_cell(*cell_coords)
             if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully moved to blue side dummy cell: {cell_coords}.")
-                return self.BLUE
+                return self._BLUE
         
         if len(red_dummy_cells) == 0:
-            return self.RED
+            return self._RED
         elif len(blue_dummy_cells) == 0:
-            return self.BLUE
+            return self._BLUE
         
         log.error("Failed to move to dummy cells.")
         return Status.FAILED_TO_MOVE_TO_DUMMY_CELLS
@@ -135,8 +135,8 @@ class Preparer:
         if dummy_cell_color is not None:
             starting_cells = self._get_free_starting_cells(dummy_cell_color, map_coords)
         else:
-            red_starting_cells = self._get_free_starting_cells(self.RED, map_coords)
-            blue_starting_cells = self._get_free_starting_cells(self.BLUE, map_coords)
+            red_starting_cells = self._get_free_starting_cells(self._RED, map_coords)
+            blue_starting_cells = self._get_free_starting_cells(self._BLUE, map_coords)
             starting_cells = red_starting_cells + blue_starting_cells
 
         for cell_coords in starting_cells:
@@ -182,7 +182,7 @@ class Preparer:
         return Status.FAILED_TO_MOVE_TO_CELL
 
     def _get_dummy_cells(self, map_coords: str, color: str):
-        if color not in [self.RED, self.BLUE]:
+        if color not in [self._RED, self._BLUE]:
             raise ValueError(f"Invalid cell color: '{color}'.")
         for map, cell_data in self._dummy_cell_data.items():
             if map == map_coords:
@@ -192,13 +192,13 @@ class Preparer:
     def _get_free_dummy_cells(self, map_coords: str, color: str):
         free_cells = []
         for cell_coords in self._get_dummy_cells(color, map_coords):
-            game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
+            game_window_screenshot = pyag.screenshot(region=ScreenCapture.GAME_WINDOW_AREA)
             if self._is_cell_free(*cell_coords, game_window_screenshot):
                 free_cells.append(cell_coords)
         return free_cells
 
     def _get_starting_cells(self, map_coords: str, color: str):
-        if color not in [self.RED, self.BLUE]:
+        if color not in [self._RED, self._BLUE]:
             raise ValueError(f"Invalid cell color: '{color}'.")
         for map, cell_data in self._starting_cell_data.items():
             if map == map_coords:
@@ -208,7 +208,7 @@ class Preparer:
     def _get_free_starting_cells(self, map_coords: str, color: str):
         free_cells = []
         for cell_coords in self._get_starting_cells(color, map_coords):
-            game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
+            game_window_screenshot = pyag.screenshot(region=ScreenCapture.GAME_WINDOW_AREA)
             if self._is_cell_free(*cell_coords, game_window_screenshot):
                 free_cells.append(cell_coords)
         return free_cells
@@ -216,7 +216,7 @@ class Preparer:
     @staticmethod
     def _is_cell_free(cell_x, cell_y, game_window_screenshot: Image.Image):
         if game_window_screenshot is None:
-            game_window_screenshot = pyag.screenshot(region=ScreenCapture.game_window_area)
+            game_window_screenshot = pyag.screenshot(region=ScreenCapture.GAME_WINDOW_AREA)
         colors = [
             # There are multiple shades of red and blue because on some maps
             # the "You started a fight!" message makes the cell colors a 
@@ -261,11 +261,11 @@ class Preparer:
     def _is_fight_lock_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
-                needle=cls.fight_lock_off_icon,
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
+                needle=cls._FIGHT_LOCK_OFF_ICON,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls.fight_lock_off_icon_mask
+                mask=cls._FIGHT_LOCK_OFF_ICON_MASK
             )
         ) > 0
 
@@ -273,11 +273,11 @@ class Preparer:
     def _is_tactical_mode_icon_checked(cls):
         return not len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
-                needle=cls.tactical_mode_off_icon,
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
+                needle=cls._TACTICAL_MODE_OFF_ICON,
                 confidence=0.98,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls.tactical_mode_off_icon_mask
+                mask=cls._TACTICAL_MODE_OFF_ICON_MASK
             )
         ) > 0
 
@@ -285,20 +285,20 @@ class Preparer:
     def _is_ready_button_visible(cls):
         is_lit_visible = len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.ready_button_area),
-                needle=cls.ready_button_lit_image,
+                haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
+                needle=cls._READY_BUTTON_LIT_IMAGE,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls.ready_button_lit_image_mask
+                mask=cls._READY_BUTTON_LIT_IMAGE_MASK
             )
         ) > 0
         is_dim_visible = len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.ready_button_area),
-                needle=cls.ready_button_dim_image,
+                haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
+                needle=cls._READY_BUTTON_DIM_IMAGE,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls.ready_button_dim_image_mask
+                mask=cls._READY_BUTTON_DIM_IMAGE_MASK
             )
         ) > 0
         return is_lit_visible or is_dim_visible
@@ -306,12 +306,12 @@ class Preparer:
     @classmethod
     def _get_fight_lock_icon_pos(cls):
         images_to_search = [
-            (cls.fight_lock_on_icon, cls.fight_lock_on_icon_mask),
-            (cls.fight_lock_off_icon, cls.fight_lock_off_icon_mask)
+            (cls._FIGHT_LOCK_ON_ICON, cls._FIGHT_LOCK_ON_ICON_MASK),
+            (cls._FIGHT_LOCK_OFF_ICON, cls._FIGHT_LOCK_OFF_ICON_MASK)
         ]
         for needle, mask in images_to_search:
             rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
                 needle=needle,
                 confidence=0.99,
                 method=cv2.TM_CCORR_NORMED,
@@ -319,8 +319,8 @@ class Preparer:
             )
             if len(rectangle) > 0:
                 return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls.icon_area[0],
-                    rectangle[1] + cls.icon_area[1],
+                    rectangle[0] + cls._ICON_AREA[0],
+                    rectangle[1] + cls._ICON_AREA[1],
                     rectangle[2],
                     rectangle[3]
                 ))
@@ -329,12 +329,12 @@ class Preparer:
     @classmethod
     def _get_tactical_mode_icon_pos(cls):
         images_to_search = [
-            (cls.tactical_mode_on_icon, cls.tactical_mode_on_icon_mask),
-            (cls.tactical_mode_off_icon, cls.tactical_mode_off_icon_mask)
+            (cls._TACTICAL_MODE_ON_ICON, cls._TACTICAL_MODE_ON_ICON_MASK),
+            (cls._TACTICAL_MODE_OFF_ICON, cls._TACTICAL_MODE_OFF_ICON_MASK)
         ]
         for needle, mask in images_to_search:
             rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
                 needle=needle,
                 confidence=0.98,
                 method=cv2.TM_CCORR_NORMED,
@@ -342,8 +342,8 @@ class Preparer:
             )
             if len(rectangle) > 0:
                 return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls.icon_area[0],
-                    rectangle[1] + cls.icon_area[1],
+                    rectangle[0] + cls._ICON_AREA[0],
+                    rectangle[1] + cls._ICON_AREA[1],
                     rectangle[2],
                     rectangle[3]
                 ))
@@ -352,12 +352,12 @@ class Preparer:
     @classmethod
     def _get_ready_button_pos(cls):
         images_to_search = [
-            (cls.ready_button_lit_image, cls.ready_button_lit_image_mask),
-            (cls.ready_button_dim_image, cls.ready_button_dim_image_mask)
+            (cls._READY_BUTTON_LIT_IMAGE, cls._READY_BUTTON_LIT_IMAGE_MASK),
+            (cls._READY_BUTTON_DIM_IMAGE, cls._READY_BUTTON_DIM_IMAGE_MASK)
         ]
         for needle, mask in images_to_search:
             rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.ready_button_area),
+                haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
                 needle=needle,
                 confidence=0.99,
                 method=cv2.TM_SQDIFF,
@@ -365,8 +365,8 @@ class Preparer:
             )
             if len(rectangle) > 0:
                 return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls.ready_button_area[0],
-                    rectangle[1] + cls.ready_button_area[1],
+                    rectangle[0] + cls._READY_BUTTON_AREA[0],
+                    rectangle[1] + cls._READY_BUTTON_AREA[1],
                     rectangle[2],
                     rectangle[3]
                 ))
@@ -418,10 +418,10 @@ class Preparer:
     def _is_ap_counter_visible(cls):
         return len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.ap_counter_area),
-                needle=cls.ap_counter_image,
+                haystack=ScreenCapture.custom_area(cls._AP_COUNTER_AREA),
+                needle=cls._AP_COUNTER_IMAGE,
                 confidence=0.99,
-                mask=cls.ap_counter_image_mask
+                mask=cls._AP_COUNTER_IMAGE_MASK
             )
         ) > 0
     

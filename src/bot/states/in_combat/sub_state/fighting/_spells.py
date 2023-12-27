@@ -13,11 +13,12 @@ from src.screen_capture import ScreenCapture
 from .status_enum import Status
 
 
-AVAILABLE_SPELLS = ["earthquake", "poisoned_wind", "sylvan_power", "bramble"]
+AVAILABLE_SPELLS = ["EARTHQUAKE", "POISONED_WIND", "SYLVAN_POWER", "BRAMBLE"]
 
 
-def _get_spell_name(decorated_method_name):
+def _get_spell_name(decorated_method_name: str):
     """Utility function for decorators."""
+    decorated_method_name = decorated_method_name.upper()
     for name in AVAILABLE_SPELLS:
         if name in decorated_method_name:
             return name
@@ -29,8 +30,8 @@ def _is_spell_available(decorated_method):
     def wrapper(cls, *args, **kwargs):
         return len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.spell_bar_area),
-                needle=getattr(cls, f"{_get_spell_name(decorated_method.__name__)}_image"),
+                haystack=ScreenCapture.custom_area(cls._SPELL_BAR_AREA),
+                needle=getattr(cls, f"_{_get_spell_name(decorated_method.__name__)}_IMAGE"),
                 confidence=0.99,
                 method=cv2.TM_SQDIFF_NORMED,
             )
@@ -43,12 +44,12 @@ def _get_spell_icon_pos(decorated_method):
     def wrapper(cls, *args, **kwargs):
         spell_name = _get_spell_name(decorated_method.__name__)
         images_and_masks = [
-            (getattr(cls, f"{spell_name}_image"), None),
-            (getattr(cls, f"{spell_name}_on_cooldown_image"), getattr(cls, f"{spell_name}_on_cooldown_image_mask"))
+            (getattr(cls, f"_{spell_name}_IMAGE"), None),
+            (getattr(cls, f"_{spell_name}_ON_COOLDOWN_IMAGE"), getattr(cls, f"_{spell_name}_ON_COOLDOWN_IMAGE_MASK"))
         ]
         for image, mask in images_and_masks:
             rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.spell_bar_area),
+                haystack=ScreenCapture.custom_area(cls._SPELL_BAR_AREA),
                 needle=image,
                 confidence=0.98,
                 method=cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_SQDIFF_NORMED,
@@ -62,7 +63,7 @@ def _get_spell_icon_pos(decorated_method):
                 # will always return False because the images will be only
                 # partially visible due to them being cut off by the bottom
                 # of the game window.
-                return rectangle[0] + cls.spell_bar_area[0], rectangle[1] + cls.spell_bar_area[1]
+                return rectangle[0] + cls._SPELL_BAR_AREA[0], rectangle[1] + cls._SPELL_BAR_AREA[1]
         return None
     return wrapper
 
@@ -73,8 +74,8 @@ def _is_spell_selected(decorated_method):
         spell_name = _get_spell_name(decorated_method.__name__)
         screenshot = ScreenCapture.around_pos(pyag.position(), 75)
         images_and_masks = [
-            (getattr(cls, f"{spell_name}_selected_cannot_cast_image"), getattr(cls, f"{spell_name}_selected_cannot_cast_image_mask")),
-            (getattr(cls, f"{spell_name}_selected_can_cast_image"), None)
+            (getattr(cls, f"_{spell_name}_SELECTED_CANNOT_CAST_IMAGE"), getattr(cls, f"_{spell_name}_SELECTED_CANNOT_CAST_IMAGE_MASK")),
+            (getattr(cls, f"_{spell_name}_SELECTED_CAN_CAST_IMAGE"), None)
         ]
         for image, mask in images_and_masks:
             if len(
@@ -100,7 +101,7 @@ def _is_spell_castable_on_pos(decorated_method):
         return len(
             ImageDetection.find_image(
                 haystack=screenshot,
-                needle=getattr(cls, f"{spell_name}_selected_can_cast_image"),
+                needle=getattr(cls, f"_{spell_name}_SELECTED_CAN_CAST_IMAGE"),
                 confidence=0.97,
                 method=cv2.TM_SQDIFF_NORMED
             )
@@ -118,7 +119,7 @@ def _select_spell(decorated_method):
         pyag.moveTo(929, 752)
         pyag.click()
 
-        spell_name = _get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__).lower()
         spell_icon_pos = getattr(cls, f"get_{spell_name}_icon_pos")()
         if spell_icon_pos is None:
             return Status.FAILED_TO_GET_SPELL_ICON_POS
@@ -140,7 +141,7 @@ def _select_spell(decorated_method):
 def _cast_spell(decorated_method):
     @wraps(decorated_method)
     def wrapper(cls, *args, **kwargs):
-        spell_name = _get_spell_name(decorated_method.__name__)
+        spell_name = _get_spell_name(decorated_method.__name__).lower()
         spell_name_formatted = spell_name.replace("_", " ").title()
         log.info(f"Attempting to cast: '{spell_name_formatted}' ... ")
 
@@ -162,14 +163,14 @@ def _cast_spell(decorated_method):
         log.info(f"Spell is castable.")
 
         log.info(f"Casting ... ")
-        ap_area_before_casting = ScreenCapture.custom_area(cls.ap_area)
+        _AP_AREA_before_casting = ScreenCapture.custom_area(cls._AP_AREA)
         pyag.click()
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            ap_area_after_casting = ScreenCapture.custom_area(cls.ap_area)
+            _AP_AREA_after_casting = ScreenCapture.custom_area(cls._AP_AREA)
             rectangle = ImageDetection.find_image(
-                haystack=ap_area_after_casting,
-                needle=ap_area_before_casting,
+                haystack=_AP_AREA_after_casting,
+                needle=_AP_AREA_before_casting,
                 confidence=0.98,
                 method=cv2.TM_CCOEFF_NORMED,
             )
@@ -185,37 +186,37 @@ def _cast_spell(decorated_method):
 
 class Spells:
 
-    ap_area = (456, 611, 29, 25)
-    spell_bar_area = (643, 658, 291, 99)
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images\\spells"
+    _AP_AREA = (456, 611, 29, 25)
+    _SPELL_BAR_AREA = (643, 658, 291, 99)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images\\spells"
     # Earthquake
-    earthquake_image = load_image(image_folder_path, "earthquake.png")
-    earthquake_selected_can_cast_image = load_image(image_folder_path, "earthquake_selected_can_cast.png")
-    earthquake_selected_cannot_cast_image = load_image(image_folder_path, "earthquake_selected_cannot_cast.png")
-    earthquake_selected_cannot_cast_image_mask = ImageDetection.create_mask(earthquake_selected_cannot_cast_image)
-    earthquake_on_cooldown_image = load_image(image_folder_path, "earthquake_on_cooldown.png")
-    earthquake_on_cooldown_image_mask = ImageDetection.create_mask(earthquake_on_cooldown_image)
+    _EARTHQUAKE_IMAGE = load_image(_IMAGE_FOLDER_PATH, "earthquake.png")
+    _EARTHQUAKE_SELECTED_CAN_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "earthquake_selected_can_cast.png")
+    _EARTHQUAKE_SELECTED_CANNOT_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "earthquake_selected_cannot_cast.png")
+    _EARTHQUAKE_SELECTED_CANNOT_CAST_IMAGE_MASK = ImageDetection.create_mask(_EARTHQUAKE_SELECTED_CANNOT_CAST_IMAGE)
+    _EARTHQUAKE_ON_COOLDOWN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "earthquake_on_cooldown.png")
+    _EARTHQUAKE_ON_COOLDOWN_IMAGE_MASK = ImageDetection.create_mask(_EARTHQUAKE_ON_COOLDOWN_IMAGE)
     # Poisoned Wind
-    poisoned_wind_image = load_image(image_folder_path, "poisoned_wind.png")
-    poisoned_wind_selected_can_cast_image = load_image(image_folder_path, "poisoned_wind_selected_can_cast.png")
-    poisoned_wind_selected_cannot_cast_image = load_image(image_folder_path, "poisoned_wind_selected_cannot_cast.png")
-    poisoned_wind_selected_cannot_cast_image_mask = ImageDetection.create_mask(poisoned_wind_selected_cannot_cast_image)
-    poisoned_wind_on_cooldown_image = load_image(image_folder_path, "poisoned_wind_on_cooldown.png")
-    poisoned_wind_on_cooldown_image_mask = ImageDetection.create_mask(poisoned_wind_on_cooldown_image)
+    _POISONED_WIND_IMAGE = load_image(_IMAGE_FOLDER_PATH, "poisoned_wind.png")
+    _POISONED_WIND_SELECTED_CAN_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "poisoned_wind_selected_can_cast.png")
+    _POISONED_WIND_SELECTED_CANNOT_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "poisoned_wind_selected_cannot_cast.png")
+    _POISONED_WIND_SELECTED_CANNOT_CAST_IMAGE_MASK = ImageDetection.create_mask(_POISONED_WIND_SELECTED_CANNOT_CAST_IMAGE)
+    _POISONED_WIND_ON_COOLDOWN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "poisoned_wind_on_cooldown.png")
+    _POISONED_WIND_ON_COOLDOWN_IMAGE_MASK = ImageDetection.create_mask(_POISONED_WIND_ON_COOLDOWN_IMAGE)
     # Sylvan Power
-    sylvan_power_image = load_image(image_folder_path, "sylvan_power.png")
-    sylvan_power_selected_can_cast_image = load_image(image_folder_path, "sylvan_power_selected_can_cast.png")
-    sylvan_power_selected_cannot_cast_image = load_image(image_folder_path, "sylvan_power_selected_cannot_cast.png")
-    sylvan_power_selected_cannot_cast_image_mask = ImageDetection.create_mask(sylvan_power_selected_cannot_cast_image)
-    sylvan_power_on_cooldown_image = load_image(image_folder_path, "sylvan_power_on_cooldown.png")
-    sylvan_power_on_cooldown_image_mask = ImageDetection.create_mask(sylvan_power_on_cooldown_image)
+    _SYLVAN_POWER_IMAGE = load_image(_IMAGE_FOLDER_PATH, "sylvan_power.png")
+    _SYLVAN_POWER_SELECTED_CAN_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "sylvan_power_selected_can_cast.png")
+    _SYLVAN_POWER_SELECTED_CANNOT_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "sylvan_power_selected_cannot_cast.png")
+    _SYLVAN_POWER_SELECTED_CANNOT_CAST_IMAGE_MASK = ImageDetection.create_mask(_SYLVAN_POWER_SELECTED_CANNOT_CAST_IMAGE)
+    _SYLVAN_POWER_ON_COOLDOWN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "sylvan_power_on_cooldown.png")
+    _SYLVAN_POWER_ON_COOLDOWN_IMAGE_MASK = ImageDetection.create_mask(_SYLVAN_POWER_ON_COOLDOWN_IMAGE)
     # Bramble
-    bramble_image = load_image(image_folder_path, "bramble.png")
-    bramble_selected_can_cast_image = load_image(image_folder_path, "bramble_selected_can_cast.png")
-    bramble_selected_cannot_cast_image = load_image(image_folder_path, "bramble_selected_cannot_cast.png")
-    bramble_selected_cannot_cast_image_mask = ImageDetection.create_mask(bramble_selected_cannot_cast_image)
-    bramble_on_cooldown_image = load_image(image_folder_path, "bramble_on_cooldown.png")
-    bramble_on_cooldown_image_mask = ImageDetection.create_mask(bramble_on_cooldown_image)
+    _BRAMBLE_IMAGE = load_image(_IMAGE_FOLDER_PATH, "bramble.png")
+    _BRAMBLE_SELECTED_CAN_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "bramble_selected_can_cast.png")
+    _BRAMBLE_SELECTED_CANNOT_CAST_IMAGE = load_image(_IMAGE_FOLDER_PATH, "bramble_selected_cannot_cast.png")
+    _BRAMBLE_SELECTED_CANNOT_CAST_IMAGE_MASK = ImageDetection.create_mask(_BRAMBLE_SELECTED_CANNOT_CAST_IMAGE)
+    _BRAMBLE_ON_COOLDOWN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "bramble_on_cooldown.png")
+    _BRAMBLE_ON_COOLDOWN_IMAGE_MASK = ImageDetection.create_mask(_BRAMBLE_ON_COOLDOWN_IMAGE)
 
     @classmethod
     @_is_spell_available

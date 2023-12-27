@@ -9,9 +9,9 @@ from src.bot.map_changer.map_changer import MapChanger
 
 class Handler:
 
-    _astrub_bank_map = "4,-16"
-    _astrub_zaap_map = "4,-19"
-    _no_recall_maps = ["4,-16", "4,-17", "4,-18", "4,-19"]
+    _ASTRUB_BANK_MAP = "4,-16"
+    _ASTRUB_ZAAP_MAP = "4,-19"
+    _NO_RECALL_MAPS = ["4,-16", "4,-17", "4,-18", "4,-19"]
 
     @classmethod
     def handle(cls):
@@ -27,7 +27,7 @@ class Handler:
             if cls._does_char_have_recall_potion():
                 cls._use_recall_potion()
                 if MapChanger.has_loading_screen_passed():
-                    if MapChanger.get_current_map_coords() == cls._astrub_zaap_map:
+                    if MapChanger.get_current_map_coords() == cls._ASTRUB_ZAAP_MAP:
                         log.info("Successfully recalled.")
                         return Status.SUCCESSFULLY_RECALLED
                 else:
@@ -42,10 +42,10 @@ class Handler:
 
     @classmethod
     def _run_to_bank(cls):
-        path_to_bank = MapChanger.get_shortest_path(MapChanger.get_current_map_coords(), cls._astrub_bank_map)
+        path_to_bank = MapChanger.get_shortest_path(MapChanger.get_current_map_coords(), cls._ASTRUB_BANK_MAP)
         while True:
             map_coords = MapChanger.get_current_map_coords()
-            if map_coords == cls._astrub_bank_map:
+            if map_coords == cls._ASTRUB_BANK_MAP:
                 log.info("Arrived at Astrub bank map.")
                 return Status.ARRIVED_AT_ASTRUB_BANK_MAP
 
@@ -58,7 +58,7 @@ class Handler:
 
     @classmethod
     def _is_char_on_no_recall_map(cls):
-        return MapChanger.get_current_map_coords() in cls._no_recall_maps
+        return MapChanger.get_current_map_coords() in cls._NO_RECALL_MAPS
 
     @staticmethod
     def _use_recall_potion():

@@ -17,16 +17,16 @@ from .status_enum import Status
 
 class Finder:
 
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    red_circle_image = load_image(image_folder_path, "red_circle.png")
-    red_circle_image_mask = ImageDetection.create_mask(red_circle_image)
-    blue_circle_image = load_image(image_folder_path, "blue_circle.png")
-    blue_circle_image_mask = ImageDetection.create_mask(blue_circle_image)
-    turn_indicator_arrow_image = load_image(image_folder_path, "turn_indicator_arrow.png")
-    turn_indicator_arrow_image_mask = ImageDetection.create_mask(turn_indicator_arrow_image)
-    info_card_name_area = (593, 598, 225, 28)
-    circle_detection_area = (0, 0, 933, 600)
-    turn_bar_area = (0, 516, 933, 81)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
+    _RED_CIRCLE_IMAGE = load_image(_IMAGE_FOLDER_PATH, "red_circle.png")
+    _RED_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(_RED_CIRCLE_IMAGE)
+    _BLUE_CIRCLE_IMAGE = load_image(_IMAGE_FOLDER_PATH, "blue_circle.png")
+    _BLUE_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(_BLUE_CIRCLE_IMAGE)
+    _TURN_INDICATOR_ARROW_IMAGE = load_image(_IMAGE_FOLDER_PATH, "turn_indicator_arrow.png")
+    _TURN_INDICATOR_ARROW_IMAGE_MASK = ImageDetection.create_mask(_TURN_INDICATOR_ARROW_IMAGE)
+    _INFO_CARD_NAME_AREA = (593, 598, 225, 28)
+    _CIRCLE_DETECTION_AREA = (0, 0, 933, 600)
+    _TURN_BAR_AREA = (0, 516, 933, 81)
 
     @classmethod
     def find_by_circles(cls, character_name: str) -> tuple[int, int]:
@@ -106,10 +106,10 @@ class Finder:
         """Get red model circle locations."""
         rectangles = ImageDetection.find_image(
             haystack=cls._screenshot_circle_detection_area(),
-            needle=cls.red_circle_image,
+            needle=cls._RED_CIRCLE_IMAGE,
             method=cv2.TM_CCORR_NORMED,
             confidence=0.85,
-            mask=cls.red_circle_image_mask,
+            mask=cls._RED_CIRCLE_IMAGE_MASK,
             get_best_match_only=False
         )
         rectangles = cv2.groupRectangles(rectangles, 1, 0.5)[0]
@@ -124,10 +124,10 @@ class Finder:
         """Get blue model circle locations."""
         rectangles = ImageDetection.find_image(
             haystack=cls._screenshot_circle_detection_area(),
-            needle=cls.blue_circle_image,
+            needle=cls._BLUE_CIRCLE_IMAGE,
             method=cv2.TM_CCORR_NORMED,
             confidence=0.85,
-            mask=cls.blue_circle_image_mask,
+            mask=cls._BLUE_CIRCLE_IMAGE_MASK,
             get_best_match_only=False
         )
         rectangles = cv2.groupRectangles(rectangles, 1, 0.5)[0]
@@ -142,15 +142,15 @@ class Finder:
         """Make sure the turn bar is not shrunk for accurate results."""
         rectangle = ImageDetection.find_image(
             haystack=cls._screenshot_turn_bar_area(),
-            needle=cls.turn_indicator_arrow_image,
-            method=cv2.TM_CCORR_NORMED,
-            confidence=0.9,
-            mask=cls.turn_indicator_arrow_image_mask,
+            needle=cls._TURN_INDICATOR_ARROW_IMAGE,
+            method=cv2.TM_SQDIFF,
+            confidence=0.99,
+            mask=cls._TURN_INDICATOR_ARROW_IMAGE_MASK,
         )
         if len(rectangle) > 0:
             return ImageDetection.get_rectangle_center_point((
-                rectangle[0] + cls.turn_bar_area[0],
-                rectangle[1] + cls.turn_bar_area[1],
+                rectangle[0] + cls._TURN_BAR_AREA[0],
+                rectangle[1] + cls._TURN_BAR_AREA[1],
                 rectangle[2],
                 rectangle[3]
             ))
@@ -159,16 +159,16 @@ class Finder:
         
     @classmethod
     def screenshot_name_area_on_info_card(cls):
-        return ScreenCapture.custom_area(cls.info_card_name_area)    
+        return ScreenCapture.custom_area(cls._INFO_CARD_NAME_AREA)    
 
     @classmethod
     def _screenshot_circle_detection_area(cls):
         """No chat, no minimap, no spell & item bars."""
-        return ScreenCapture.custom_area(cls.circle_detection_area)
+        return ScreenCapture.custom_area(cls._CIRCLE_DETECTION_AREA)
 
     @classmethod
     def _screenshot_turn_bar_area(cls):
-        return ScreenCapture.custom_area(cls.turn_bar_area)
+        return ScreenCapture.custom_area(cls._TURN_BAR_AREA)
 
     @staticmethod
     def read_name_area_screenshot(screenshot: np.ndarray):

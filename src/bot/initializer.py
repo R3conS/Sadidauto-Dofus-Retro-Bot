@@ -12,17 +12,13 @@ from src.ocr.ocr import OCR
 
 class Initializer:
 
-    _window_suffixes = ["Dofus Retro", "Abrak"]
-    window_size = (950, 785)
-    window_title = None
-    _window_pos = (-8, 0)
-    _valid_scripts = [
+    WINDOW_TITLE = None
+    _WINDOW_SUFFIXES = ["Dofus Retro", "Abrak"]
+    _WINDOW_SIZE = (950, 785)
+    _WINDOW_POS = (-8, 0)
+    _VALID_SCRIPTS = [
         "af_anticlock", 
-        "af_clockwise", 
-        "af_north", 
-        "af_east", 
-        "af_south", 
-        "af_west"
+        "af_clockwise"
     ]
 
     def __init__(self, script: str, character_name: str):
@@ -35,7 +31,7 @@ class Initializer:
         self._verify_character_name()
 
     def _is_script_valid(self, script_to_check):
-        for script in self._valid_scripts:
+        for script in self._VALID_SCRIPTS:
             if script == script_to_check:
                 return True
         return False
@@ -44,13 +40,13 @@ class Initializer:
         log.info("Attempting to prepare Dofus window ... ")
         if bool(gw.getWindowsWithTitle(self._character_name)):
             for w in gw.getWindowsWithTitle(self._character_name):
-                if any(suffix in w.title for suffix in self._window_suffixes):
+                if any(suffix in w.title for suffix in self._WINDOW_SUFFIXES):
                     w.restore()
                     w.activate()
-                    w.resizeTo(*self.window_size)
-                    w.moveTo(*self._window_pos)
+                    w.resizeTo(*self._WINDOW_SIZE)
+                    w.moveTo(*self._WINDOW_POS)
                     log.info(f"Successfully prepared '{w.title}' Dofus window!")
-                    self.window_title = w.title
+                    self.WINDOW_TITLE = w.title
                     return
         log.critical(f"Failed to detect Dofus window for '{self._character_name}'! Exiting ...")
         os._exit(1)

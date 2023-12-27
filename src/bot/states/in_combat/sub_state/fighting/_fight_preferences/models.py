@@ -14,23 +14,23 @@ from src.bot.states.in_combat.sub_state.fighting.status_enum import Status
 
 class Models:
     
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    model_disabler_on_image = load_image(image_folder_path, "model_disabler_on.png")
-    model_disabler_on_image_mask = ImageDetection.create_mask(model_disabler_on_image)
-    model_disabler_off_image = load_image(image_folder_path, "model_disabler_off.png")
-    model_disabler_off_image_mask = ImageDetection.create_mask(model_disabler_off_image)
-    icon_area = (853, 514, 30, 34)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
+    _MODEL_DISABLER_ON_IMAGE = load_image(_IMAGE_FOLDER_PATH, "model_disabler_on.png")
+    _MODEL_DISABLER_ON_IMAGE_MASK = ImageDetection.create_mask(_MODEL_DISABLER_ON_IMAGE)
+    _MODEL_DISABLER_OFF_IMAGE = load_image(_IMAGE_FOLDER_PATH, "model_disabler_off.png")
+    _MODEL_DISABLER_OFF_IMAGE_MASK = ImageDetection.create_mask(_MODEL_DISABLER_OFF_IMAGE)
+    _ICON_AREA = (853, 514, 30, 34)
 
     @classmethod
     def are_disabled(cls):
         """Tactical mode must be on for more accurate results."""
         return len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
-                needle=cls.model_disabler_on_image,
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
+                needle=cls._MODEL_DISABLER_ON_IMAGE,
                 confidence=0.9,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls.model_disabler_on_image_mask
+                mask=cls._MODEL_DISABLER_ON_IMAGE_MASK
             )
         ) > 0
 
@@ -38,12 +38,12 @@ class Models:
     def get_icon_pos(cls):
         """Tactical mode must be on for more accurate results."""
         images_to_search = [
-            (cls.model_disabler_on_image, cls.model_disabler_on_image_mask),
-            (cls.model_disabler_off_image, cls.model_disabler_off_image_mask)
+            (cls._MODEL_DISABLER_ON_IMAGE, cls._MODEL_DISABLER_ON_IMAGE_MASK),
+            (cls._MODEL_DISABLER_OFF_IMAGE, cls._MODEL_DISABLER_OFF_IMAGE_MASK)
         ]
         for needle, mask in images_to_search:
             rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.icon_area),
+                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
                 needle=needle,
                 confidence=0.89,
                 method=cv2.TM_CCORR_NORMED,
@@ -51,8 +51,8 @@ class Models:
             )
             if len(rectangle) > 0:
                 return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls.icon_area[0],
-                    rectangle[1] + cls.icon_area[1],
+                    rectangle[0] + cls._ICON_AREA[0],
+                    rectangle[1] + cls._ICON_AREA[1],
                     rectangle[2],
                     rectangle[3]
                 ))

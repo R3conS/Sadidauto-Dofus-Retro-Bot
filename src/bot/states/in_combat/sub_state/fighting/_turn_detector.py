@@ -16,12 +16,12 @@ from .status_enum import Status
 
 class TurnDetector:
 
-    image_folder_path = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    first_turn_indicator_image = load_image(image_folder_path, "first_turn_indicator.png")
-    close_button_image = load_image(image_folder_path, "close_button.png")
-    dofus_logo_image = load_image(image_folder_path, "dofus_logo.png")
-    ap_counter_image = load_image(image_folder_path, "ap_counter_image.png")
-    ap_counter_image_mask = ImageDetection.create_mask(ap_counter_image)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
+    _FIRST_TURN_INDICATOR_IMAGE = load_image(_IMAGE_FOLDER_PATH, "first_turn_indicator.png")
+    _CLOSE_BUTTON_IMAGE = load_image(_IMAGE_FOLDER_PATH, "close_button.png")
+    _DOFUS_LOGO_IMAGE = load_image(_IMAGE_FOLDER_PATH, "dofus_logo.png")
+    _AP_COUNTER_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ap_counter_image.png")
+    _AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(_AP_COUNTER_IMAGE)
 
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
@@ -71,7 +71,7 @@ class TurnDetector:
         return len(
             ImageDetection.find_image(
                 haystack=cls._screenshot_turn_counter_area(),
-                needle=cls.first_turn_indicator_image,
+                needle=cls._FIRST_TURN_INDICATOR_IMAGE,
                 confidence=0.98,
                 method=cv2.TM_CCOEFF_NORMED,
             )
@@ -82,9 +82,9 @@ class TurnDetector:
         return len(
             ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area((452, 598, 41, 48)),
-                needle=cls.ap_counter_image,
+                needle=cls._AP_COUNTER_IMAGE,
                 confidence=0.99,
-                mask=cls.ap_counter_image_mask
+                mask=cls._AP_COUNTER_IMAGE_MASK
             )
         ) > 0
 
@@ -135,7 +135,7 @@ class TurnDetector:
             if len(
                 ImageDetection.find_image(
                     haystack=ScreenCapture.game_window(),
-                    needle=cls.close_button_image,
+                    needle=cls._CLOSE_BUTTON_IMAGE,
                     confidence=0.99,
                     method=cv2.TM_SQDIFF_NORMED,
                 )

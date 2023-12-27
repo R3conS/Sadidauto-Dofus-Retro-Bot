@@ -31,9 +31,9 @@ def _handle_interface_action(decorated_method):
 
 class Interfaces:
 
-    _image_folder_path = "src/bot/interfaces/images"
-    dofus_logo_image = load_image(_image_folder_path, "dofus_logo.png")
-    rcm_flash_quality_image = load_image(_image_folder_path, "rcm_flash_quality.png")
+    _IMAGE_FOLDER_PATH = "src/bot/interfaces/images"
+    _DOFUS_LOGO_IMAGE = load_image(_IMAGE_FOLDER_PATH, "dofus_logo.png")
+    _RCM_FLASH_QUALITY_IMAGE = load_image(_IMAGE_FOLDER_PATH, "rcm_flash_quality.png")
 
     @staticmethod
     @_handle_interface_action
@@ -146,7 +146,7 @@ class Interfaces:
         return len(
             ImageDetection.find_image(
                 ScreenCapture.game_window(),
-                cls.dofus_logo_image,
+                cls._DOFUS_LOGO_IMAGE,
                 confidence=0.99
             )
         ) > 0
@@ -156,7 +156,7 @@ class Interfaces:
         return len(
             ImageDetection.find_image(
                 ScreenCapture.game_window(),
-                cls.rcm_flash_quality_image,
+                cls._RCM_FLASH_QUALITY_IMAGE,
                 confidence=0.995
             )
         ) > 0
