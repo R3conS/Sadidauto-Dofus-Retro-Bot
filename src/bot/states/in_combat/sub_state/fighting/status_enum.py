@@ -22,7 +22,6 @@ class Status(Enum):
     SUCCESSFULLY_CLOSED_FIGHT_RESULTS_WINDOW = "successfully_closed_fight_results_window"
     SUCCESSFULLY_PASSED_TURN = "successfully_passed_turn"
 
-    FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION = "failed_to_get_turn_indicator_arrow_location"
     FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS = "failed_to_get_tactical_mode_toggle_icon_pos"
     FAILED_TO_GET_MODELS_TOGGLE_ICON_POS = "failed_to_get_models_toggle_icon_pos"
     FAILED_TO_GET_SPELL_ICON_POS = "failed_to_get_spell_pos"

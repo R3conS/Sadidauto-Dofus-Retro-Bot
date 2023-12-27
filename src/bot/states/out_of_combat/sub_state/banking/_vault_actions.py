@@ -27,18 +27,18 @@ def _handle_tab_opening(decorated_method):
             log.info(f"'{tab_name.capitalize()}' tab is already open.")
             return True
 
-        tab_icon = ImageDetection.find_image(
+        log.info(f"Opening '{tab_name.capitalize()}' tab ...")
+        tab_icon = ImageDetection.find_images(
             haystack=cls.get_inventory_tab_area_screenshot(),
-            needle=getattr(VaultActions, f"_TAB_{tab_name.upper()}_CLOSED_IMAGE"),
+            needles=getattr(VaultActions, f"_TAB_{tab_name.upper()}_CLOSED_IMAGES"),
             confidence=0.95,
-            method=cv2.TM_CCOEFF_NORMED,
+            method=cv2.TM_SQDIFF_NORMED,
         )
         if len(tab_icon) > 0:
-            tab_x, tab_y = ImageDetection.get_rectangle_center_point(tab_icon)
+            tab_x, tab_y = ImageDetection.get_rectangle_center_point(tab_icon[0])
             tab_x += cls._INVENTORY_TAB_AREA[0]
             tab_y += cls._INVENTORY_TAB_AREA[1]
 
-            log.info(f"Opening '{tab_name.capitalize()}' tab ...")
             pyag.moveTo(tab_x, tab_y)
             pyag.click()
 
@@ -102,12 +102,30 @@ class VaultActions:
 
     _IMAGE_FOLDER_PATH = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\images"
     _EMPTY_SLOT_IMAGE = load_image(_IMAGE_FOLDER_PATH, "empty_slot.png")
-    _TAB_EQUIPMENT_OPEN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_equipment_open.png")
-    _TAB_EQUIPMENT_CLOSED_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_equipment_closed.png")
-    _TAB_RESOURCES_OPEN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_resources_open.png")
-    _TAB_RESOURCES_CLOSED_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_resources_closed.png")
-    _TAB_MISC_OPEN_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_misc_open.png")
-    _TAB_MISC_CLOSED_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tab_misc_closed.png")
+    _TAB_EQUIPMENT_OPEN_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_equipment_open.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_equipment_open_2.png")
+    ]
+    _TAB_EQUIPMENT_CLOSED_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_equipment_closed.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_equipment_closed_2.png")
+    ]
+    _TAB_RESOURCES_OPEN_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_resources_open.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_resources_open_2.png")
+    ]
+    _TAB_RESOURCES_CLOSED_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_resources_closed.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_resources_closed_2.png")
+    ]
+    _TAB_MISC_OPEN_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_misc_open.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_misc_open_2.png")
+    ]
+    _TAB_MISC_CLOSED_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "tab_misc_closed.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tab_misc_closed_2.png")
+    ]
 
     _INVENTORY_SLOT_COORDS = { # Middle of each slot.
        "row_1" : [(712, 276), (752, 276), (792, 276), (832, 276), (872, 276)],
@@ -261,7 +279,7 @@ class VaultActions:
     def deposit_slot(slot_x, slot_y):
         pyag.keyDown("ctrl")
         pyag.moveTo(slot_x, slot_y)
-        pyag.click(clicks=2)
+        pyag.click(clicks=2, interval=0.1)
         pyag.keyUp("ctrl")
 
     @classmethod
@@ -282,9 +300,9 @@ class VaultActions:
     @classmethod
     def is_equipment_tab_open(cls):
         return len(
-            ImageDetection.find_image(
+            ImageDetection.find_images(
                 haystack=cls.get_inventory_tab_area_screenshot(),
-                needle=cls._TAB_EQUIPMENT_OPEN_IMAGE,
+                needles=cls._TAB_EQUIPMENT_OPEN_IMAGES,
                 confidence=0.95,
                 method=cv2.TM_CCOEFF_NORMED,
             )
@@ -293,9 +311,9 @@ class VaultActions:
     @classmethod
     def is_misc_tab_open(cls):
         return len(
-            ImageDetection.find_image(
+            ImageDetection.find_images(
                 haystack=cls.get_inventory_tab_area_screenshot(),
-                needle=cls._TAB_MISC_OPEN_IMAGE,
+                needles=cls._TAB_MISC_OPEN_IMAGES,
                 confidence=0.95,
                 method=cv2.TM_CCOEFF_NORMED,
             )
@@ -304,9 +322,9 @@ class VaultActions:
     @classmethod
     def is_resources_tab_open(cls):
         return len(
-            ImageDetection.find_image(
+            ImageDetection.find_images(
                 haystack=cls.get_inventory_tab_area_screenshot(),
-                needle=cls._TAB_RESOURCES_OPEN_IMAGE,
+                needles=cls._TAB_RESOURCES_OPEN_IMAGES,
                 confidence=0.95,
                 method=cv2.TM_CCOEFF_NORMED,
             )

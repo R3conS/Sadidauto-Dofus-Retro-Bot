@@ -42,7 +42,6 @@ class Caster:
         character_pos = CharacterFinder.find_by_turn_bar(character_name)
         if (
             character_pos == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
-            or character_pos == Status.FAILED_TO_GET_TURN_INDICATOR_ARROW_LOCATION
             or character_pos == Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
         ):
             return Status.FAILED_TO_GET_CHARACTER_POS_BY_TURN_BAR
@@ -100,9 +99,8 @@ class Caster:
     @classmethod
     def _get_monster_locations(cls, character_name: str):
         monster_locations = []
-        red_circles = CharacterFinder.get_red_circle_locations()
         blue_circles = CharacterFinder.get_blue_circle_locations()
-        for circle in red_circles + blue_circles:
+        for circle in blue_circles:
             pyag.moveTo(circle[0], circle[1])
             CharacterFinder.wait_for_info_card_to_appear()
             if not CharacterFinder.is_info_card_visible():

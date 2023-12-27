@@ -4,6 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from collections import deque
 import os
 from time import perf_counter
+import re
 
 import cv2
 import pyautogui as pyag
@@ -17,14 +18,15 @@ from .map_data import DATA as MAP_DATA
 class MapChanger:
 
     _IMAGE_DIR_PATH = "src\\bot\\map_changer\\map_images"
-    _MAP_CHANGE_DATA = MAP_DATA
     _MAP_IMAGE_DATA = {}
     for image_name in [name for name in os.listdir(_IMAGE_DIR_PATH) if name.endswith(".png")]:
         _MAP_IMAGE_DATA[image_name.replace(".png", "")] = load_image(_IMAGE_DIR_PATH, image_name)
+    _MAP_CHANGE_DATA = MAP_DATA
+    _MAP_IMAGE_AREA = (487, 655, 78, 52)
 
     @classmethod
     def get_current_map_coords(cls):
-        current_map_image = ScreenCapture.custom_area((487, 655, 78, 52))
+        current_map_image = cls._screenshot_map_area()
         for map_coords, map_image in cls._MAP_IMAGE_DATA.items():
             result = ImageDetection.find_image(
                 haystack=map_image,
@@ -34,7 +36,9 @@ class MapChanger:
                 remove_alpha_channels=True,
             )
             if len(result) > 0:
-                return map_coords
+                match = re.search(r'-?\d{1,2},-?\d{1,2}', map_coords)
+                if match:
+                    return match.group()
         raise ValueError(f"Failed to find current map coords. Perhaps the map image is missing?")
 
     @classmethod
@@ -74,15 +78,6 @@ class MapChanger:
             log.error(f"Failed to detect end of loading screen.")
             return False
 
-    @staticmethod
-    def _is_loading_screen_visible():
-        return all((
-            pyag.pixelMatchesColor(529, 491, (0, 0, 0)),
-            pyag.pixelMatchesColor(531, 429, (0, 0, 0)),
-            pyag.pixelMatchesColor(364, 419, (0, 0, 0)),
-            pyag.pixelMatchesColor(691, 424, (0, 0, 0))
-        ))
-
     @classmethod
     def get_shortest_path(cls, start, end) -> dict[str, str]: # {from_map: to_map}
         if start not in cls._MAP_CHANGE_DATA:
@@ -105,3 +100,16 @@ class MapChanger:
                     visited.add(next_node)
         
         raise Exception(f"Impossible to generate path from '{start}' to '{end}' because there are no maps conecting them.")
+
+    @staticmethod
+    def _is_loading_screen_visible():
+        return all((
+            pyag.pixelMatchesColor(529, 491, (0, 0, 0)),
+            pyag.pixelMatchesColor(531, 429, (0, 0, 0)),
+            pyag.pixelMatchesColor(364, 419, (0, 0, 0)),
+            pyag.pixelMatchesColor(691, 424, (0, 0, 0))
+        ))
+
+    @classmethod
+    def _screenshot_map_area(cls):
+        return ScreenCapture.custom_area(cls._MAP_IMAGE_AREA)

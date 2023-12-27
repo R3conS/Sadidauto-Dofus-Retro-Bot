@@ -8,15 +8,23 @@ import cv2
 import pyautogui as pyag
 
 from image_detection import ImageDetection
-from src.bot.interfaces.interfaces import Interfaces
 from .map_data.getter import Getter as MapDataGetter
 from screen_capture import ScreenCapture
+from src.bot.interfaces.interfaces import Interfaces
 from src.bot.map_changer.map_changer import MapChanger
-from .status_enum import Status
 from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
+from src.utilities import load_image
+from .status_enum import Status
 
 
 class Hunter:
+
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images"
+    _READY_BUTTON_AREA = (678, 507, 258, 91)
+    _READY_BUTTON_LIT_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ready_button_lit.png")
+    _READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(_READY_BUTTON_LIT_IMAGE)
+    _READY_BUTTON_DIM_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ready_button_dim.png")
+    _READY_BUTTON_DIM_IMAGE_MASK = ImageDetection.create_mask(_READY_BUTTON_DIM_IMAGE)
 
     def __init__(self, script: str, game_window_title: str):
         self._game_window_title = game_window_title
@@ -27,8 +35,8 @@ class Hunter:
         map_data = MapDataGetter.get_data_object(script)
         self._pathing_data = map_data.get_pathing_data()
         self._map_type_data = map_data.get_map_type_data()
-        self._monster_detection_data = self._get_monster_detection_data()
-        self._join_sword_detection_data = self._get_join_sword_detection_data()
+        self._monster_image_data = self._load_monster_image_data()
+        self._join_sword_detection_data = self._load_join_sword_detection_data()
 
     def hunt(self):
         while True:
@@ -86,7 +94,7 @@ class Hunter:
         return Status.FAILED_TO_TRAVERSE_MAP
 
     def _handle_fightable_map(self, map_coords):
-        for segment_index in range(len(self._monster_detection_data[0])):
+        for segment_index in range(len(self._monster_image_data[0])):
             matches = self._search_segment(segment_index, ScreenCapture.game_window())
             if len(matches) > 0:
                 monster_x, monster_y = matches[0][0], matches[0][1]
@@ -133,7 +141,7 @@ class Hunter:
             return Status.MAP_FULLY_SEARCHED
         return Status.FAILED_TO_CHANGE_MAP
 
-    def _get_monster_detection_data(self):
+    def _load_monster_image_data(self):
         image_folder_path = "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\monster_images"
         image_names = [
             "Boar_BL_1.png", "Boar_BR_1.png", "Boar_TL_1.png", "Boar_TR_1.png",
@@ -156,7 +164,7 @@ class Hunter:
             self._segment_data(ImageDetection.create_masks(loaded_images), 4)
         )
 
-    def _get_join_sword_detection_data(self):
+    def _load_join_sword_detection_data(self):
         paths = [
             "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_1.png",
             "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\j_sword_ally_2.png",
@@ -177,8 +185,8 @@ class Hunter:
         return segments
 
     def _search_segment(self, segment_index, haystack_image) -> list[tuple[int, int]]:
-        images_segment = self._monster_detection_data[0][segment_index]
-        masks_segment = self._monster_detection_data[1][segment_index]
+        images_segment = self._monster_image_data[0][segment_index]
+        masks_segment = self._monster_image_data[1][segment_index]
         matches = ImageDetection.find_images(
             haystack=haystack_image,
             needles=images_segment,
@@ -203,14 +211,17 @@ class Hunter:
             pyag.click()
             pyag.keyUp("shift")
 
-    def _is_attack_successful(self):
+    @classmethod
+    def _is_attack_successful(cls):
         start_time = perf_counter()
         while perf_counter() - start_time <= 6:
             if len(
                 ImageDetection.find_images(
-                    ScreenCapture.game_window(), 
-                    ["src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\cc_lit.png", 
-                     "src\\bot\\states\\out_of_combat\\sub_state\\hunting\\images\\cc_dim.png"],
+                    haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
+                    needles=[cls._READY_BUTTON_LIT_IMAGE, cls._READY_BUTTON_DIM_IMAGE],
+                    confidence=0.99,
+                    method=cv2.TM_CCORR_NORMED,
+                    masks=[cls._READY_BUTTON_LIT_IMAGE_MASK, cls._READY_BUTTON_DIM_IMAGE_MASK],
                 )
             ) > 0:
                 log.info("Attack successful.")

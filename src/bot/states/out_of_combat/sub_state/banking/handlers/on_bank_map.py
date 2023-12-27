@@ -159,7 +159,7 @@ class Handler:
     def _talk_with_banker(self, banker_x, banker_y):
         if "Dofus Retro" in self._game_window_title:
             pyag.moveTo(banker_x, banker_y)
-            pyag.click("right")
+            pyag.click(button="right")
         else: # For Abrak private server
             pyag.keyDown("shift")
             pyag.moveTo(banker_x, banker_y)
