@@ -10,7 +10,7 @@ import pyautogui as pyag
 from src.utilities import load_image, move_mouse_off_game_area
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from .status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 
 
 AVAILABLE_SPELLS = ["EARTHQUAKE", "POISONED_WIND", "SYLVAN_POWER", "BRAMBLE"]

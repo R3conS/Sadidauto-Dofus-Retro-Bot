@@ -9,19 +9,25 @@ import pyautogui as pyag
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.bot.states.in_combat.sub_state.fighting.status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 from .turn_bar import TurnBar
 
 
 class TacticalMode:
     
-    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    _TACTICAL_MODE_ON_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_on.png")
-    _TACTICAL_MODE_ON_IMAGE_MASK = ImageDetection.create_mask(_TACTICAL_MODE_ON_IMAGE)
-    _TACTICAL_MODE_OFF_IMAGE = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_off.png")
-    _TACTICAL_MODE_OFF_IMAGE_MASK = ImageDetection.create_mask(_TACTICAL_MODE_OFF_IMAGE)
-    _ICON_AREA = (822, 510, 34, 36)
-
+    _ICON_AREA = (750, 512, 185, 34)
+    _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\_combat_options\\images"
+    _TACTICAL_MODE_ON_ICONS = [
+        load_image(_IMAGE_FOLDER_PATH, "tactical_mode_on.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tactical_mode_on_2.png")
+    ]
+    _TACTICAL_MODE_ON_ICON_MASKS = [ImageDetection.create_mask(icon) for icon in _TACTICAL_MODE_ON_ICONS]
+    _TACTICAL_MODE_OFF_ICONS = [
+        load_image(_IMAGE_FOLDER_PATH, "tactical_mode_off.png"),
+        load_image(_IMAGE_FOLDER_PATH, "tactical_mode_off_2.png")
+    ]
+    _TACTICAL_MODE_OFF_ICON_MASKS = [ImageDetection.create_mask(icon) for icon in _TACTICAL_MODE_OFF_ICONS]
+    
     @classmethod
     def is_on(cls):
         """
@@ -29,36 +35,31 @@ class TacticalMode:
         the turn indicator arrow blocks the icon.
         """
         return len(
-            ImageDetection.find_image(
+            ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=cls._TACTICAL_MODE_ON_IMAGE,
+                needles=cls._TACTICAL_MODE_ON_ICONS,
                 confidence=0.95,
                 method=cv2.TM_CCORR_NORMED,
-                mask=cls._TACTICAL_MODE_ON_IMAGE_MASK
+                masks=cls._TACTICAL_MODE_ON_ICON_MASKS
             )
         ) > 0
     
     @classmethod
     def get_icon_pos(cls):
-        images_to_search = [
-            (cls._TACTICAL_MODE_ON_IMAGE, cls._TACTICAL_MODE_ON_IMAGE_MASK),
-            (cls._TACTICAL_MODE_OFF_IMAGE, cls._TACTICAL_MODE_OFF_IMAGE_MASK)
-        ]
-        for needle, mask in images_to_search:
-            rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=needle,
-                confidence=0.98,
-                method=cv2.TM_CCORR_NORMED,
-                mask=mask
-            )
-            if len(rectangle) > 0:
-                return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls._ICON_AREA[0],
-                    rectangle[1] + cls._ICON_AREA[1],
-                    rectangle[2],
-                    rectangle[3]
-                ))
+        rectangles = ImageDetection.find_images(
+            haystack=ScreenCapture.custom_area(cls._ICON_AREA),
+            needles=cls._TACTICAL_MODE_ON_ICONS + cls._TACTICAL_MODE_OFF_ICONS,
+            confidence=0.98,
+            method=cv2.TM_CCORR_NORMED,
+            masks=cls._TACTICAL_MODE_ON_ICON_MASKS + cls._TACTICAL_MODE_OFF_ICON_MASKS
+        )
+        if len(rectangles) > 0:
+            return ImageDetection.get_rectangle_center_point((
+                rectangles[0][0] + cls._ICON_AREA[0],
+                rectangles[0][1] + cls._ICON_AREA[1],
+                rectangles[0][2],
+                rectangles[0][3]
+            ))
         return None
    
     @classmethod
@@ -72,12 +73,12 @@ class TacticalMode:
             log.info("Tactical mode is already on.")
             return Status.TACTICAL_MODE_IS_ALREADY_ON
 
-        tactical_mode_icon_pos = cls.get_icon_pos()
-        if tactical_mode_icon_pos is None:
+        icon_pos = cls.get_icon_pos()
+        if icon_pos is None:
             log.error("Failed to get tactical mode toggle icon position.")
             return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
 
-        pyag.moveTo(*tactical_mode_icon_pos)
+        pyag.moveTo(*icon_pos)
         pyag.click()
 
         start_time = perf_counter()

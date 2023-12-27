@@ -2,11 +2,11 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from .._character_finder import Finder as CharacterFinder
-from .._fight_preferences.models import Models
-from .._fight_preferences.turn_bar import TurnBar
-from ..status_enum import Status
+from ..._combat_options.models import Models
+from ..._combat_options.turn_bar import TurnBar
 from ._character_mover import Mover as CharacterMover
 from ._spell_caster import Caster as SpellCaster
+from src.bot.states.in_combat.status_enum import Status
 
 
 class Handler:

@@ -4,30 +4,22 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from time import perf_counter
 
 import cv2
-import numpy as np
 import pyautogui as pyag
 from PIL import Image
 
-from src.utilities import move_mouse_off_game_area, load_image
-from .status_enum import Status
 from .map_data.getter import Getter as MapDataGetter
+from src.utilities import move_mouse_off_game_area, load_image
+from src.bot.states.in_combat.status_enum import Status
 from src.bot.map_changer.map_changer import MapChanger
 from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
+from .._combat_options.lock import Lock as FightLock
+from .._combat_options.tactical_mode import TacticalMode
 
 
 class Preparer:
 
     _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\preparing\\images"
-    _ICON_AREA = (693, 506, 241, 40)
-    _FIGHT_LOCK_OFF_ICON = load_image(_IMAGE_FOLDER_PATH, "fight_lock_off.png")
-    _FIGHT_LOCK_OFF_ICON_MASK = ImageDetection.create_mask(_FIGHT_LOCK_OFF_ICON)
-    _FIGHT_LOCK_ON_ICON = load_image(_IMAGE_FOLDER_PATH, "fight_lock_on.png")
-    _FIGHT_LOCK_ON_ICON_MASK = ImageDetection.create_mask(_FIGHT_LOCK_ON_ICON)
-    _TACTICAL_MODE_OFF_ICON = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_off.png")
-    _TACTICAL_MODE_OFF_ICON_MASK = ImageDetection.create_mask(_TACTICAL_MODE_OFF_ICON)
-    _TACTICAL_MODE_ON_ICON = load_image(_IMAGE_FOLDER_PATH, "tactical_mode_on.png")
-    _TACTICAL_MODE_ON_ICON_MASK = ImageDetection.create_mask(_TACTICAL_MODE_ON_ICON)
     _READY_BUTTON_AREA = (678, 507, 258, 91)
     _READY_BUTTON_LIT_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ready_button_lit.png")
     _READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(_READY_BUTTON_LIT_IMAGE)
@@ -85,21 +77,21 @@ class Preparer:
 
         return Status.SUCCESSFULLY_FINISHED_PREPARING
 
-    @classmethod
-    def _handle_fight_lock(cls):
-        if cls._is_fight_lock_icon_checked():
+    @staticmethod
+    def _handle_fight_lock():
+        if FightLock.is_on():
             log.info("Fight lock is on.")
             return Status.FIGHT_LOCK_IS_ALREADY_ON
         log.info("Fight lock is off.")
-        return cls._turn_on_fight_lock()
+        return FightLock.turn_on()
 
-    @classmethod
-    def _handle_tactical_mode(cls):
-        if cls._is_tactical_mode_icon_checked():
+    @staticmethod
+    def _handle_tactical_mode():
+        if TacticalMode.is_on():
             log.info("Tactical mode is on.")
             return Status.TACTICAL_MODE_IS_ALREADY_ON
         log.info("Tactical mode is off.")
-        return cls._turn_on_tactical_mode()
+        return TacticalMode.turn_on()
 
     def _handle_dummy_cells(self, map_coords: str):
         log.info(f"Checking for dummy cells on map: {map_coords} ... ")
@@ -258,30 +250,6 @@ class Preparer:
         return False
 
     @classmethod
-    def _is_fight_lock_icon_checked(cls):
-        return not len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=cls._FIGHT_LOCK_OFF_ICON,
-                confidence=0.99,
-                method=cv2.TM_CCORR_NORMED,
-                mask=cls._FIGHT_LOCK_OFF_ICON_MASK
-            )
-        ) > 0
-
-    @classmethod
-    def _is_tactical_mode_icon_checked(cls):
-        return not len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=cls._TACTICAL_MODE_OFF_ICON,
-                confidence=0.98,
-                method=cv2.TM_CCORR_NORMED,
-                mask=cls._TACTICAL_MODE_OFF_ICON_MASK
-            )
-        ) > 0
-
-    @classmethod
     def _is_ready_button_visible(cls):
         is_lit_visible = len(
             ImageDetection.find_image(
@@ -304,115 +272,22 @@ class Preparer:
         return is_lit_visible or is_dim_visible
 
     @classmethod
-    def _get_fight_lock_icon_pos(cls):
-        images_to_search = [
-            (cls._FIGHT_LOCK_ON_ICON, cls._FIGHT_LOCK_ON_ICON_MASK),
-            (cls._FIGHT_LOCK_OFF_ICON, cls._FIGHT_LOCK_OFF_ICON_MASK)
-        ]
-        for needle, mask in images_to_search:
-            rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=needle,
-                confidence=0.99,
-                method=cv2.TM_CCORR_NORMED,
-                mask=mask
-            )
-            if len(rectangle) > 0:
-                return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls._ICON_AREA[0],
-                    rectangle[1] + cls._ICON_AREA[1],
-                    rectangle[2],
-                    rectangle[3]
-                ))
-        return None
-
-    @classmethod
-    def _get_tactical_mode_icon_pos(cls):
-        images_to_search = [
-            (cls._TACTICAL_MODE_ON_ICON, cls._TACTICAL_MODE_ON_ICON_MASK),
-            (cls._TACTICAL_MODE_OFF_ICON, cls._TACTICAL_MODE_OFF_ICON_MASK)
-        ]
-        for needle, mask in images_to_search:
-            rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._ICON_AREA),
-                needle=needle,
-                confidence=0.98,
-                method=cv2.TM_CCORR_NORMED,
-                mask=mask
-            )
-            if len(rectangle) > 0:
-                return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls._ICON_AREA[0],
-                    rectangle[1] + cls._ICON_AREA[1],
-                    rectangle[2],
-                    rectangle[3]
-                ))
-        return None
-
-    @classmethod
     def _get_ready_button_pos(cls):
-        images_to_search = [
-            (cls._READY_BUTTON_LIT_IMAGE, cls._READY_BUTTON_LIT_IMAGE_MASK),
-            (cls._READY_BUTTON_DIM_IMAGE, cls._READY_BUTTON_DIM_IMAGE_MASK)
-        ]
-        for needle, mask in images_to_search:
-            rectangle = ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
-                needle=needle,
-                confidence=0.99,
-                method=cv2.TM_SQDIFF,
-                mask=mask
-            )
-            if len(rectangle) > 0:
-                return ImageDetection.get_rectangle_center_point((
-                    rectangle[0] + cls._READY_BUTTON_AREA[0],
-                    rectangle[1] + cls._READY_BUTTON_AREA[1],
-                    rectangle[2],
-                    rectangle[3]
-                ))
+        rectangles = ImageDetection.find_images(
+            haystack=ScreenCapture.custom_area(cls._READY_BUTTON_AREA),
+            needles=[cls._READY_BUTTON_LIT_IMAGE, cls._READY_BUTTON_DIM_IMAGE],
+            confidence=0.99,
+            method=cv2.TM_SQDIFF,
+            masks=[cls._READY_BUTTON_LIT_IMAGE_MASK, cls._READY_BUTTON_DIM_IMAGE_MASK]
+        )
+        if len(rectangles) > 0:
+            return ImageDetection.get_rectangle_center_point((
+                rectangles[0][0] + cls._READY_BUTTON_AREA[0],
+                rectangles[0][1] + cls._READY_BUTTON_AREA[1],
+                rectangles[0][2],
+                rectangles[0][3]
+            ))
         return None
-
-    @classmethod
-    def _turn_on_fight_lock(cls):
-        log.info("Turning on fight lock ... ")
-        fight_lock_icon_pos = cls._get_fight_lock_icon_pos()
-        if fight_lock_icon_pos is None:
-            log.error("Failed to get fight lock icon position.")
-            return Status.FAILED_TO_GET_FIGHT_LOCK_ICON_POS
-
-        pyag.moveTo(*fight_lock_icon_pos)
-        pyag.click()
-
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
-            if cls._is_fight_lock_icon_checked():
-                log.info("Successfully turned on fight lock.")
-                return Status.SUCCESSFULLY_TURNED_ON_FIGHT_LOCK
-        log.error("Timed out while turning on fight lock.")
-        return Status.TIMED_OUT_WHILE_TURNING_ON_FIGHT_LOCK
-
-    @classmethod
-    def _turn_on_tactical_mode(cls):
-        log.info("Turning on tactical mode ... ")
-        tactical_mode_icon_pos = cls._get_tactical_mode_icon_pos()
-        if tactical_mode_icon_pos is None:
-            log.error("Failed to get tactical mode icon position.")
-            return Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
-
-        sc_before_clicking_icon = ScreenCapture.game_window()
-        pyag.moveTo(*tactical_mode_icon_pos)
-        pyag.click()
-
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
-            if (
-                cls._is_tactical_mode_icon_checked()
-                and not cls._are_images_same(sc_before_clicking_icon, ScreenCapture.game_window())
-            ):
-                log.info("Successfully turned on tactical mode.")
-                return Status.SUCCESSFULLY_TURNED_ON_TACTICAL_MODE
-        log.error("Timed out while turning on tactical mode.")
-        return Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
 
     @classmethod
     def _is_ap_counter_visible(cls):

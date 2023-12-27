@@ -12,7 +12,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.map_changer.map_changer import MapChanger
 from ..map_data.getter import Getter as FightingDataGetter
-from ..status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 
 
 class Mover:

@@ -9,9 +9,9 @@ import pyautogui as pyag
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from .status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 from ._turn_detector import TurnDetector
-from ._fight_preferences.tactical_mode import TacticalMode
+from .._combat_options.tactical_mode import TacticalMode
 from ._first_turn_handler.handler import Handler as FirstTurnHandler
 from ._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
 

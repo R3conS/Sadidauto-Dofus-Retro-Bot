@@ -6,13 +6,14 @@ import pyautogui as pyag
 from utilities import move_mouse_off_game_area
 from .._character_finder import Finder as CharacterFinder
 from .._spells import Spells
-from ..status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 from .._turn_detector import TurnDetector
 
 class Caster:
 
     @classmethod
     def cast_spells(cls, character_name: str):
+        log.info("Casting spells ...")
         if cls._is_any_core_spell_available():
             result = cls._handle_core_spells(character_name)
             if result != Status.SUCCESSFULLY_CAST_CORE_SPELLS:
@@ -23,6 +24,7 @@ class Caster:
             if result != Status.SUCCESSFULLY_CAST_NON_CORE_SPELLS:
                 return Status.FAILED_TO_CAST_NON_CORE_SPELLS
 
+        log.info("Finished casting spells.")
         return Status.SUCCESSFULLY_FINISHED_SUBSEQUENT_TURN_SPELL_CASTING
 
     @staticmethod

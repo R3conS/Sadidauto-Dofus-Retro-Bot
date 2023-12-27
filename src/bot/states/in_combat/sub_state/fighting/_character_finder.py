@@ -13,8 +13,8 @@ from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image, move_mouse_off_game_area
-from ._fight_preferences.turn_bar import TurnBar
-from .status_enum import Status
+from .._combat_options.turn_bar import TurnBar
+from src.bot.states.in_combat.status_enum import Status
 
 
 class Finder:

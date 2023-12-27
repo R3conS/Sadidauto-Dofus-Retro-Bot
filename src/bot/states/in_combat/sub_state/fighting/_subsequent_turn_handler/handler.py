@@ -1,10 +1,10 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from ..status_enum import Status
 from .._spells import Spells
 from ._spell_caster import Caster as SpellCaster
-from .._fight_preferences.turn_bar import TurnBar
+from ..._combat_options.turn_bar import TurnBar
+from src.bot.states.in_combat.status_enum import Status
 
 
 class Handler:

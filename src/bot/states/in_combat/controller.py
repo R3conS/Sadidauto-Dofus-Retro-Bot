@@ -4,8 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from src.utilities import load_image
 from .sub_state.preparing.preparer import Preparer
 from .sub_state.fighting.fighter import Fighter
-from .sub_state.preparing.status_enum import Status as PreparingStatus
-from .sub_state.fighting.status_enum import Status as FightingStatus
+from src.bot.states.in_combat.status_enum import Status
 from src.bot.main_states_enum import State as MainBotStates
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
@@ -27,22 +26,22 @@ class Controller:
         while True:
             if sub_state == _SubStates.PREPARING:
                 status = self._preparer.prepare()
-                if status == PreparingStatus.SUCCESSFULLY_FINISHED_PREPARING:
+                if status == Status.SUCCESSFULLY_FINISHED_PREPARING:
                     sub_state = _SubStates.FIGHTING
                     continue
-                elif status == PreparingStatus.FAILED_TO_FINISH_PREPARING:
+                elif status == Status.FAILED_TO_FINISH_PREPARING:
                     log.error(f"Failed to finish preparing. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
                 
             elif sub_state == _SubStates.FIGHTING:
                 result = self._fighter.fight()
-                if result == FightingStatus.SUCCESSFULLY_FINISHED_FIGHTING:
+                if result == Status.SUCCESSFULLY_FINISHED_FIGHTING:
                     self._fight_counter += 1
                     log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
                     self._set_main_bot_state_callback(MainBotStates.OUT_OF_COMBAT)
                     return
-                elif result == FightingStatus.FAILED_TO_FINISH_FIGHTING:
+                elif result == Status.FAILED_TO_FINISH_FIGHTING:
                     log.error(f"Failed to finish fighting. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return

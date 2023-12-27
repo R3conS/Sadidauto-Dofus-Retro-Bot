@@ -5,7 +5,7 @@ from time import perf_counter
 
 import pyautogui as pyag
 
-from src.bot.states.in_combat.sub_state.fighting.status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 
 
 class TurnBar:

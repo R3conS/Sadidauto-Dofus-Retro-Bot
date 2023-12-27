@@ -11,7 +11,7 @@ from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image, move_mouse_off_game_area
-from .status_enum import Status
+from src.bot.states.in_combat.status_enum import Status
 
 
 class TurnDetector:
