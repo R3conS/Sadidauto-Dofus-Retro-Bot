@@ -1,7 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from .._spells import Spells
+from .._spells.spells import Spells
 from ._spell_caster import Caster as SpellCaster
 from ..._combat_options.turn_bar import TurnBar
 from src.bot.states.in_combat.status_enum import Status
@@ -33,8 +33,8 @@ class Handler:
     @staticmethod
     def _is_any_spell_available():
         return (
-            Spells.is_earthquake_available()
-            or Spells.is_poisoned_wind_available()
-            or Spells.is_sylvan_power_available()
-            or Spells.is_bramble_available()
+            Spells.EARTHQUAKE.is_available()
+            or Spells.POISONED_WIND.is_available()
+            or Spells.SYLVAN_POWER.is_available()
+            or Spells.BRAMBLE.is_available()
         )

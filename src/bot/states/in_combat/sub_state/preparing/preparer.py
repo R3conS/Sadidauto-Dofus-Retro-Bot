@@ -59,6 +59,8 @@ class Preparer:
         else:
             if isinstance(result, str):
                 dummy_cell_color = result
+                # Prevent character's info tooltip from blocking starting cell locations from view.
+                move_mouse_off_game_area() 
         
         result = self._handle_starting_cells(map_coords, dummy_cell_color)
         if result == Status.FAILED_TO_MOVE_TO_STARTING_CELLS:
@@ -213,8 +215,8 @@ class Preparer:
             # There are multiple shades of red and blue because on some maps
             # the "You started a fight!" message makes the cell colors a 
             # bit darker.
-            (255, 0, 0), (154, 0, 0), (77, 0, 0), (38, 0, 0),
-            (0, 0, 255), (0, 0, 154)
+            (255, 0, 0), (154, 0, 0), (77, 0, 0), (38, 0, 0), (179, 0, 0)
+            (0, 0, 255), (0, 0, 154), (0, 0, 179)
         ]
         for color in colors:
             if game_window_screenshot.getpixel((cell_x, cell_y)) == color:

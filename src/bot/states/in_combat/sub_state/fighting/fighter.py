@@ -19,7 +19,10 @@ from ._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
 class Fighter:
 
     _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
-    _CLOSE_BUTTON_IMAGE = load_image(_IMAGE_FOLDER_PATH, "close_button.png")
+    _CLOSE_BUTTON_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "close_button.png"),
+        load_image(_IMAGE_FOLDER_PATH, "close_button_2.png"),
+    ]
 
     def __init__(self, script: str, character_name: str):
         self._script = script
@@ -84,23 +87,23 @@ class Fighter:
 
     @classmethod
     def _get_close_button_pos(cls):
-        rectangle = ImageDetection.find_image(
+        rectangle = ImageDetection.find_images(
             haystack=ScreenCapture.game_window(),
-            needle=cls._CLOSE_BUTTON_IMAGE,
-            confidence=0.99,
+            needles=cls._CLOSE_BUTTON_IMAGES,
+            confidence=0.98,
             method=cv2.TM_SQDIFF_NORMED,
         )
         if len(rectangle) <= 0:
             return None
-        return ImageDetection.get_rectangle_center_point(rectangle)
+        return ImageDetection.get_rectangle_center_point(rectangle[0])
 
     @classmethod
     def _is_close_button_visible(cls):
         return len(
-            ImageDetection.find_image(
+            ImageDetection.find_images(
                 haystack=ScreenCapture.game_window(),
-                needle=cls._CLOSE_BUTTON_IMAGE,
-                confidence=0.99,
+                needles=cls._CLOSE_BUTTON_IMAGES,
+                confidence=0.98,
                 method=cv2.TM_SQDIFF_NORMED,
             )
         ) > 0

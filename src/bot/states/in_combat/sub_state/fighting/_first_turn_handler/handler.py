@@ -52,9 +52,6 @@ class Handler:
                 return Status.FAILED_TO_DISABLE_MODELS
         
         character_pos = CharacterFinder.find_by_circles(character_name)
-        if character_pos == Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR:
-            return Status.FAILED_TO_GET_CHARACTER_POS_BY_CIRCLES
-        
         mover = CharacterMover(script, character_name, character_pos)
 
         result = mover.move()

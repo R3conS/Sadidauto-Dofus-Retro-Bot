@@ -18,7 +18,10 @@ class TurnDetector:
 
     _IMAGE_FOLDER_PATH = "src\\bot\\states\\in_combat\\sub_state\\fighting\\images"
     _FIRST_TURN_INDICATOR_IMAGE = load_image(_IMAGE_FOLDER_PATH, "first_turn_indicator.png")
-    _CLOSE_BUTTON_IMAGE = load_image(_IMAGE_FOLDER_PATH, "close_button.png")
+    _CLOSE_BUTTON_IMAGES = [
+        load_image(_IMAGE_FOLDER_PATH, "close_button.png"),
+        load_image(_IMAGE_FOLDER_PATH, "close_button_2.png"),
+    ]
     _DOFUS_LOGO_IMAGE = load_image(_IMAGE_FOLDER_PATH, "dofus_logo.png")
     _AP_COUNTER_IMAGE = load_image(_IMAGE_FOLDER_PATH, "ap_counter_image.png")
     _AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(_AP_COUNTER_IMAGE)
@@ -133,10 +136,10 @@ class TurnDetector:
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if len(
-                ImageDetection.find_image(
+                ImageDetection.find_images(
                     haystack=ScreenCapture.game_window(),
-                    needle=cls._CLOSE_BUTTON_IMAGE,
-                    confidence=0.99,
+                    needles=cls._CLOSE_BUTTON_IMAGES,
+                    confidence=0.98,
                     method=cv2.TM_SQDIFF_NORMED,
                 )
             ) > 0:
