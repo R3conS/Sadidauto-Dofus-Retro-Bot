@@ -215,7 +215,7 @@ class Preparer:
             # There are multiple shades of red and blue because on some maps
             # the "You started a fight!" message makes the cell colors a 
             # bit darker.
-            (255, 0, 0), (154, 0, 0), (77, 0, 0), (38, 0, 0), (179, 0, 0)
+            (255, 0, 0), (154, 0, 0), (77, 0, 0), (38, 0, 0), (179, 0, 0),
             (0, 0, 255), (0, 0, 154), (0, 0, 179)
         ]
         for color in colors:

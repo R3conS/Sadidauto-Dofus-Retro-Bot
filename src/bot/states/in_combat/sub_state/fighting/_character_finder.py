@@ -6,7 +6,6 @@ from time import perf_counter
 import cv2
 import numpy as np
 import pyautogui as pyag
-from sklearn.cluster import DBSCAN
 from PIL import Image
 
 from src.ocr.ocr import OCR
@@ -61,23 +60,28 @@ class Finder:
                 return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
 
         red_health_pixels = cls._find_pixels(cls._screenshot_turn_bar_area(), (255, 0, 0))
-        clustered_pixels = cls._cluster_pixels(red_health_pixels)
-        middle_pixels = [cls._find_most_middle_pixel(cluster) for cluster in clustered_pixels.values()]
-        for pixel_loc in middle_pixels:
-            if pixel_loc is not None:
-                pyag.moveTo(*pixel_loc)
-                cls.wait_for_info_card_to_appear()
-                if not cls.is_info_card_visible():
-                    log.error("Timed out while waiting for info card to appear during detection by turn bar.")
-                    move_mouse_off_game_area()
-                    return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
+        middle_pixel = cls._find_most_middle_pixel(red_health_pixels)
+        if middle_pixel is not None:
+            # Adding offset to 'x' so that the coords are in the middle 
+            # of the turn card of the character. If omitted and the
+            # character's turn card is last in the order, when bot attempts
+            # to cast a spell the Spell.is_castable_on_pos() will always
+            # return False due to the spell's image not fully fitting inside
+            # the game area.
+            x, y = middle_pixel[0] - 15, middle_pixel[1]
+            pyag.moveTo(x, y)
+            cls.wait_for_info_card_to_appear()
+            if not cls.is_info_card_visible():
+                log.error("Timed out while waiting for info card to appear during detection by turn bar.")
+                move_mouse_off_game_area()
+                return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
 
-                name_area = cls.screenshot_name_area_on_info_card()
-                name = cls.read_name_area_screenshot(name_area)
-                if name == character_name:
-                    log.info(f"Found character at: {pixel_loc[0], pixel_loc[1]}")
-                    move_mouse_off_game_area()
-                    return pixel_loc
+            name_area = cls.screenshot_name_area_on_info_card()
+            name = cls.read_name_area_screenshot(name_area)
+            if name == character_name:
+                log.info(f"Found character at: {x, y}")
+                move_mouse_off_game_area()
+                return x, y
         
         return Status.FAILED_TO_GET_CHARACTER_POS_BY_TURN_BAR
 
@@ -166,28 +170,10 @@ class Finder:
         pixels = []
         for y in range(image.height):
             for x in range(image.width):
-                r, g, b = image.getpixel((x, y)) # ScreenCapture.custom_area() returns in BGR.
+                r, g, b = image.getpixel((x, y))
                 if (r, g, b) == rgb_color: 
                     pixels.append((x + cls._TURN_BAR_AREA[0], y + cls._TURN_BAR_AREA[1]))
         return pixels
-
-    @staticmethod
-    def _cluster_pixels(
-            pixels: list[tuple[int, int]],
-            eps: int = 15,
-            min_samples: int = 2,
-        ) -> dict[int, list[tuple[int, int]]]:
-        if len(pixels) == 0:
-            return {}
-        db = DBSCAN(eps=eps, min_samples=min_samples)
-        labels = db.fit_predict(pixels)
-        clusters_dict = {}
-        for i, label in enumerate(labels):
-            if label != -1:
-                if label not in clusters_dict:
-                    clusters_dict[label] = []
-                clusters_dict[label].append(tuple(pixels[i]))
-        return clusters_dict
 
     @staticmethod
     def _find_most_middle_pixel(pixel_cluster: list[tuple[int, int]]):
