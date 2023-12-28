@@ -12,7 +12,7 @@ from .map_data.getter import Getter as MapDataGetter
 from screen_capture import ScreenCapture
 from src.bot.interfaces.interfaces import Interfaces
 from src.bot.map_changer.map_changer import MapChanger
-from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
+from src.bot.states.out_of_combat.pods_reader.reader import PodsReader
 from src.utilities import load_image
 from src.bot.states.out_of_combat.status_enum import Status
 
@@ -75,7 +75,7 @@ class Hunter:
         log.info("Getting inventory pods percentage ... ")
         try:
             Interfaces.INVENTORY.open()
-            percentage = PodsReader.get_occupied_inventory_percentage()
+            percentage = PodsReader.INVENTORY.get_occupied_percentage()
             if percentage is not None:
                 log.info(f"Inventory is {percentage}% full.")
                 Interfaces.INVENTORY.close()

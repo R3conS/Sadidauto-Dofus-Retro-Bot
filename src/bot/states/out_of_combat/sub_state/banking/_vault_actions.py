@@ -12,7 +12,7 @@ import pyautogui as pyag
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
+from src.bot.states.out_of_combat.pods_reader.reader import PodsReader
 from src.bot.states.out_of_combat.status_enum import Status
 
 
@@ -206,12 +206,12 @@ class VaultActions:
             is_first_iteration = False
 
             log.info(f"Depositing {occupied_slots_amount} items ...")
-            pods_before_deposit = PodsReader.get_occupied_bank_pods()
+            pods_before_deposit = PodsReader.BANK.get_occupied_pods()
             if pods_before_deposit is None:
                 log.error("Failed to get occupied bank pods.")
                 return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
             cls.deposit_visible_items(occupied_slots_amount)
-            pods_after_deposit = PodsReader.get_occupied_bank_pods()
+            pods_after_deposit = PodsReader.BANK.get_occupied_pods()
             if pods_after_deposit is None:
                 log.error("Failed to get occupied bank pods.")
                 return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
@@ -231,7 +231,7 @@ class VaultActions:
         loaded_forbidden_items: dict[float, list[np.ndarray]],
         forbidden_items: dict[float, list[str]],
     ):
-        pods_before_deposit = PodsReader.get_occupied_bank_pods()
+        pods_before_deposit = PodsReader.BANK.get_occupied_pods()
         if pods_before_deposit is None:
             log.error("Failed to get occupied bank pods.")
             return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
@@ -240,7 +240,7 @@ class VaultActions:
         deposited_items_count = 0
         while True:
             if cls.is_slot_empty(*slot_coords):
-                pods_after_deposit = PodsReader.get_occupied_bank_pods()
+                pods_after_deposit = PodsReader.BANK.get_occupied_pods()
                 if pods_after_deposit is None:
                     log.error("Failed to get occupied bank pods.")
                     return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
