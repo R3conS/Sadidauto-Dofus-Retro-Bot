@@ -73,18 +73,29 @@ class Hunter:
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
-        Interfaces.open_inventory()
-        if Interfaces.is_inventory_open():
+        try:
+            Interfaces.INVENTORY.open()
             percentage = PodsReader.get_occupied_inventory_percentage()
             if percentage is not None:
                 log.info(f"Inventory is {percentage}% full.")
-                Interfaces.close_inventory()
-                if not Interfaces.is_inventory_open():
-                    return percentage
+                Interfaces.INVENTORY.close()
+                return percentage
             else:
-                log.error("Failed to get inventory pods percentage.")
-                PodsReader.save_images_for_debug()
-        return None
+                # ToDo: catch why reading failed.
+                log.error("Failed to get pods percentage. get_occupied_inventory_percentage() returned None.")
+                return None
+        except Interfaces.EXCEPTIONS.FailedToOpenInterface:
+            # ToDo: raise another exception that can be caught by recovery state.
+            # Also perhaps screenshot the game area inside the exception
+            # class and save it to a file for debugging.
+            log.error("Failed to get inventory pods percentage because 'Inventory' interface failed to open.")
+            return None
+        except Interfaces.EXCEPTIONS.FailedToCloseInterface:
+            # ToDo: raise another exception that can be caught by recovery state.
+            # Also perhaps screenshot the game area inside the exception
+            # class and save it to a file for debugging.
+            log.error("Failed to get inventory pods percentage because 'Inventory' interface failed to close.")
+            return None
 
     def _handle_traversable_map(self, map_coords):
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
@@ -108,9 +119,9 @@ class Hunter:
                 # Allow time for 'Right Click Menu' to open in case the attack 
                 # click missed. Clicks can miss if the monster moves away.
                 sleep(0.25) # Maybe increase this to 0.5?
-                if Interfaces.is_right_click_menu_open():
+                if Interfaces.RIGHT_CLICK_MENU.is_open():
                     log.error("Failed to attack monster because it moved away. Skipping ... ")
-                    Interfaces.close_right_click_menu()
+                    Interfaces.RIGHT_CLICK_MENU.close()
                     continue
 
                 if self._is_attack_successful():

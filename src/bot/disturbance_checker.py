@@ -17,16 +17,14 @@ class DisturbanceChecker(threading.Thread):
     def run(self):
         log.info("Disturbance checker started!")
         while True:
-            if Interfaces.is_offer_or_invite_open():
-                log.info("Offer or invite from another player detected!")
-                Interfaces.close_offer_or_invite()
-                if Interfaces.is_offer_or_invite_open():
-                    # ToDo: Implement this when recovery state is implemented
-                    pass
-            if Interfaces.is_information_open():
-                log.info("'Information' interface detected!")
-                Interfaces.close_information()
-                if Interfaces.is_information_open():
-                    # ToDo: Implement this when recovery state is implemented
-                    pass 
-            sleep(self._check_interval)
+            try:
+                if Interfaces.OFFER_OR_INVITE.is_open():
+                    log.info("Offer or invite from another player detected!")
+                    Interfaces.OFFER_OR_INVITE.close()
+                if Interfaces.INFORMATION.is_open():
+                    log.info("'Information' interface detected!")
+                    Interfaces.INFORMATION.close()
+                sleep(self._check_interval)
+            except Interfaces.EXCEPTIONS.FailedToCloseInterface:
+                # ToDo: link to recovery state.
+                log.error(f"Failed to close disturbance!")
