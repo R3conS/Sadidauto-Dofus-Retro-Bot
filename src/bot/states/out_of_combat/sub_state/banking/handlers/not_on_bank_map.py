@@ -3,8 +3,8 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import pyautogui as pyag
 
-from ..status_enum import Status
 from src.bot.map_changer.map_changer import MapChanger
+from src.bot.states.out_of_combat.status_enum import Status
 
 
 class Handler:

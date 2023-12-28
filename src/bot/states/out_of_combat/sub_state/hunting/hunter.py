@@ -14,7 +14,7 @@ from src.bot.interfaces.interfaces import Interfaces
 from src.bot.map_changer.map_changer import MapChanger
 from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
 from src.utilities import load_image
-from .status_enum import Status
+from src.bot.states.out_of_combat.status_enum import Status
 
 
 class Hunter:

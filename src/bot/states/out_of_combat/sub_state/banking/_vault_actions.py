@@ -13,7 +13,7 @@ from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.states.out_of_combat.pods_reader.pods_reader import PodsReader
-from .status_enum import Status
+from src.bot.states.out_of_combat.status_enum import Status
 
 
 def _handle_tab_opening(decorated_method):

@@ -7,12 +7,12 @@ import pyautogui as pyag
 from time import perf_counter
 
 from src.utilities import load_image
-from ..status_enum import Status
 from .._vault_actions import VaultActions
 from src.image_detection import ImageDetection
 from src.bot.map_changer.map_changer import MapChanger
 from src.ocr.ocr import OCR
 from src.screen_capture import ScreenCapture
+from src.bot.states.out_of_combat.status_enum import Status
 
 
 class Handler:

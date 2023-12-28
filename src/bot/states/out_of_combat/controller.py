@@ -4,8 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from src.bot.main_states_enum import State as MainBotStates
 from .sub_state.hunting.hunter import Hunter
 from .sub_state.banking.banker import Banker
-from .sub_state.banking.status_enum import Status as BankerStatus
-from .sub_state.hunting.status_enum import Status as HunterStatus
+from .status_enum import Status
 
 
 class Controller:
@@ -25,23 +24,23 @@ class Controller:
         while True:
             if sub_state == _SubStates.HUNTING:
                 status = self._hunter.hunt()
-                if status == HunterStatus.REACHED_PODS_LIMIT:
+                if status == Status.REACHED_PODS_LIMIT:
                     sub_state = _SubStates.BANKING
                     continue
-                elif status == HunterStatus.SUCCESSFULLY_FINISHED_HUNTING:
+                elif status == Status.SUCCESSFULLY_FINISHED_HUNTING:
                     self._set_main_bot_state_callback(MainBotStates.IN_COMBAT)
                     return
-                elif status == HunterStatus.FAILED_TO_FINISH_HUNTING:
+                elif status == Status.FAILED_TO_FINISH_HUNTING:
                     log.error(f"Failed to finish hunting. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
 
             elif sub_state == _SubStates.BANKING:
                 status = self._banker.bank()
-                if status == BankerStatus.SUCCESSFULLY_FINISHED_BANKING:
+                if status == Status.SUCCESSFULLY_FINISHED_BANKING:
                     sub_state = _SubStates.HUNTING
                     continue
-                elif status == BankerStatus.FAILED_TO_FINISH_BANKING:
+                elif status == Status.FAILED_TO_FINISH_BANKING:
                     log.error(f"Failed to finish banking. Attempting to recover ...")
                     self._set_main_bot_state_callback(MainBotStates.RECOVERY)
                     return
