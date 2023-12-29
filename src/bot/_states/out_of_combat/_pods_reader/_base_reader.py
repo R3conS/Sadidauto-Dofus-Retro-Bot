@@ -9,6 +9,7 @@ import os
 import re
 
 from src.ocr.ocr import OCR
+from src.bot._exceptions import RecoverableException
 
 
 class BaseReader(ABC):
@@ -39,24 +40,16 @@ class BaseReader(ABC):
 
     @classmethod
     def get_occupied_pods(cls) -> int:
-        numbers = cls.get_numbers()
-        if numbers is not None:
-            return numbers[0]
-        return None
+        return cls.get_numbers()[0]
 
     @classmethod
     def get_total_pods(cls) -> int:
-        numbers = cls.get_numbers()
-        if numbers is not None:
-            return numbers[1]
-        return None
+        return cls.get_numbers()[1]
 
     @classmethod
     def get_occupied_percentage(cls) -> float:
-        numbers = cls.get_numbers()
-        if numbers is not None:
-            return round(numbers[0] / numbers[1] * 100, 2)
-        return None
+        occupied_pods, total_pods = cls.get_numbers()
+        return round(occupied_pods[0] / total_pods[1] * 100, 2)
     
     @classmethod
     def _is_tooltip_visible(cls):
@@ -90,8 +83,11 @@ class BaseReader(ABC):
                 return text
             binarization_value += 5
             if binarization_value > 255:
-                log.critical("Failed to read tooltip text.")
-                os._exit(1)
+                raise RecoverableException(
+                    f"Failed to read defined tooltip pattern. "
+                    f"Received: '{text}'. "
+                    f"Expected: 'number+podsoutof+number'."
+                )
 
     @staticmethod
     def _parse_tooltip_text(text: str) -> tuple[int, int]:

@@ -1,9 +1,7 @@
 from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-import os
 from time import perf_counter
-import re
 
 import cv2
 import numpy as np
@@ -12,6 +10,7 @@ import pyautogui as pyag
 from ._base_reader import BaseReader
 from src.ocr.ocr import OCR
 from src.screen_capture import ScreenCapture
+from src.bot._exceptions import RecoverableException
 
 
 class BankReader(BaseReader):
@@ -26,12 +25,10 @@ class BankReader(BaseReader):
                 tooltip_area = cls._screenshot_tooltip_area()
                 tooltip_rectangle = cls._get_tooltip_rectangle(tooltip_area)
                 cls._hide_tooltip()
-                if tooltip_rectangle is not None:
-                    tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
-                    text = cls._read_tooltip_text(tooltip)
-                    return cls._parse_tooltip_text(text)
-        log.error("Timed out while getting bank pods numbers.")
-        return None
+                tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
+                text = cls._read_tooltip_text(tooltip)
+                return cls._parse_tooltip_text(text)
+        raise RecoverableException("Failed to get bank pods numbers.")
 
     @staticmethod
     def _screenshot_tooltip_area():
@@ -50,7 +47,6 @@ class BankReader(BaseReader):
         tooltip_area = OCR.convert_to_grayscale(tooltip_area)
         tooltip_area = cv2.morphologyEx(tooltip_area, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
         tooltip_area = OCR.invert_image(tooltip_area)
-
         threshold = 170
         max_threshold = 125
         while threshold >= max_threshold:
@@ -64,4 +60,4 @@ class BankReader(BaseReader):
                 if w > 60 and h > 18:
                     return x, y, w, h
             threshold -=1
-        return None
+        raise RecoverableException("Failed to detect tooltip rectangle from bank tooltip area image.")

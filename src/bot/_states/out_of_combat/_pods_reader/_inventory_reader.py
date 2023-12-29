@@ -10,6 +10,7 @@ import pyautogui as pyag
 from ._base_reader import BaseReader
 from src.ocr.ocr import OCR
 from src.screen_capture import ScreenCapture
+from src.bot._exceptions import RecoverableException
 
 
 class InventoryReader(BaseReader):
@@ -24,12 +25,10 @@ class InventoryReader(BaseReader):
                 tooltip_area = cls._screenshot_tooltip_area()
                 tooltip_rectangle = cls._get_tooltip_rectangle(tooltip_area)
                 cls._hide_tooltip()
-                if tooltip_rectangle is not None:
-                    tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
-                    text = cls._read_tooltip_text(tooltip)
-                    return cls._parse_tooltip_text(text)
-        log.error("Timed out while getting inventory pods numbers.")
-        return None
+                tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
+                text = cls._read_tooltip_text(tooltip)
+                return cls._parse_tooltip_text(text)
+        raise RecoverableException("Failed to get inventory pods numbers.")
 
     @staticmethod
     def _screenshot_tooltip_area():
@@ -47,7 +46,6 @@ class InventoryReader(BaseReader):
     def _get_tooltip_rectangle(tooltip_area: np.ndarray):
         tooltip_area = OCR.convert_to_grayscale(tooltip_area)
         tooltip_area = OCR.invert_image(tooltip_area)
-
         threshold = 190
         max_threshold = 225
         while threshold <= max_threshold:
@@ -61,4 +59,4 @@ class InventoryReader(BaseReader):
                 if w > 60 and h > 18:
                     return x, y, w, h
             threshold +=1
-        return None
+        raise RecoverableException("Failed to detect tooltip rectangle from inventory tooltip area image.")
