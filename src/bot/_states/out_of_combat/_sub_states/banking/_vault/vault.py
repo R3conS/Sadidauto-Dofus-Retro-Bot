@@ -16,6 +16,7 @@ from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat._status_enum import Status
 from src.ocr.ocr import OCR
 from src.bot._states.out_of_combat._sub_states.banking._bank_data import Getter as BankData
+from src.bot._exceptions import RecoverableException, UnrecoverableException
 
 
 class Vault:
@@ -31,30 +32,14 @@ class Vault:
 
     def open_vault(self):
         if self.is_vault_open():
-            return Status.SUCCESSFULLY_OPENED_BANK_VAULT
-
-        result = self._detect_banker_npc()
-        if result != Status.SUCCESSFULLY_DETECTED_BANKER_NPC:
-            return result
-
+            return
+        self._detect_banker_npc()
         banker_coords = self._get_banker_npc_coords()
         if banker_coords is None:
-            # ToDo: Add a way to handle this error and make a custom exception for it.
-            raise Exception("Failed to get banker NPC coordinates.")
-
-        result = self._talk_with_banker(banker_coords[0], banker_coords[1])
-        if result != Status.SUCCESSFULLY_OPENED_BANKER_DIALOGUE:
-            return result
-        
-        result = self._select_consult_your_personal_safe()
-        if result != Status.SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE:
-            return result
-
-        result = self._have_item_sprites_loaded()
-        if result != Status.SUCCESSFULLY_DETECTED_IF_ITEM_SPRITES_HAVE_LOADED:
-            return result
-
-        return Status.SUCCESSFULLY_OPENED_BANK_VAULT
+            raise RecoverableException("Failed to get banker NPC coordinates.")
+        self._talk_with_banker(banker_coords[0], banker_coords[1])
+        self._select_consult_your_personal_safe()
+        self._have_item_sprites_loaded()
 
     @classmethod
     def close_vault(cls):
@@ -65,9 +50,8 @@ class Vault:
         while perf_counter() - start_time <= 5:
             if not cls.is_vault_open():
                 log.info("Successfully closed the bank vault.")
-                return Status.SUCCESSFULLY_CLOSED_BANK_VAULT
-        log.error("Failed to close the bank vault.")
-        return Status.FAILED_TO_CLOSE_BANK_VAULT
+                return
+        raise UnrecoverableException("Failed to close the bank vault.")
 
     @classmethod
     def deposit_all_tabs(cls):
@@ -85,10 +69,8 @@ class Vault:
                 or status == Status.FAILED_TO_DEPOSIT_SLOT
                 or status == Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
             ):
-                log.error("Failed to deposit all tabs.")
-                return Status.FAILED_TO_DEPOSIT_ALL_TABS
+                raise UnrecoverableException("Failed to deposit all tabs.")
         log.info("Successfully deposited all tabs.")
-        return Status.SUCCESSFULLY_DEPOSITED_ALL_TABS
 
     def _detect_banker_npc(self):
         log.info("Detecting banker NPC ... ")
@@ -100,9 +82,8 @@ class Vault:
         )
         if len(rectangles) > 0:
             log.info("Successfully detected banker NPC.")
-            return Status.SUCCESSFULLY_DETECTED_BANKER_NPC
-        log.error("Failed to detect banker NPC.")
-        return Status.FAILED_TO_DETECT_BANKER_NPC
+            return
+        raise RecoverableException("Failed to detect banker NPC.")
 
     def _get_banker_npc_coords(self):
         log.info("Getting banker NPC coordinates ... ")
@@ -115,7 +96,6 @@ class Vault:
         if len(rectangles) > 0:
             log.info("Successfully got banker NPC coordinates.")
             return ImageDetection.get_rectangle_center_point(rectangles[0])
-        log.error("Failed to get banker NPC coordinates.")
         return None
 
     def _talk_with_banker(self, banker_x, banker_y,):
@@ -133,9 +113,8 @@ class Vault:
         while perf_counter() - start_time <= 5:
             if self._is_banker_dialogue_open():
                 log.info("Successfully talked with banker.")
-                return Status.SUCCESSFULLY_OPENED_BANKER_DIALOGUE
-        log.error("Failed to talk with banker.")
-        return Status.FAILED_TO_OPEN_BANKER_DIALOGUE
+                return
+        raise RecoverableException("Failed to open banker dialogue.")
 
     @classmethod
     def _select_consult_your_personal_safe(cls):
@@ -148,8 +127,7 @@ class Vault:
             if cls.is_vault_open():
                 log.info("Successfully selected 'Consult your personal safe' option from the banker dialogue.")
                 return Status.SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE
-        log.error("Failed to select 'Consult your personal safe' option from the banker dialogue.")
-        return Status.FAILED_TO_SELECT_CONSULT_YOUR_PERSONAL_SAFE
+        raise UnrecoverableException("Failed to select 'Consult your personal safe' option from the banker dialogue.")
 
     @staticmethod
     def _is_banker_dialogue_open():
@@ -187,9 +165,9 @@ class Vault:
             bar = OCR.binarize_image(bar, 127)
             if len(OCR.get_text_from_image(bar)) > 0:
                 log.info("Successfully detected if item sprites have loaded.")
-                return Status.SUCCESSFULLY_DETECTED_IF_ITEM_SPRITES_HAVE_LOADED
+                return
         log.error("Timed out while detecting if item sprites have loaded.")
-        return Status.FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED
+        raise UnrecoverableException("Failed to detect if item sprites have loaded.")
 
     @staticmethod
     def _load_npc_images(image_folder_path: str):

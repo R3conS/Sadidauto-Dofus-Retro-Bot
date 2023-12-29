@@ -36,20 +36,9 @@ class Controller:
                     return
 
             elif sub_state == _SubStates.BANKING:
-                status = self._banker.bank()
-                if status == Status.SUCCESSFULLY_FINISHED_BANKING:
-                    sub_state = _SubStates.HUNTING
-                    continue
-                elif status == Status.FAILED_TO_FINISH_BANKING:
-                    log.error(f"Failed to finish banking. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
-                    return
+                self._banker.bank()
+                sub_state = _SubStates.HUNTING
                 
-            elif sub_state == _SubStates.RECOVERY:
-                log.error("'Out of Combat' controller failed to determine its sub state. Attempting to recover ...")
-                self._set_main_bot_state_callback(MainBotStates.RECOVERY)
-                return
-
 
 class _SubStates:
 

@@ -6,6 +6,7 @@ import pyautogui as pyag
 from .._bank_data import Getter as BankData
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException, UnrecoverableException
 
 
 class Handler:
@@ -18,41 +19,17 @@ class Handler:
         self._no_recall_maps = bank_data["no_recall_maps"]
 
     def handle(self):
-        if self._recall() == Status.FAILED_TO_RECALL:
-            return Status.FAILED_TO_RECALL
-        if self._run_to_bank() == Status.ARRIVED_AT_ASTRUB_BANK_MAP:
-            return Status.ARRIVED_AT_ASTRUB_BANK_MAP
+        self._recall()
+        self._run_to_bank()
 
     def _recall(self):
         if self._is_char_on_no_recall_map():
             log.info("Character is close to the bank. No need to recall.")
-            return Status.NO_NEED_TO_RECALL
-        
+            return
         if not self._does_char_have_recall_potion():
             log.info("Character does not have a recall potion.")
-            return Status.CHAR_DOESNT_HAVE_RECALL_POTION
-
-        if self._use_recall_potion() != Status.SUCCESSFULLY_RECALLED:
-            # ToDo: Handle this error.
-            return Status.FAILED_TO_RECALL
-        
-        return Status.SUCCESSFULLY_RECALLED
-
-    def _run_to_bank(self):
-        path_to_bank = MapChanger.get_shortest_path(MapChanger.get_current_map_coords(), self._bank_map)
-        while True:
-            map_coords = MapChanger.get_current_map_coords()
-            if map_coords == self._bank_map:
-                log.info("Arrived at Astrub bank map.")
-                return Status.ARRIVED_AT_ASTRUB_BANK_MAP
-
-            log.info(f"Running to bank. Current map coords: {map_coords}.")
-            MapChanger.change_map(map_coords, path_to_bank[map_coords])
-            if MapChanger.has_loading_screen_passed():
-                continue
-            # ToDo: Handle this error.
-            log.error("Failed to detect loading screen after changing map.")
-            return Status.FAILED_TO_DETECT_LOADING_SCREEN_AFTER_CHANGE_MAP
+            return
+        self._use_recall_potion()
 
     def _is_char_on_no_recall_map(self):
         return MapChanger.get_current_map_coords() in self._no_recall_maps
@@ -63,12 +40,23 @@ class Handler:
         if MapChanger.has_loading_screen_passed():
             if MapChanger.get_current_map_coords() == self._zaap_map:
                 log.info("Successfully recalled.")
-                return Status.SUCCESSFULLY_RECALLED
-        else:
-            # ToDo: Handle this error.
-            log.error("Failed to recall.")
-            return Status.FAILED_TO_RECALL
+                return
+        raise RecoverableException("Failed to recall.")
     
     @staticmethod
     def _does_char_have_recall_potion():
         return pyag.pixelMatchesColor(664, 725, (120, 151, 154), tolerance=20)
+
+    def _run_to_bank(self):
+        path_to_bank = MapChanger.get_shortest_path(MapChanger.get_current_map_coords(), self._bank_map)
+        while True:
+            map_coords = MapChanger.get_current_map_coords()
+            if map_coords == self._bank_map:
+                log.info("Arrived at Astrub bank map.")
+                return
+
+            log.info(f"Running to bank. Current map coords: {map_coords}.")
+            MapChanger.change_map(map_coords, path_to_bank[map_coords])
+            if MapChanger.has_loading_screen_passed():
+                continue
+            raise RecoverableException("Failed to detect loading screen after changing map.")

@@ -11,6 +11,7 @@ from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.in_combat.controller import Controller as IC_Controller
 from src.bot._states_enum import States as MainBotStates
+from ._exceptions import RecoverableException, UnrecoverableException
 
 
 class Bot(threading.Thread):
@@ -31,12 +32,21 @@ class Bot(threading.Thread):
         try:
             self.determine_state()
             while not self._stopped:
-                if self._state == MainBotStates.OUT_OF_COMBAT:
-                    self._ooc_controller.run()
-                elif self._state == MainBotStates.IN_COMBAT:
-                    self._ic_controller.run()
-        except:
-            log.exception("An exception occured!")
+                try:
+                    if self._state == MainBotStates.OUT_OF_COMBAT:
+                        self._ooc_controller.run()
+                    elif self._state == MainBotStates.IN_COMBAT:
+                        self._ic_controller.run()
+                    elif self._state == MainBotStates.RECOVERY:
+                        log.critical("Recovery state not implemented yet! Exiting ...")
+                        os._exit(1)
+                except RecoverableException:
+                    log.info("Attempting to recover ...")
+                    self._state = MainBotStates.RECOVERY
+                    continue
+        
+        except Exception:
+            log.exception("An unhandled exception occured!")
             log.critical("Exiting ... ")
             os._exit(1)
 

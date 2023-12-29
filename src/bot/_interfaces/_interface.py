@@ -5,14 +5,14 @@ from time import perf_counter
 
 from pyautogui import moveTo, click
 
-from ._exceptions import Exceptions
+from src.bot._exceptions import RecoverableException
 
 
 class Interface:
 
     def __init__(self, name):
         self._name = name
-        self._action_timeout = 3
+        self._action_timeout = 5
 
     def open(self, x, y, is_open_func: callable):
         log.info(f"Opening '{self._name}' interface ... ")
@@ -26,7 +26,7 @@ class Interface:
             if is_open_func():
                 log.info(f"Successfully opened '{self._name}' interface!")
                 return
-        raise Exceptions.FailedToOpenInterface(f"Timed out while opening '{self._name}' interface.")
+        raise RecoverableException(f"Failed to open '{self._name}' interface.")
 
     def close(self, x, y, is_open_func: callable):
         log.info(f"Closing '{self._name}' interface ... ")
@@ -40,4 +40,4 @@ class Interface:
             if not is_open_func():
                 log.info(f"Successfully closed '{self._name}' interface!")
                 return
-        raise Exceptions.FailedToCloseInterface(f"Timed out while closing '{self._name}' interface.")
+        raise RecoverableException(f"Failed to close '{self._name}' interface.")

@@ -53,20 +53,11 @@ class Initializer:
 
     def _verify_character_name(self):
         log.info("Verifying character's name ... ")
-        try:
-            Interfaces.CHARACTERISTICS.open()
-            sc = ScreenCapture.custom_area((685, 93, 205, 26))
-            if self._character_name == OCR.get_text_from_image(sc):
-                log.info("Successfully verified character's name!")
-                Interfaces.CHARACTERISTICS.close()
-            else:
-                log.critical("Invalid character name! Exiting ... ")
-                os._exit(1)
-        except Interfaces.EXCEPTIONS.FailedToOpenInterface:
-            # ToDo: Link to recovery state.
-            log.critical("Failed to verify character's name because 'Characteristics' interface failed to open! Exiting ... ")
-            os._exit(1)
-        except Interfaces.EXCEPTIONS.FailedToCloseInterface:
-            # ToDo: Link to recovery state.
-            log.critical("Failed to verify character's name because 'Characteristics' interface failed to close! Exiting ... ")
+        Interfaces.CHARACTERISTICS.open()
+        sc = ScreenCapture.custom_area((685, 93, 205, 26))
+        if self._character_name == OCR.get_text_from_image(sc):
+            log.info("Successfully verified character's name!")
+            Interfaces.CHARACTERISTICS.close()
+        else:
+            log.critical("Invalid character name! Exiting ... ")
             os._exit(1)

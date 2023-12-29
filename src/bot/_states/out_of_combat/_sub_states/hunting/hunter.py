@@ -15,6 +15,7 @@ from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.utilities import load_image
 from src.bot._states.out_of_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException
 
 
 class Hunter:
@@ -30,7 +31,7 @@ class Hunter:
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
-        self._pods_percentage_limit = 90
+        self._pods_percentage_limit = 3
         # Map data
         map_data = MapDataGetter.get_data_object(script)
         self._pathing_data = map_data.get_pathing_data()
@@ -73,29 +74,16 @@ class Hunter:
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
-        try:
-            Interfaces.INVENTORY.open()
-            percentage = PodsReader.INVENTORY.get_occupied_percentage()
-            if percentage is not None:
-                log.info(f"Inventory is {percentage}% full.")
-                Interfaces.INVENTORY.close()
-                return percentage
-            else:
-                # ToDo: catch why reading failed.
-                log.error("Failed to get pods percentage. get_occupied_inventory_percentage() returned None.")
-                return None
-        except Interfaces.EXCEPTIONS.FailedToOpenInterface:
-            # ToDo: raise another exception that can be caught by recovery state.
-            # Also perhaps screenshot the game area inside the exception
-            # class and save it to a file for debugging.
-            log.error("Failed to get inventory pods percentage because 'Inventory' interface failed to open.")
-            return None
-        except Interfaces.EXCEPTIONS.FailedToCloseInterface:
-            # ToDo: raise another exception that can be caught by recovery state.
-            # Also perhaps screenshot the game area inside the exception
-            # class and save it to a file for debugging.
-            log.error("Failed to get inventory pods percentage because 'Inventory' interface failed to close.")
-            return None
+        # ToDo: update this. Perhaps checking if percentage is not None
+        # will not be needed if get_occupied_percentage() raises an exception
+        # and gets resolved in recovery.
+        Interfaces.INVENTORY.open()
+        percentage = PodsReader.INVENTORY.get_occupied_percentage()
+        if percentage is not None:
+            log.info(f"Inventory is {percentage}% full.")
+            Interfaces.INVENTORY.close()
+            return percentage
+        raise RecoverableException("Failed to get inventory pods percentage.")
 
     def _handle_traversable_map(self, map_coords):
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
