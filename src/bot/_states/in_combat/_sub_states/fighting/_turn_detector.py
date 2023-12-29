@@ -16,7 +16,7 @@ from src.bot._states.in_combat._status_enum import Status
 
 class TurnDetector:
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\sub_states\\fighting\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_images"
     FIRST_TURN_INDICATOR_IMAGE = load_image(IMAGE_FOLDER_PATH, "first_turn_indicator.png")
     CLOSE_BUTTON_IMAGES = [
         load_image(IMAGE_FOLDER_PATH, "close_button.png"),

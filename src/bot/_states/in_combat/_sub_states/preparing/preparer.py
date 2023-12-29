@@ -19,7 +19,7 @@ from src.bot._states.in_combat._status_enum import Status
 
 class Preparer:
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\sub_states\\preparing\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\preparing\\_images"
     READY_BUTTON_AREA = (678, 507, 258, 91)
     READY_BUTTON_LIT_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_lit.png")
     READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_LIT_IMAGE)

@@ -6,5 +6,5 @@ class Bramble(BaseSpell):
     def __init__(self):
         super().__init__(
             name="Bramble",
-            image_folder_path="src\\bot\\_states\\in_combat\\sub_states\\fighting\\_spells\\_images\\bramble"
+            image_folder_path="src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_spells\\_images\\bramble"
         )

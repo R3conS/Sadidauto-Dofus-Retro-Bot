@@ -1,8 +1,8 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from .sub_states.hunting.hunter import Hunter
-from .sub_states.banking.banker import Banker
+from ._sub_states.hunting.hunter import Hunter
+from ._sub_states.banking.banker import Banker
 from ._status_enum import Status
 from src.bot._states_enum import States as MainBotStates
 

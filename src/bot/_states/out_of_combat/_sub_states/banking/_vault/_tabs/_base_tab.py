@@ -17,7 +17,7 @@ from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 
 class BaseTab(ABC):
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\sub_states\\banking\\_vault\\_tabs\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_tabs\\_images"
     INVENTORY_TAB_ICON_AREA = (684, 187, 234, 69)
     INVENTORY_SLOT_AREA = (687, 252, 227, 291)
     INVENTORY_SLOT_COORDS = { # Middle of each slot.

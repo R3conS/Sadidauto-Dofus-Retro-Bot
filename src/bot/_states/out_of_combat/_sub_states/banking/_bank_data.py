@@ -13,5 +13,5 @@ class Getter:
             "no_recall_maps": ["4,-16", "4,-17", "4,-18", "4,-19"],
             "enter_coords": (792, 203),
             "exit_coords": (262, 502),
-            "npc_image_folder_path": "src\\bot\\_states\\out_of_combat\\sub_states\\banking\\_vault\\_images\\astrub_banker_npc"
+            "npc_image_folder_path": "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_images\\astrub_banker_npc"
         }

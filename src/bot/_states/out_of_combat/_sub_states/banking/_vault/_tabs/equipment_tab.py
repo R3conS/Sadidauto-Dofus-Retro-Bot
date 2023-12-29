@@ -5,7 +5,7 @@ from ._base_tab import BaseTab
 
 class EquipmentTab(BaseTab):
 
-    ICONS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\sub_states\\banking\\_vault\\_tabs\\_images\\icons"
+    ICONS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_tabs\\_images\\icons"
 
     def __init__(self):
         super().__init__(

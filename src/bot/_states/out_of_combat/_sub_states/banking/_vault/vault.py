@@ -15,7 +15,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat._status_enum import Status
 from src.ocr.ocr import OCR
-from src.bot._states.out_of_combat.sub_states.banking._bank_data import Getter as BankData
+from src.bot._states.out_of_combat._sub_states.banking._bank_data import Getter as BankData
 
 
 class Vault:

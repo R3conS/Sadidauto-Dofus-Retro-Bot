@@ -18,7 +18,7 @@ from src.bot._states.in_combat._status_enum import Status
 
 class Finder:
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\sub_states\\fighting\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_images"
     RED_CIRCLE_IMAGE = load_image(IMAGE_FOLDER_PATH, "red_circle.png")
     RED_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(RED_CIRCLE_IMAGE)
     BLUE_CIRCLE_IMAGE = load_image(IMAGE_FOLDER_PATH, "blue_circle.png")

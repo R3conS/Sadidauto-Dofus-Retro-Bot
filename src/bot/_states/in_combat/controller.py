@@ -2,8 +2,8 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from src.utilities import load_image
-from .sub_states.preparing.preparer import Preparer
-from .sub_states.fighting.fighter import Fighter
+from ._sub_states.preparing.preparer import Preparer
+from ._sub_states.fighting.fighter import Fighter
 from src.bot._states.in_combat._status_enum import Status
 from src.bot._states_enum import States as MainBotStates
 from src.image_detection import ImageDetection

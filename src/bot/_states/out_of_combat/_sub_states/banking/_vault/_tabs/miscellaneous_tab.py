@@ -5,8 +5,8 @@ from ._base_tab import BaseTab
 
 class MiscellaneousTab(BaseTab):
 
-    ICONS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\sub_states\\banking\\_vault\\_tabs\\_images\\icons"
-    FORBIDDEN_ITEMS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\sub_states\\banking\\_vault\\_tabs\\_images\\forbidden_items\\misc"
+    ICONS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_tabs\\_images\\icons"
+    FORBIDDEN_ITEMS_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_tabs\\_images\\forbidden_items\\misc"
 
     def __init__(self):
         super().__init__(

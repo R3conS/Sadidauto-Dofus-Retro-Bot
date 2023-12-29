@@ -18,7 +18,7 @@ from src.bot._states.in_combat._status_enum import Status
 
 class Fighter:
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\sub_states\\fighting\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_images"
     CLOSE_BUTTON_IMAGES = [
         load_image(IMAGE_FOLDER_PATH, "close_button.png"),
         load_image(IMAGE_FOLDER_PATH, "close_button_2.png"),

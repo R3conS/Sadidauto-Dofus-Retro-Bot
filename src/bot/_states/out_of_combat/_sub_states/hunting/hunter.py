@@ -19,7 +19,7 @@ from src.bot._states.out_of_combat._status_enum import Status
 
 class Hunter:
 
-    IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images"
+    IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images"
     READY_BUTTON_AREA = (678, 507, 258, 91)
     READY_BUTTON_LIT_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_lit.png")
     READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_LIT_IMAGE)
@@ -153,7 +153,7 @@ class Hunter:
         return Status.FAILED_TO_CHANGE_MAP
 
     def _load_monster_image_data(self):
-        image_folder_path = "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images\\monster_images"
+        image_folder_path = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\monster_images"
         image_names = [
             "Boar_BL_1.png", "Boar_BR_1.png", "Boar_TL_1.png", "Boar_TR_1.png",
             "Pres_BL_1.png", "Pres_BR_1.png", "Pres_TL_1.png", "Pres_TR_1.png",
@@ -177,10 +177,10 @@ class Hunter:
 
     def _load_join_sword_detection_data(self):
         paths = [
-            "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images\\j_sword_ally_1.png",
-            "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images\\j_sword_ally_2.png",
-            "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images\\j_sword_ally_3.png",
-            "src\\bot\\_states\\out_of_combat\\sub_states\\hunting\\_images\\j_sword_enemy.png",
+            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_1.png",
+            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_2.png",
+            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_3.png",
+            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_enemy.png",
         ]
         read_images = []
         for path in paths:
