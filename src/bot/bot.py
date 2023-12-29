@@ -11,7 +11,7 @@ from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.in_combat.controller import Controller as IC_Controller
 from src.bot._states_enum import States as MainBotStates
-from ._exceptions import RecoverableException, UnrecoverableException
+from ._exceptions import RecoverableException
 
 
 class Bot(threading.Thread):

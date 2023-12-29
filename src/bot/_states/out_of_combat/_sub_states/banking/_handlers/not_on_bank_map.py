@@ -5,8 +5,7 @@ import pyautogui as pyag
 
 from .._bank_data import Getter as BankData
 from src.bot._map_changer.map_changer import MapChanger
-from src.bot._states.out_of_combat._status_enum import Status
-from src.bot._exceptions import RecoverableException, UnrecoverableException
+from src.bot._exceptions import RecoverableException
 
 
 class Handler:

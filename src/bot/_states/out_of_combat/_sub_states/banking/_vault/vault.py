@@ -16,7 +16,7 @@ from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat._status_enum import Status
 from src.ocr.ocr import OCR
 from src.bot._states.out_of_combat._sub_states.banking._bank_data import Getter as BankData
-from src.bot._exceptions import RecoverableException, UnrecoverableException
+from src.bot._exceptions import RecoverableException
 
 
 class Vault:
@@ -51,25 +51,14 @@ class Vault:
             if not cls.is_vault_open():
                 log.info("Successfully closed the bank vault.")
                 return
-        raise UnrecoverableException("Failed to close the bank vault.")
+        raise RecoverableException("Failed to close the bank vault.")
 
     @classmethod
     def deposit_all_tabs(cls):
         log.info("Depositing all tabs ... ")
-        deposit_methods = [
-            cls.EQUIPMENT_TAB.deposit_tab,
-            cls.MISCELLANEOUS_TAB.deposit_tab,
-            cls.RESOURCES_TAB.deposit_tab,
-        ]
-        for deposit_method in deposit_methods:
-            status = deposit_method()
-            if (
-                status == Status.FAILED_TO_OPEN_TAB 
-                or status == Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
-                or status == Status.FAILED_TO_DEPOSIT_SLOT
-                or status == Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
-            ):
-                raise UnrecoverableException("Failed to deposit all tabs.")
+        cls.EQUIPMENT_TAB.deposit_tab()
+        cls.MISCELLANEOUS_TAB.deposit_tab()
+        cls.RESOURCES_TAB.deposit_tab()
         log.info("Successfully deposited all tabs.")
 
     def _detect_banker_npc(self):
@@ -127,7 +116,7 @@ class Vault:
             if cls.is_vault_open():
                 log.info("Successfully selected 'Consult your personal safe' option from the banker dialogue.")
                 return Status.SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE
-        raise UnrecoverableException("Failed to select 'Consult your personal safe' option from the banker dialogue.")
+        raise RecoverableException("Failed to select 'Consult your personal safe' option from the banker dialogue.")
 
     @staticmethod
     def _is_banker_dialogue_open():
@@ -167,7 +156,7 @@ class Vault:
                 log.info("Successfully detected if item sprites have loaded.")
                 return
         log.error("Timed out while detecting if item sprites have loaded.")
-        raise UnrecoverableException("Failed to detect if item sprites have loaded.")
+        raise RecoverableException("Failed to detect if item sprites have loaded.")
 
     @staticmethod
     def _load_npc_images(image_folder_path: str):

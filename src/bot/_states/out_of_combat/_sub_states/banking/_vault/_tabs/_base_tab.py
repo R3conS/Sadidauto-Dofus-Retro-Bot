@@ -13,6 +13,7 @@ from src.screen_capture import ScreenCapture
 from src.utilities import load_image_full_path
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
+from src.bot._exceptions import RecoverableException
 
 
 class BaseTab(ABC):
@@ -58,41 +59,28 @@ class BaseTab(ABC):
 
     def open_tab(self):
         log.info(f"Opening '{self._name}' tab ...")
-
         if self.is_tab_open():
             log.info(f"'{self._name}' tab is already open.")
-            return True
-
-        icon_position = self._get_icon_position()
-        if icon_position is not None:
-            pyag.moveTo(*icon_position)
-            pyag.click()
-            
-            start_time = perf_counter()
-            while perf_counter() - start_time <= 5:
-                if self.is_tab_open():
-                    log.info(f"Successfully opened '{self._name}' tab.")
-                    return True
-                
-            log.error(f"Timed out while opening '{self._name}' tab.")
-            return False
-        
-        log.error(f"Failed to find '{self._name}' tab icon.")
-        return False
+            return
+        pyag.moveTo(*self._get_icon_position())
+        pyag.click()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if self.is_tab_open():
+                log.info(f"Successfully opened '{self._name}' tab.")
+                return
+        raise RecoverableException(f"Timed out while trying to open '{self._name}' tab.")
 
     def deposit_tab(self):
-        # To Do: surround open tab in try/except.
         self.open_tab()
-
         if self._are_any_forbidden_items_loaded():
             log.info(f"'{self._name}' tab has forbidden items loaded. Depositing slot by slot ...")
-            return self._deposit_slot_by_slot()
+            self._deposit_slot_by_slot()
         else:
             log.info(f"No forbidden items detected in '{self._name}' tab. Will deposit in bulk.")
-            return self._deposit_in_bulk()
+            self._deposit_in_bulk()
 
-    @staticmethod
-    def _deposit_slot(slot_x, slot_y):
+    def _deposit_slot(self, slot_x, slot_y):
         pyag.keyDown("ctrl")
         pyag.moveTo(slot_x, slot_y)
         pyag.click(clicks=2, interval=0.1)
@@ -110,10 +98,10 @@ class BaseTab(ABC):
         pyag.keyUp("ctrl")
 
     def _deposit_slot_by_slot(self):
+        # ToDo: remove None checks when PodsReader is refactored with exceptions.
         pods_before_deposit = PodsReader.BANK.get_occupied_pods()
         if pods_before_deposit is None:
-            log.error("Failed to get occupied bank pods.")
-            return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+            raise RecoverableException("Failed to get occupied bank pods.")
         
         slot_coords = self.INVENTORY_SLOT_COORDS["row_1"][0]
         deposited_items_count = 0
@@ -121,26 +109,22 @@ class BaseTab(ABC):
             if self._is_slot_empty(*slot_coords):
                 pods_after_deposit = PodsReader.BANK.get_occupied_pods()
                 if pods_after_deposit is None:
-                    log.error("Failed to get occupied bank pods.")
-                    return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+                    raise RecoverableException("Failed to get occupied bank pods.")
                 log.info(
                     f"Successfully deposited all items in the tab! "
                     f"Total items deposited: {deposited_items_count}. "
                     f"Pods freed: {pods_before_deposit - pods_after_deposit}."
                 )
-                return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
+                return
             
             if not self._is_item_in_slot_forbidden(*slot_coords):
-                next_slot_screenshot = self._screenshot_next_slot(*slot_coords)
                 self._deposit_slot(*slot_coords)
-                if self._was_slot_deposited(*slot_coords, next_slot_screenshot):
+                if self._was_slot_deposited(*slot_coords):
                     deposited_items_count += 1
                     continue
-                log.error("Failed to deposit slot.")
-                return Status.FAILED_TO_DEPOSIT_SLOT
+                raise RecoverableException("Failed to deposit slot.")
             else:
-                name = self._get_forbidden_item_name(*slot_coords)
-                log.info(f"Skipping forbidden item '{name}'.")
+                log.info(f"Skipping forbidden item '{self._get_forbidden_item_name(*slot_coords)}'.")
                 slot_coords = self._get_next_slot_coords(*slot_coords)
 
     def _deposit_in_bulk(self):
@@ -154,24 +138,24 @@ class BaseTab(ABC):
             if occupied_slots_amount == 0:
                 if is_first_iteration:
                     log.info("No items to deposit.")
-                    return Status.NO_ITEMS_TO_DEPOSIT_IN_TAB
+                    return
                 else:
                     log.info("Successfully deposited all items in the tab!")
-                    return Status.SUCCESSFULLY_DEPOSITED_ITEMS_IN_TAB
-
+                    return
             is_first_iteration = False
 
+            # ToDo: remove None checks when PodsReader is refactored with exceptions.
             log.info(f"Depositing {occupied_slots_amount} items ...")
             pods_before_deposit = PodsReader.BANK.get_occupied_pods()
             if pods_before_deposit is None:
-                log.error("Failed to get occupied bank pods.")
-                return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+                raise RecoverableException("Failed to get occupied bank pods.")
             
             self._deposit_visible_items(occupied_slots_amount)
+
             pods_after_deposit = PodsReader.BANK.get_occupied_pods()
             if pods_after_deposit is None:
                 log.error("Failed to get occupied bank pods.")
-                return Status.FAILED_TO_GET_OCCUPIED_BANK_PODS
+                raise RecoverableException("Failed to get occupied bank pods.")
 
             if pods_after_deposit < pods_before_deposit:
                 log.info(
@@ -179,8 +163,7 @@ class BaseTab(ABC):
                     f"Pods freed: {pods_before_deposit - pods_after_deposit}."
                 )
             else:
-                log.error("Failed to deposit items.")
-                return Status.FAILED_TO_DEPOSIT_ITEMS_IN_TAB
+                raise RecoverableException("Failed to deposit items in bulk.")
 
     def _get_icon_position(self):
         if not self.is_tab_open():
@@ -203,7 +186,7 @@ class BaseTab(ABC):
                 center_point[0] + self.INVENTORY_TAB_ICON_AREA[0],
                 center_point[1] + self.INVENTORY_TAB_ICON_AREA[1]
             )
-        return None
+        raise RecoverableException(f"Failed to find '{self._name}' tab icon.")
 
     @staticmethod
     def _get_slot_rectangle(slot_center_x, slot_center_y):
@@ -260,7 +243,7 @@ class BaseTab(ABC):
                 if len(rectangle) > 0:
                     name = os.path.splitext(os.path.basename(self._forbidden_item_image_paths[confidence][i]))[0]
                     return name.title()
-        return None
+        raise RecoverableException("Failed to get forbidden item name.")
 
     def _get_coordinates_for_in_bulk_deposit(self, occupied_slots_amount):
         slots_per_row = 5
@@ -310,7 +293,8 @@ class BaseTab(ABC):
                     return True
         return False
 
-    def _was_slot_deposited(self, slot_x, slot_y, next_slot_screenshot):
+    def _was_slot_deposited(self, slot_x, slot_y):
+        next_slot_screenshot = self._screenshot_next_slot(slot_x, slot_y)
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             current_slot_screenshot = self._screenshot_slot(slot_x, slot_y)
@@ -322,7 +306,7 @@ class BaseTab(ABC):
             )
             if len(rectangle) > 0:
                 return True
-        return False 
+        return False
 
     def _are_any_forbidden_items_loaded(self):
         return len(self._forbidden_item_images_loaded) > 0

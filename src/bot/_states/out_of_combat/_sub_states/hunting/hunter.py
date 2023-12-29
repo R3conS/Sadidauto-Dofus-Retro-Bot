@@ -31,7 +31,7 @@ class Hunter:
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
-        self._pods_percentage_limit = 3
+        self._pods_percentage_limit = 1
         # Map data
         map_data = MapDataGetter.get_data_object(script)
         self._pathing_data = map_data.get_pathing_data()

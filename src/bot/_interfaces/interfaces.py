@@ -5,12 +5,10 @@ from ._offer_or_invite import OfferOrInvite
 from ._main_menu import MainMenu
 from ._caution import Caution
 from ._information import Information
-from ._exceptions import Exceptions
 
 
 class Interfaces:
 
-    EXCEPTIONS = Exceptions()
     CHARACTERISTICS = Characteristics()
     INVENTORY = Inventory()
     RIGHT_CLICK_MENU = RightClickMenu()
