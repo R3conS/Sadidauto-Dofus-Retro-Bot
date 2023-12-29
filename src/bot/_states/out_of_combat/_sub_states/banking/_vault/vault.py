@@ -35,8 +35,6 @@ class Vault:
             return
         self._detect_banker_npc()
         banker_coords = self._get_banker_npc_coords()
-        if banker_coords is None:
-            raise RecoverableException("Failed to get banker NPC coordinates.")
         self._talk_with_banker(banker_coords[0], banker_coords[1])
         self._select_consult_your_personal_safe()
         self._have_item_sprites_loaded()
@@ -85,7 +83,7 @@ class Vault:
         if len(rectangles) > 0:
             log.info("Successfully got banker NPC coordinates.")
             return ImageDetection.get_rectangle_center_point(rectangles[0])
-        return None
+        raise RecoverableException("Failed to get banker NPC coordinates.")
 
     def _talk_with_banker(self, banker_x, banker_y,):
         log.info("Talking with banker ... ")
