@@ -7,7 +7,7 @@ import pyautogui as pyag
 from time import perf_counter
 
 from src.utilities import load_image
-from .._vault_actions import VaultActions
+from .._vault.vault import Vault
 from src.image_detection import ImageDetection
 from src.bot.map_changer.map_changer import MapChanger
 from src.ocr.ocr import OCR
@@ -91,7 +91,7 @@ class Handler:
             return Status.FAILED_TO_DETECT_BANKER_NPC
         
     def _handle_vault_open(self):
-        return VaultActions.deposit_all_tabs()
+        return Vault.deposit_all_tabs()
     
     def _handle_finished_depositing(self):
         log.info("Closing the bank vault ... ")
