@@ -13,7 +13,12 @@ class Status(Enum):
     SUCCESSFULLY_TRAVERSED_MAP = "successfully_traversed_map"
     SUCCESSFULLY_STARTED_COMBAT = "successfully_started_combat"
     SUCCESSFULLY_FINISHED_HUNTING = "successfully_finished_hunting"
-    
+    SUCCESSFULLY_CLOSED_BANK_VAULT = "successfully_closed_bank_vault"
+    SUCCESSFULLY_OPENED_BANKER_DIALOGUE = "successfully_opened_banker_dialogue"
+    SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE = "successfully_selected_consult_your_personal_safe"
+    SUCCESSFULLY_DETECTED_IF_ITEM_SPRITES_HAVE_LOADED = "successfully_detected_if_item_sprites_have_loaded"
+    SUCCESSFULLY_DETECTED_BANKER_NPC = "successfully_detected_banker_npc"
+
     FAILED_TO_DETECT_LOADING_SCREEN_AFTER_RECALL = "failed_to_detect_loading_screen_after_recall"
     FAILED_TO_DETECT_LOADING_SCREEN_AFTER_CHANGE_MAP = "failed_to_detect_loading_screen_after_change_map"
     FAILED_TO_RECALL = "failed_to_recall"
@@ -36,7 +41,8 @@ class Status(Enum):
     FAILED_TO_CHANGE_MAP = "failed_to_change_map"
     FAILED_TO_FINISH_HUNTING = "failed_to_finish_hunting"
     FAILED_TO_CHANGE_MAP_BACK_TO_ORIGINAL = "failed_to_change_map_back_to_original"
-    
+    FAILED_TO_SELECT_CONSULT_YOUR_PERSONAL_SAFE = "failed_to_select_consult_your_personal_safe"
+
     CHAR_DOESNT_HAVE_RECALL_POTION = "char_doesnt_have_recall_potion"
     NO_NEED_TO_RECALL = "no_need_to_recall"
     NO_ITEMS_TO_DEPOSIT_IN_TAB = "no_items_to_deposit_in_tab"
