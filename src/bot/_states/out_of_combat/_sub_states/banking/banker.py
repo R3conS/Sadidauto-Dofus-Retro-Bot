@@ -20,17 +20,19 @@ class Banker:
         self._bank_map = BankData.get_data(self._script)["bank_map"]
 
     def bank(self):
-        try:
-            if not self._is_char_on_bank_map():
-                self._handler_not_on_bank_map.handle()
-            else:
-                self._handler_on_bank_map.handle()
-        except RecoverableException:
-            # ToDo: Call recovery code and try again.
-            # Perhaps surround the whole thing with a while that attempts
-            # to recover a few times before raising UnrecoverableException.
-            log.error("Recoverable exception occurred while banking. Exiting ...")
-            os._exit(1)
+        while True:
+            try:
+                if not self._is_char_on_bank_map():
+                    self._handler_not_on_bank_map.handle()
+                else:
+                    self._handler_on_bank_map.handle()
+                    return
+            except RecoverableException:
+                # ToDo: Call recovery code and try again.
+                # Perhaps surround the whole thing with a while that attempts
+                # to recover a few times before raising UnrecoverableException.
+                log.error("Recoverable exception occurred while banking. Exiting ...")
+                os._exit(1)
 
     def _is_char_on_bank_map(self):
         return MapChanger.get_current_map_coords() == self._bank_map

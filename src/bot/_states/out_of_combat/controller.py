@@ -23,25 +23,18 @@ class Controller:
         sub_state = _SubStates.HUNTING
         while True:
             if sub_state == _SubStates.HUNTING:
-                status = self._hunter.hunt()
-                if status == Status.REACHED_PODS_LIMIT:
-                    sub_state = _SubStates.BANKING
-                    continue
-                elif status == Status.SUCCESSFULLY_FINISHED_HUNTING:
+                result = self._hunter.hunt()
+                if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
                     self._set_main_bot_state_callback(MainBotStates.IN_COMBAT)
                     return
-                elif status == Status.FAILED_TO_FINISH_HUNTING:
-                    log.error(f"Failed to finish hunting. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
-                    return
-
+                elif result == Status.REACHED_PODS_LIMIT:
+                    sub_state = _SubStates.BANKING
+                    continue
             elif sub_state == _SubStates.BANKING:
                 self._banker.bank()
                 sub_state = _SubStates.HUNTING
-                
 
 class _SubStates:
 
     HUNTING = "HUNTING"
     BANKING = "BANKING"
-    RECOVERY = "RECOVERY"

@@ -31,7 +31,7 @@ class Hunter:
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
-        self._pods_percentage_limit = 1
+        self._pods_percentage_limit = 90
         # Map data
         map_data = MapDataGetter.get_data_object(script)
         self._pathing_data = map_data.get_pathing_data()
@@ -41,36 +41,34 @@ class Hunter:
 
     def hunt(self):
         while True:
-            if self._consecutive_fights_counter >= self._check_pods_every_x_fights:
-                pods_percentage = self._get_pods_percentage()
-                if pods_percentage is not None:
+            try:
+                if self._consecutive_fights_counter >= self._check_pods_every_x_fights:
+                    pods_percentage = self._get_pods_percentage()
                     self._consecutive_fights_counter = 0
                     if pods_percentage >= self._pods_percentage_limit:
                         log.info(f"Reached pods limit of: {self._pods_percentage_limit}%. Going to bank ... ")
-                        # Setting these values to equal so that pods are checked on the 
-                        # first call to 'hunt()' after banking.
+                        # Setting these values to equal so that pods are checked on 
+                        # the first call to 'hunt()' after banking.
                         self._consecutive_fights_counter = self._check_pods_every_x_fights
                         return Status.REACHED_PODS_LIMIT
-                else:
-                    return Status.FAILED_TO_FINISH_HUNTING
 
-            map_coords = MapChanger.get_current_map_coords()
-            map_type = self._map_type_data[map_coords]
-            if map_type == "traversable":
-                if self._handle_traversable_map(map_coords) == Status.FAILED_TO_TRAVERSE_MAP:
-                    return Status.FAILED_TO_FINISH_HUNTING
-            elif map_type == "fightable":
-                log.info(f"Hunting on map: {map_coords} ... ")
-                status = self._handle_fightable_map(map_coords)
-                if status == Status.SUCCESSFULLY_STARTED_COMBAT:
-                    return Status.SUCCESSFULLY_FINISHED_HUNTING
-                elif status == Status.FAILED_TO_CHANGE_MAP_BACK_TO_ORIGINAL:
-                    return Status.FAILED_TO_FINISH_HUNTING
-                elif (
-                    status == Status.FAILED_TO_CHANGE_MAP
-                    or status == Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
-                ):
-                    return Status.FAILED_TO_FINISH_HUNTING
+                map_coords = MapChanger.get_current_map_coords()
+                map_type = self._map_type_data[map_coords]
+                if map_type == "traversable":
+                    result = self._handle_traversable_map(map_coords)
+                    if result == Status.SUCCESSFULLY_TRAVERSED_MAP:
+                        continue
+                elif map_type == "fightable":
+                    result = self._handle_fightable_map(map_coords)
+                    if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
+                        return Status.SUCCESSFULLY_ATTACKED_MONSTER
+                    elif result == Status.MAP_FULLY_SEARCHED:
+                        continue
+            except RecoverableException:
+                # ToDo: Call recovery code and try again a few times before
+                # raising UnrecoverableException.
+                log.error("Recoverable exception occurred while hunting. Exiting ...")
+                os._exit(1)
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
@@ -84,10 +82,10 @@ class Hunter:
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         if MapChanger.has_loading_screen_passed():
             return Status.SUCCESSFULLY_TRAVERSED_MAP
-        log.error("Failed to detect loading screen after changing map.")
-        return Status.FAILED_TO_TRAVERSE_MAP
-
+        raise RecoverableException("Failed to traverse map.")
+    
     def _handle_fightable_map(self, map_coords):
+        log.info(f"Hunting on map: {map_coords} ... ")
         for segment_index in range(len(self._monster_image_data[0])):
             matches = self._search_segment(segment_index, ScreenCapture.game_window())
             if len(matches) > 0:
@@ -109,31 +107,22 @@ class Hunter:
 
                 if self._is_attack_successful():
                     self._consecutive_fights_counter += 1
-                    return Status.SUCCESSFULLY_STARTED_COMBAT
+                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
                 else:
                     if map_coords != MapChanger.get_current_map_coords():
                         log.error("Map was accidentally changed during the attack.")
-                        log.info("Attempting to change map back to original ...")
-                        MapChanger.change_map(MapChanger.get_current_map_coords(), map_coords)
-                        if MapChanger.has_loading_screen_passed():
-                            log.info("Successfully changed map back to original!")
-                            continue
-                        log.error("Failed to change map back to original map.")
-                        return Status.FAILED_TO_CHANGE_MAP_BACK_TO_ORIGINAL
+                        self._change_map_back_to_original(map_coords)
+                        continue
                     elif self._is_char_in_lumberjack_workshop():
                         log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                         self._leave_lumberjacks_workshop()
-                        if MapChanger.has_loading_screen_passed():
-                            log.info("Successfully left 'Lumberjack's Workshop'.")
-                            continue
-                        log.error("Failed to leave 'Lumberjack's Workshop'.")
-                        return Status.FAILED_TO_LEAVE_LUMBERJACK_WORKSHOP
+                        continue
 
         log.info(f"Map {map_coords} fully searched. Changing map ... ")
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         if MapChanger.has_loading_screen_passed():
             return Status.MAP_FULLY_SEARCHED
-        return Status.FAILED_TO_CHANGE_MAP
+        raise RecoverableException("Failed to change map.")
 
     def _load_monster_image_data(self):
         image_folder_path = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\monster_images"
@@ -238,7 +227,8 @@ class Hunter:
                 return True
         return False
 
-    def _is_char_in_lumberjack_workshop(self):
+    @staticmethod
+    def _is_char_in_lumberjack_workshop():
         return all ((
             pyag.pixelMatchesColor(49, 559, (0, 0, 0)),
             pyag.pixelMatchesColor(48, 137, (0, 0, 0)),
@@ -247,8 +237,24 @@ class Hunter:
             pyag.pixelMatchesColor(731, 554, (0, 0, 0)),
         ))
 
-    def _leave_lumberjacks_workshop(self):
-        pyag.keyDown('e')
+    @staticmethod
+    def _leave_lumberjacks_workshop():
+        pyag.keyDown("e")
         pyag.moveTo(667, 507)
         pyag.click()
-        pyag.keyUp('e')
+        pyag.keyUp("e")
+        if MapChanger.has_loading_screen_passed():
+            log.info("Successfully left 'Lumberjack's Workshop'.")
+            return
+        # ToDo: If recovery fails multiple times then maybe emergency
+        # recall teleport?
+        raise RecoverableException("Failed to leave 'Lumberjack's Workshop'.")
+
+    @staticmethod
+    def _change_map_back_to_original(original_map_coords):
+        log.info("Attempting to change map back to original ...")
+        MapChanger.change_map(MapChanger.get_current_map_coords(), original_map_coords)
+        if MapChanger.has_loading_screen_passed():
+            log.info("Successfully changed map back to original!")
+            return
+        raise RecoverableException("Failed to change map back to original map.")

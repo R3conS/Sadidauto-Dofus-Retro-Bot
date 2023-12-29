@@ -113,7 +113,7 @@ class Vault:
         while perf_counter() - start_time <= 5:
             if cls.is_vault_open():
                 log.info("Successfully selected 'Consult your personal safe' option from the banker dialogue.")
-                return Status.SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE
+                return
         raise RecoverableException("Failed to select 'Consult your personal safe' option from the banker dialogue.")
 
     @staticmethod
