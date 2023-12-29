@@ -4,10 +4,12 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import os
 
 import pygetwindow as gw
+import win32gui, win32con
 
-from src.bot._interfaces.interfaces import Interfaces
+from ._disturbance_checker import DisturbanceChecker
 from screen_capture import ScreenCapture
 from src.ocr.ocr import OCR
+from src.bot._interfaces.interfaces import Interfaces
 
 
 class Initializer:
@@ -24,29 +26,40 @@ class Initializer:
     def __init__(self, script: str, character_name: str):
         self._script = script
         self._character_name = character_name
-        if not self._is_script_valid(self._script):
-            log.critical(f"Invalid script name '{self._script}'! Exiting ... ")
-            os._exit(1)
+        self._disturbance_checker = DisturbanceChecker()
+
+    def initialize(self):
+        log.info("Initializing bot ...")
+        self._verify_script(self._script)
         self._prepare_game_window()
         self._verify_character_name()
+        self._start_disturbance_checker()
+        log.info("Successfully initialized bot!")
 
-    def _is_script_valid(self, script_to_check):
-        for script in self.VALID_SCRIPTS:
-            if script == script_to_check:
-                return True
-        return False
+    def _verify_script(self, script: str):
+        log.info("Verifying script ... ")
+        if script not in self.VALID_SCRIPTS:
+            log.critical(f"Script name is invalid: '{script}'! Exiting ... ")
+            os._exit(1)
+        log.info(f"Successfully verified script!")
 
     def _prepare_game_window(self):
-        log.info("Attempting to prepare Dofus window ... ")
+        log.info("Preparing Dofus window ...")
         if bool(gw.getWindowsWithTitle(self._character_name)):
             for w in gw.getWindowsWithTitle(self._character_name):
                 if any(suffix in w.title for suffix in self.WINDOW_SUFFIXES):
+                    win32gui.SetWindowPos( # Set window always on top.
+                        w._hWnd, 
+                        win32con.HWND_TOPMOST, 
+                        0, 0, 0, 0, 
+                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE
+                    )
                     w.restore()
                     w.activate()
                     w.resizeTo(*self.WINDOW_SIZE)
                     w.moveTo(*self.WINDOW_POS)
-                    log.info(f"Successfully prepared '{w.title}' Dofus window!")
                     self.WINDOW_TITLE = w.title
+                    log.info(f"Successfully prepared '{w.title}' Dofus window!")
                     return
         log.critical(f"Failed to detect Dofus window for '{self._character_name}'! Exiting ...")
         os._exit(1)
@@ -55,9 +68,18 @@ class Initializer:
         log.info("Verifying character's name ... ")
         Interfaces.CHARACTERISTICS.open()
         sc = ScreenCapture.custom_area((685, 93, 205, 26))
-        if self._character_name == OCR.get_text_from_image(sc):
+        text = OCR.get_text_from_image(sc)
+        if self._character_name == text:
             log.info("Successfully verified character's name!")
             Interfaces.CHARACTERISTICS.close()
         else:
-            log.critical("Invalid character name! Exiting ... ")
+            log.critical(
+                f"Provided character's name '{self._character_name}' does not "
+                f"match the one in-game '{text}'! Exiting ..."
+            )
             os._exit(1)
+
+    def _start_disturbance_checker(self):
+        log.info("Starting disturbance checker ... ")
+        self._disturbance_checker.start()
+        log.info("Successfully started disturbance checker!")

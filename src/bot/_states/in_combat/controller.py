@@ -1,13 +1,15 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from src.utilities import load_image
+from enum import Enum
+
 from ._sub_states.preparing.preparer import Preparer
 from ._sub_states.fighting.fighter import Fighter
-from src.bot._states.in_combat._status_enum import Status
-from src.bot._states_enum import States as MainBotStates
+from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
+from src.bot._states.in_combat._status_enum import Status
+from src.bot._states.states_enum import State as MainBotState
 
 
 class Controller:
@@ -24,31 +26,31 @@ class Controller:
     def run(self):
         sub_state = self._determine_sub_state()
         while True:
-            if sub_state == _SubStates.PREPARING:
+            if sub_state == _SubState.PREPARING:
                 status = self._preparer.prepare()
                 if status == Status.SUCCESSFULLY_FINISHED_PREPARING:
-                    sub_state = _SubStates.FIGHTING
+                    sub_state = _SubState.FIGHTING
                     continue
                 elif status == Status.FAILED_TO_FINISH_PREPARING:
                     log.error(f"Failed to finish preparing. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
+                    self._set_main_bot_state_callback(MainBotState.RECOVERY)
                     return
                 
-            elif sub_state == _SubStates.FIGHTING:
+            elif sub_state == _SubState.FIGHTING:
                 result = self._fighter.fight()
                 if result == Status.SUCCESSFULLY_FINISHED_FIGHTING:
                     self._fight_counter += 1
                     log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
-                    self._set_main_bot_state_callback(MainBotStates.OUT_OF_COMBAT)
+                    self._set_main_bot_state_callback(MainBotState.OUT_OF_COMBAT)
                     return
                 elif result == Status.FAILED_TO_FINISH_FIGHTING:
                     log.error(f"Failed to finish fighting. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotStates.RECOVERY)
+                    self._set_main_bot_state_callback(MainBotState.RECOVERY)
                     return
 
-            elif sub_state == _SubStates.RECOVERY:
+            elif sub_state == _SubState.RECOVERY:
                 log.error("'In Combat' controller failed to determine its sub state. Attempting to recover ...")
-                self._set_main_bot_state_callback(MainBotStates.RECOVERY)
+                self._set_main_bot_state_callback(MainBotState.RECOVERY)
                 return
 
     def _determine_sub_state(self):
@@ -65,12 +67,11 @@ class Controller:
             mask=ImageDetection.create_mask(self._mp_icon_image)
         )
         if len(ap_icon_rectangle) > 0 or len(mp_icon_rectangle) > 0:
-            return _SubStates.FIGHTING
-        return _SubStates.PREPARING
+            return _SubState.FIGHTING
+        return _SubState.PREPARING
 
 
-class _SubStates:
+class _SubState(Enum):
 
     PREPARING = "PREPARING"
     FIGHTING = "FIGHTING"
-    RECOVERY = "RECOVERY"

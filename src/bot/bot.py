@@ -5,14 +5,15 @@ import os
 import traceback
 import threading
 
-from src.bot._disturbance_checker import DisturbanceChecker
-from src.bot._initializer import Initializer
+from ._exceptions import UnrecoverableException
+from ._states.states_enum import State
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
+
+from src.bot._initializer.initializer import Initializer
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.in_combat.controller import Controller as IC_Controller
-from src.bot._states_enum import States as MainBotStates
-from ._exceptions import UnrecoverableException
+from src.utilities import load_image_full_path
 
 
 class Bot(threading.Thread):
@@ -21,24 +22,30 @@ class Bot(threading.Thread):
     def __init__(self, script: str, character_name: str):
         super().__init__()
         self.daemon = True
+        self._script = script
+        self._character_name = character_name
         self._state = None
         self._stopped = False
-        self._disturbance_checker = DisturbanceChecker()
-        self._disturbance_checker.start()
-        initializer = Initializer(script, character_name)
-        self._ooc_controller = OOC_Controller(self.set_state, script, initializer.WINDOW_TITLE)
-        self._ic_controller = IC_Controller(self.set_state, script, character_name)
+        self._initializer = None
+        self._ooc_controller = None
+        self._ic_controller = None
 
     def run(self):
         try:
-            self.determine_state()
+            self._initializer = Initializer(self._script, self._character_name)
+            self._initializer.initialize()
+            self._ooc_controller = OOC_Controller(self._set_state, self._script, self._initializer.WINDOW_TITLE)
+            self._ic_controller = IC_Controller(self._set_state, self._script, self._character_name)
+            self._state = self._determine_initial_state()
             while not self._stopped:
                 try:
-                    if self._state == MainBotStates.OUT_OF_COMBAT:
+                    if self._state == State.OUT_OF_COMBAT:
                         self._ooc_controller.run()
-                    elif self._state == MainBotStates.IN_COMBAT:
+                    elif self._state == State.IN_COMBAT:
                         self._ic_controller.run()
                 except UnrecoverableException:
+                    # ToDo: Implement UnrecoverableException class logic.
+                    # Take screenshots, logout etc.
                     log.critical(traceback.format_exc())
                     log.critical("Unrecoverable exception occurred! Exiting ...")
                     os._exit(1)
@@ -50,21 +57,21 @@ class Bot(threading.Thread):
     def stop(self):
         self._stopped = True
 
-    def set_state(self, state):
+    def _set_state(self, state):
         self._state = state
 
-    def determine_state(self):
-        image_folder = "src\\bot\\_images"
-        image_names = ["cc_lit.png", "cc_dim.png"]
-        game_window_image = ScreenCapture.game_window()
-        for name in image_names:
-            path = os.path.join(image_folder, name)
-            if not os.path.exists(path):
-                raise ValueError(f"Image '{path}' does not exist.")
-            if not os.path.isfile(path):
-                raise ValueError(f"Path '{path}' is not a file.")
-            if len(ImageDetection.find_image(game_window_image, path, 0.98)) > 0:
-                self.set_state(MainBotStates.IN_COMBAT)
-                return
-        self.set_state(MainBotStates.OUT_OF_COMBAT)
-        return
+    @staticmethod
+    def _determine_initial_state():
+        image = load_image_full_path("src\\bot\\_images\\in_combat_state_verifier.png")
+        if len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area((452, 598, 41, 48)), 
+                needle=image,
+                confidence=0.99,
+                mask=ImageDetection.create_mask(image)
+            )
+        ) > 0:
+            log.info(f"Determined initial state: in combat.")
+            return State.IN_COMBAT
+        log.info(f"Determined initial state: out of combat.")
+        return State.OUT_OF_COMBAT

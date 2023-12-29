@@ -1,3 +1,6 @@
+from pyautogui import pixelMatchesColor
+
+
 class Getter:
 
     @staticmethod
@@ -7,11 +10,20 @@ class Getter:
 
     @staticmethod
     def _get_astrub_bank_data():
+        def is_char_inside_bank():
+            return all((
+                pixelMatchesColor(10, 587, (0, 0, 0)),
+                pixelMatchesColor(922, 587, (0, 0, 0)),
+                pixelMatchesColor(454, 90, (0, 0, 0)), 
+                pixelMatchesColor(533, 99, (242, 240, 236)),
+                pixelMatchesColor(491, 124, (239, 236, 232))
+            ))
         return {
             "bank_map": "4,-16",
             "zaap_map": "4,-19",
             "no_recall_maps": ["4,-16", "4,-17", "4,-18", "4,-19"],
             "enter_coords": (792, 203),
             "exit_coords": (262, 502),
-            "npc_image_folder_path": "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_images\\astrub_banker_npc"
+            "npc_image_folder_path": "src\\bot\\_states\\out_of_combat\\_sub_states\\banking\\_vault\\_images\\astrub_banker_npc",
+            "is_char_inside_bank": is_char_inside_bank
         }

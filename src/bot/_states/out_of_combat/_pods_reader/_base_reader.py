@@ -1,7 +1,8 @@
 from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from abc import ABC, abstractclassmethod, abstractstaticmethod
+from abc import ABC, abstractstaticmethod
+from time import perf_counter
 
 import cv2
 import numpy as np
@@ -12,10 +13,6 @@ from src.bot._exceptions import RecoverableException
 
 
 class BaseReader(ABC):
-
-    @abstractclassmethod
-    def _get_numbers(cls) -> tuple[int, int]:
-        pass
 
     @abstractstaticmethod
     def _screenshot_tooltip_area() -> np.ndarray:
@@ -39,6 +36,7 @@ class BaseReader(ABC):
 
     @classmethod
     def get_occupied_pods(cls) -> int:
+        log.info("Getting occupied pods amount ...")
         numbers = cls._get_numbers()
         if numbers is None:
             raise RecoverableException("Failed to get occupied pods.")
@@ -46,6 +44,7 @@ class BaseReader(ABC):
 
     @classmethod
     def get_total_pods(cls) -> int:
+        log.info("Getting total pods amount ...")
         numbers = cls._get_numbers()
         if numbers is None:
             raise RecoverableException("Failed to get total pods.")
@@ -53,11 +52,28 @@ class BaseReader(ABC):
 
     @classmethod
     def get_occupied_percentage(cls) -> float:
+        log.info("Getting occupied pods percentage ...")
         numbers = cls._get_numbers()
         if numbers is None:
             raise RecoverableException("Failed to get occupied pods percentage.")
         return round(numbers[0] / numbers[1] * 100, 2)
-    
+
+    @classmethod
+    def _get_numbers(cls) -> tuple[int, int]:
+        """Get (pods_occupied, total_pods) numbers."""
+        cls._trigger_tooltip()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if cls._is_tooltip_visible():
+                tooltip_area = cls._screenshot_tooltip_area()
+                tooltip_rectangle = cls._get_tooltip_rectangle(tooltip_area)
+                cls._hide_tooltip()
+                if tooltip_rectangle is not None:
+                    tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
+                    text = cls._read_tooltip_text(tooltip)
+                    return cls._parse_tooltip_text(text)
+        return None
+
     @classmethod
     def _is_tooltip_visible(cls):
         if cls._get_tooltip_rectangle(cls._screenshot_tooltip_area()) is not None:

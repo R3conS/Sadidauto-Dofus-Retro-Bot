@@ -14,13 +14,14 @@ class Handler:
     def __init__(self, script: str, game_window_title: str):
         self._script = script
         self._game_window_title = game_window_title
+        self._vault = Vault(self._script, self._game_window_title)
         bank_data = BankData.get_data(self._script)
         self._enter_coords = bank_data["enter_coords"]
         self._exit_coords = bank_data["exit_coords"]
-        self._vault = Vault(self._script, self._game_window_title)
+        self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
 
     def handle(self):
-        if not self._is_char_inside_astrub_bank():
+        if not self._is_char_inside_bank():
             self._enter_astrub_bank()
         self._vault.open_vault()
         self._vault.deposit_all_tabs()
@@ -34,7 +35,7 @@ class Handler:
         pyag.click()
         pyag.keyUp('e')
         if MapChanger.has_loading_screen_passed():
-            if self._is_char_inside_astrub_bank():
+            if self._is_char_inside_bank():
                 log.info("Successfully entered the bank.")
                 return
             raise RecoverableException("Failed to enter the bank.")
@@ -47,18 +48,8 @@ class Handler:
         pyag.click()
         pyag.keyUp('e')
         if MapChanger.has_loading_screen_passed():
-            if not self._is_char_inside_astrub_bank():
+            if not self._is_char_inside_bank():
                 log.info("Successfully left the bank.")
                 return 
             raise RecoverableException("Failed to leave the bank.")
         raise RecoverableException("Failed to detect loading screen after trying to leave the bank.")
-
-    @staticmethod
-    def _is_char_inside_astrub_bank():
-        return all((
-            pyag.pixelMatchesColor(10, 587, (0, 0, 0)),
-            pyag.pixelMatchesColor(922, 587, (0, 0, 0)),
-            pyag.pixelMatchesColor(454, 90, (0, 0, 0)), 
-            pyag.pixelMatchesColor(533, 99, (242, 240, 236)),
-            pyag.pixelMatchesColor(491, 124, (239, 236, 232))
-        ))
