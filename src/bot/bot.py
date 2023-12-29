@@ -2,6 +2,7 @@ from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import os
+import traceback
 import threading
 
 from src.bot._disturbance_checker import DisturbanceChecker
@@ -11,7 +12,7 @@ from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.in_combat.controller import Controller as IC_Controller
 from src.bot._states_enum import States as MainBotStates
-from ._exceptions import RecoverableException
+from ._exceptions import UnrecoverableException
 
 
 class Bot(threading.Thread):
@@ -37,14 +38,10 @@ class Bot(threading.Thread):
                         self._ooc_controller.run()
                     elif self._state == MainBotStates.IN_COMBAT:
                         self._ic_controller.run()
-                    elif self._state == MainBotStates.RECOVERY:
-                        log.critical("Recovery state not implemented yet! Exiting ...")
-                        os._exit(1)
-                except RecoverableException:
-                    log.info("Attempting to recover ...")
-                    self._state = MainBotStates.RECOVERY
-                    continue
-        
+                except UnrecoverableException:
+                    log.critical(traceback.format_exc())
+                    log.critical("Unrecoverable exception occurred! Exiting ...")
+                    os._exit(1)
         except Exception:
             log.exception("An unhandled exception occured!")
             log.critical("Exiting ... ")
