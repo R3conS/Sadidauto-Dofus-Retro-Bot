@@ -1,6 +1,6 @@
 import unittest
 
-from src.bot.states.out_of_combat.pods_reader.reader import PodsReader
+from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.utilities import load_image
 
 
