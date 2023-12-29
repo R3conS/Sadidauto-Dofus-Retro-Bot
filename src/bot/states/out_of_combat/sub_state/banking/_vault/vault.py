@@ -7,53 +7,50 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
+from ._tabs.equipment_tab import EquipmentTab
+from ._tabs.miscellaneous_tab import MiscellaneousTab
+from ._tabs.resources_tab import ResourcesTab
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot.states.out_of_combat.status_enum import Status
 from src.ocr.ocr import OCR
-
-from ._tabs.equipment_tab import EquipmentTab
-from ._tabs.miscellaneous_tab import MiscellaneousTab
-from ._tabs.resources_tab import ResourcesTab
+from src.bot.states.out_of_combat.sub_state.banking._bank_data import Getter as BankData
 
 
 class Vault:
-
-    IMAGE_FOLDER_PATH = "src\\bot\\states\\out_of_combat\\sub_state\\banking\\_vault\\_images"
-    
-    ASTRUB_BANKER_NPC_IMAGE_FOLDER_PATH = os.path.join(IMAGE_FOLDER_PATH, "astrub_banker_npc")
-    ASTRUB_BANKER_NPC_IMAGES_LOADED = []
-    for image in os.listdir(ASTRUB_BANKER_NPC_IMAGE_FOLDER_PATH):
-        ASTRUB_BANKER_NPC_IMAGES_LOADED.append(load_image(ASTRUB_BANKER_NPC_IMAGE_FOLDER_PATH, image))
 
     EQUIPMENT_TAB = EquipmentTab()
     MISCELLANEOUS_TAB = MiscellaneousTab()
     RESOURCES_TAB = ResourcesTab()
 
-    @classmethod
-    def open_vault(cls, game_window_title):
-        if cls.is_vault_open():
+    def __init__(self, script: str, game_window_title: str):
+        self._script = script
+        self._game_window_title = game_window_title
+        self._banker_npc_images_loaded =  self._load_npc_images(BankData.get_data(self._script)["npc_image_folder_path"])
+
+    def open_vault(self):
+        if self.is_vault_open():
             return Status.SUCCESSFULLY_OPENED_BANK_VAULT
 
-        result = cls._detect_banker_npc()
+        result = self._detect_banker_npc()
         if result != Status.SUCCESSFULLY_DETECTED_BANKER_NPC:
             return result
 
-        banker_coords = cls._get_banker_npc_coords()
+        banker_coords = self._get_banker_npc_coords()
         if banker_coords is None:
             # ToDo: Add a way to handle this error and make a custom exception for it.
             raise Exception("Failed to get banker NPC coordinates.")
 
-        result = cls._talk_with_banker(banker_coords[0], banker_coords[1], game_window_title)
+        result = self._talk_with_banker(banker_coords[0], banker_coords[1])
         if result != Status.SUCCESSFULLY_OPENED_BANKER_DIALOGUE:
             return result
         
-        result = cls._select_consult_your_personal_safe()
+        result = self._select_consult_your_personal_safe()
         if result != Status.SUCCESSFULLY_SELECTED_CONSULT_YOUR_PERSONAL_SAFE:
             return result
 
-        result = cls._have_item_sprites_loaded()
+        result = self._have_item_sprites_loaded()
         if result != Status.SUCCESSFULLY_DETECTED_IF_ITEM_SPRITES_HAVE_LOADED:
             return result
 
@@ -93,22 +90,11 @@ class Vault:
         log.info("Successfully deposited all tabs.")
         return Status.SUCCESSFULLY_DEPOSITED_ALL_TABS
 
-    @staticmethod
-    def is_vault_open():
-        if all ((
-            pyag.pixelMatchesColor(218, 170, (81, 74, 60)),
-            pyag.pixelMatchesColor(881, 172, (81, 74, 60)),
-            pyag.pixelMatchesColor(700, 577, (213, 207, 170)),
-            pyag.pixelMatchesColor(31, 568, (213, 207, 170)),
-        )):
-            return True
-        return False
-
-    @classmethod
-    def _detect_banker_npc(cls):
+    def _detect_banker_npc(self):
+        log.info("Detecting banker NPC ... ")
         rectangles = ImageDetection.find_images(
             haystack=ScreenCapture.game_window(),
-            needles=cls.ASTRUB_BANKER_NPC_IMAGES_LOADED,
+            needles=self._banker_npc_images_loaded,
             confidence=0.99,
             method=cv2.TM_CCORR_NORMED
         )
@@ -118,21 +104,11 @@ class Vault:
         log.error("Failed to detect banker NPC.")
         return Status.FAILED_TO_DETECT_BANKER_NPC
 
-    @staticmethod
-    def _is_banker_dialogue_open():
-        """Astrub banker dialogue interface."""
-        if all((
-            pyag.pixelMatchesColor(25, 255, (255, 255, 206)),
-            pyag.pixelMatchesColor(123, 255, (255, 255, 206))
-        )): 
-            return True
-        return False
-    
-    @classmethod
-    def _get_banker_npc_coords(cls):
+    def _get_banker_npc_coords(self):
+        log.info("Getting banker NPC coordinates ... ")
         rectangles = ImageDetection.find_images(
             haystack=ScreenCapture.game_window(),
-            needles=cls.ASTRUB_BANKER_NPC_IMAGES_LOADED,
+            needles=self._banker_npc_images_loaded,
             confidence=0.99,
             method=cv2.TM_CCORR_NORMED
         )
@@ -142,10 +118,9 @@ class Vault:
         log.error("Failed to get banker NPC coordinates.")
         return None
 
-    @classmethod
-    def _talk_with_banker(cls, banker_x, banker_y, game_window_title):
+    def _talk_with_banker(self, banker_x, banker_y,):
         log.info("Talking with banker ... ")
-        if "Dofus Retro" in game_window_title:
+        if "Dofus Retro" in self._game_window_title:
             pyag.moveTo(banker_x, banker_y)
             pyag.click(button="right")
         else: # For Abrak private server
@@ -156,7 +131,7 @@ class Vault:
 
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            if cls._is_banker_dialogue_open():
+            if self._is_banker_dialogue_open():
                 log.info("Successfully talked with banker.")
                 return Status.SUCCESSFULLY_OPENED_BANKER_DIALOGUE
         log.error("Failed to talk with banker.")
@@ -177,6 +152,27 @@ class Vault:
         return Status.FAILED_TO_SELECT_CONSULT_YOUR_PERSONAL_SAFE
 
     @staticmethod
+    def _is_banker_dialogue_open():
+        """Astrub banker dialogue interface."""
+        if all((
+            pyag.pixelMatchesColor(25, 255, (255, 255, 206)),
+            pyag.pixelMatchesColor(123, 255, (255, 255, 206))
+        )): 
+            return True
+        return False
+
+    @staticmethod
+    def is_vault_open():
+        if all ((
+            pyag.pixelMatchesColor(218, 170, (81, 74, 60)),
+            pyag.pixelMatchesColor(881, 172, (81, 74, 60)),
+            pyag.pixelMatchesColor(700, 577, (213, 207, 170)),
+            pyag.pixelMatchesColor(31, 568, (213, 207, 170)),
+        )):
+            return True
+        return False
+
+    @staticmethod
     def _have_item_sprites_loaded():
         """
         Checks for the character's name in the inventory title bar.
@@ -194,3 +190,11 @@ class Vault:
                 return Status.SUCCESSFULLY_DETECTED_IF_ITEM_SPRITES_HAVE_LOADED
         log.error("Timed out while detecting if item sprites have loaded.")
         return Status.FAILED_TO_DETECT_IF_ITEM_SPRITES_HAVE_LOADED
+
+    @staticmethod
+    def _load_npc_images(image_folder_path: str):
+        if not os.path.exists(image_folder_path):
+            raise Exception(f"Image folder path '{image_folder_path}' does not exist.")
+        if not os.path.isdir(image_folder_path):
+            raise Exception(f"Image folder path '{image_folder_path}' is not a directory.")
+        return [load_image(image_folder_path, image) for image in os.listdir(image_folder_path)]

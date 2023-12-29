@@ -1,10 +1,10 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from src.bot.main_states_enum import State as MainBotStates
 from .sub_state.hunting.hunter import Hunter
 from .sub_state.banking.banker import Banker
 from .status_enum import Status
+from src.bot.main_states_enum import State as MainBotStates
 
 
 class Controller:
@@ -17,7 +17,7 @@ class Controller:
         ):
         self._set_main_bot_state_callback = set_bot_state_callback
         self._hunter = Hunter(script, game_window_title)
-        self._banker = Banker(game_window_title)
+        self._banker = Banker(script, game_window_title)
 
     def run(self):
         sub_state = _SubStates.HUNTING

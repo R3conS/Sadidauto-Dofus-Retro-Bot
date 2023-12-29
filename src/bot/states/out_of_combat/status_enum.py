@@ -49,3 +49,5 @@ class Status(Enum):
     ARRIVED_AT_ASTRUB_BANK_MAP = "arrived_at_astrub_bank_map"
     MAP_FULLY_SEARCHED = "map_fully_searched"
     REACHED_PODS_LIMIT = "reached_pods_limit"
+    CHARACTER_IS_ON_NO_RECALL_MAP = "character_is_on_no_recall_map"
+    CHARACTER_IS_NOT_ON_NO_RECALL_MAP = "character_is_not_on_no_recall_map"
