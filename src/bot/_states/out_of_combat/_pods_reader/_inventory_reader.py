@@ -16,7 +16,7 @@ from src.bot._exceptions import RecoverableException
 class InventoryReader(BaseReader):
 
     @classmethod
-    def get_numbers(cls) -> tuple[int, int]:
+    def _get_numbers(cls) -> tuple[int, int]:
         """Get (pods_occupied, total_pods) numbers."""
         cls._trigger_tooltip()
         start_time = perf_counter()
@@ -28,7 +28,8 @@ class InventoryReader(BaseReader):
                 tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
                 text = cls._read_tooltip_text(tooltip)
                 return cls._parse_tooltip_text(text)
-        raise RecoverableException("Failed to get inventory pods numbers.")
+        log.error("Failed to get inventory pods numbers.")
+        return None
 
     @staticmethod
     def _screenshot_tooltip_area():

@@ -5,7 +5,6 @@ from abc import ABC, abstractclassmethod, abstractstaticmethod
 
 import cv2
 import numpy as np
-import os
 import re
 
 from src.ocr.ocr import OCR
@@ -15,7 +14,7 @@ from src.bot._exceptions import RecoverableException
 class BaseReader(ABC):
 
     @abstractclassmethod
-    def get_numbers(cls) -> tuple[int, int]:
+    def _get_numbers(cls) -> tuple[int, int]:
         pass
 
     @abstractstaticmethod
@@ -40,16 +39,24 @@ class BaseReader(ABC):
 
     @classmethod
     def get_occupied_pods(cls) -> int:
-        return cls.get_numbers()[0]
+        numbers = cls._get_numbers()
+        if numbers is None:
+            raise RecoverableException("Failed to get occupied pods.")
+        return numbers[0]
 
     @classmethod
     def get_total_pods(cls) -> int:
-        return cls.get_numbers()[1]
+        numbers = cls._get_numbers()
+        if numbers is None:
+            raise RecoverableException("Failed to get total pods.")
+        return numbers[1]
 
     @classmethod
     def get_occupied_percentage(cls) -> float:
-        occupied_pods, total_pods = cls.get_numbers()
-        return round(occupied_pods[0] / total_pods[1] * 100, 2)
+        numbers = cls._get_numbers()
+        if numbers is None:
+            raise RecoverableException("Failed to get occupied pods percentage.")
+        return round(numbers[0] / numbers[1] * 100, 2)
     
     @classmethod
     def _is_tooltip_visible(cls):

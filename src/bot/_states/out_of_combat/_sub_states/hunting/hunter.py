@@ -74,16 +74,11 @@ class Hunter:
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
-        # ToDo: update this. Perhaps checking if percentage is not None
-        # will not be needed if get_occupied_percentage() raises an exception
-        # and gets resolved in recovery.
         Interfaces.INVENTORY.open()
         percentage = PodsReader.INVENTORY.get_occupied_percentage()
-        if percentage is not None:
-            log.info(f"Inventory is {percentage}% full.")
-            Interfaces.INVENTORY.close()
-            return percentage
-        raise RecoverableException("Failed to get inventory pods percentage.")
+        log.info(f"Inventory is {percentage}% full.")
+        Interfaces.INVENTORY.close()
+        return percentage
 
     def _handle_traversable_map(self, map_coords):
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])

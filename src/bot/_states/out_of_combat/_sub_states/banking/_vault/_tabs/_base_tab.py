@@ -97,22 +97,15 @@ class BaseTab(ABC):
         pyag.keyUp("ctrl")
 
     def _deposit_slot_by_slot(self):
-        # ToDo: remove None checks when PodsReader is refactored with exceptions.
         pods_before_deposit = PodsReader.BANK.get_occupied_pods()
-        if pods_before_deposit is None:
-            raise RecoverableException("Failed to get occupied bank pods.")
-        
         slot_coords = self.INVENTORY_SLOT_COORDS["row_1"][0]
         deposited_items_count = 0
         while True:
             if self._is_slot_empty(*slot_coords):
-                pods_after_deposit = PodsReader.BANK.get_occupied_pods()
-                if pods_after_deposit is None:
-                    raise RecoverableException("Failed to get occupied bank pods.")
                 log.info(
                     f"Successfully deposited all items in the tab! "
                     f"Total items deposited: {deposited_items_count}. "
-                    f"Pods freed: {pods_before_deposit - pods_after_deposit}."
+                    f"Pods freed: {pods_before_deposit - PodsReader.BANK.get_occupied_pods()}."
                 )
                 return
             
@@ -143,19 +136,10 @@ class BaseTab(ABC):
                     return
             is_first_iteration = False
 
-            # ToDo: remove None checks when PodsReader is refactored with exceptions.
             log.info(f"Depositing {occupied_slots_amount} items ...")
             pods_before_deposit = PodsReader.BANK.get_occupied_pods()
-            if pods_before_deposit is None:
-                raise RecoverableException("Failed to get occupied bank pods.")
-            
             self._deposit_visible_items(occupied_slots_amount)
-
             pods_after_deposit = PodsReader.BANK.get_occupied_pods()
-            if pods_after_deposit is None:
-                log.error("Failed to get occupied bank pods.")
-                raise RecoverableException("Failed to get occupied bank pods.")
-
             if pods_after_deposit < pods_before_deposit:
                 log.info(
                     f"Successfully deposited {occupied_slots_amount} items! "
