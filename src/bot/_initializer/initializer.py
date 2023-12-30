@@ -4,7 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 import os
 
 import pygetwindow as gw
-import win32gui, win32con
+import ctypes
 
 from ._disturbance_checker import DisturbanceChecker
 from screen_capture import ScreenCapture
@@ -48,11 +48,11 @@ class Initializer:
         if bool(gw.getWindowsWithTitle(self._character_name)):
             for w in gw.getWindowsWithTitle(self._character_name):
                 if any(suffix in w.title for suffix in self.WINDOW_SUFFIXES):
-                    win32gui.SetWindowPos( # Set window always on top.
+                    ctypes.windll.user32.SetWindowPos( # Set window to topmost/always on top.
                         w._hWnd, 
-                        win32con.HWND_TOPMOST, 
+                        ctypes.wintypes.HWND(-1), 
                         0, 0, 0, 0, 
-                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE
+                        0x0002 | 0x0001
                     )
                     w.restore()
                     w.activate()
