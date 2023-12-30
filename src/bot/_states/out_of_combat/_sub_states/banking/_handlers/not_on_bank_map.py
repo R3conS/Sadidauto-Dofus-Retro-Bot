@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import pyautogui as pyag
 
-from .._bank_data import Getter as BankData
+from ..bank_data import Getter as BankDataGetter
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._exceptions import RecoverableException
 
@@ -12,7 +12,7 @@ class Handler:
 
     def __init__(self, script: str):
         self._script = script
-        bank_data = BankData.get_data(self._script)
+        bank_data = BankDataGetter.get_data(self._script)
         self._bank_map = bank_data["bank_map"]
         self._zaap_map = bank_data["zaap_map"]
         self._no_recall_maps = bank_data["no_recall_maps"]

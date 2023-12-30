@@ -15,7 +15,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat._status_enum import Status
 from src.ocr.ocr import OCR
-from src.bot._states.out_of_combat._sub_states.banking._bank_data import Getter as BankData
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 from src.bot._exceptions import RecoverableException
 
 
@@ -28,7 +28,9 @@ class Vault:
     def __init__(self, script: str, game_window_title: str):
         self._script = script
         self._game_window_title = game_window_title
-        self._banker_npc_images_loaded =  self._load_npc_images(BankData.get_data(self._script)["npc_image_folder_path"])
+        self._banker_npc_images_loaded =  self._load_npc_images(
+            BankDataGetter.get_data(self._script)["npc_image_folder_path"]
+        )
 
     def open_vault(self):
         if self.is_vault_open():

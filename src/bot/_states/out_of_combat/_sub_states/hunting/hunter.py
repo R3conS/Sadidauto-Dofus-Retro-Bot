@@ -8,12 +8,13 @@ import cv2
 import pyautogui as pyag
 
 from image_detection import ImageDetection
-from ._map_data.getter import Getter as MapDataGetter
 from screen_capture import ScreenCapture
+from src.utilities import load_image
+from ._map_data.getter import Getter as MapDataGetter
+from ..banking.bank_data import Getter as BankDataGetterGetter
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
-from src.utilities import load_image
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._exceptions import RecoverableException
 
@@ -38,6 +39,11 @@ class Hunter:
         self._map_type_data = map_data.get_map_type_data()
         self._monster_image_data = self._load_monster_image_data()
         self._join_sword_detection_data = self._load_join_sword_detection_data()
+        # Bank data
+        bank_data = BankDataGetterGetter.get_data(script)
+        self._bank_map_coords = bank_data["bank_map"]
+        self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
+        self._bank_exit_coords = bank_data["exit_coords"]
 
     def hunt(self):
         while True:
@@ -53,6 +59,10 @@ class Hunter:
                         return Status.REACHED_PODS_LIMIT
 
                 map_coords = MapChanger.get_current_map_coords()
+                if map_coords == self._bank_map_coords:
+                    log.info("Character is inside the bank.")
+                    self._leave_bank()
+
                 map_type = self._map_type_data[map_coords]
                 if map_type == "traversable":
                     result = self._handle_traversable_map(map_coords)
@@ -249,6 +259,19 @@ class Hunter:
         # ToDo: If recovery fails multiple times then maybe emergency
         # recall teleport?
         raise RecoverableException("Failed to leave 'Lumberjack's Workshop'.")
+
+    def _leave_bank(self):
+        log.info("Attempting to leave the bank ... ")
+        pyag.keyDown('e')
+        pyag.moveTo(*self._bank_exit_coords)
+        pyag.click()
+        pyag.keyUp('e')
+        if MapChanger.has_loading_screen_passed():
+            if not self._is_char_inside_bank():
+                log.info("Successfully left the bank.")
+                return 
+            raise RecoverableException("Failed to leave the bank.")
+        raise RecoverableException("Failed to detect loading screen after trying to leave the bank.")
 
     @staticmethod
     def _change_map_back_to_original(original_map_coords):
