@@ -1,16 +1,18 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+import os
 from time import perf_counter
 
 import cv2
+import glob
 import pyautogui as pyag
 from PIL import Image
 
 from ._map_data.getter import Getter as MapDataGetter
 from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
-from src.utilities import move_mouse_off_game_area, load_image
+from src.utilities import move_mouse_off_game_area, load_image, load_image_full_path
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._combat_options.lock import Lock as FightLock
 from src.bot._states.in_combat._combat_options.tactical_mode import TacticalMode
@@ -21,10 +23,10 @@ class Preparer:
 
     IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\preparing\\_images"
     READY_BUTTON_AREA = (678, 507, 258, 91)
-    READY_BUTTON_LIT_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_lit.png")
-    READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_LIT_IMAGE)
-    READY_BUTTON_DIM_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_dim.png")
-    READY_BUTTON_DIM_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_DIM_IMAGE)
+    READY_BUTTON_IMAGES = [
+        load_image_full_path(path) 
+        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "ready_button\\*.png"))
+    ]
     AP_COUNTER_AREA = (452, 598, 41, 48)
     AP_COUNTER_IMAGE = load_image(IMAGE_FOLDER_PATH, "ap_counter_image.png")
     AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(AP_COUNTER_IMAGE)
@@ -253,34 +255,24 @@ class Preparer:
 
     @classmethod
     def _is_ready_button_visible(cls):
-        is_lit_visible = len(
-            ImageDetection.find_image(
+        if len(
+            ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
-                needle=cls.READY_BUTTON_LIT_IMAGE,
-                confidence=0.99,
-                method=cv2.TM_CCORR_NORMED,
-                mask=cls.READY_BUTTON_LIT_IMAGE_MASK
+                needles=cls.READY_BUTTON_IMAGES,
+                confidence=0.98,
+                method=cv2.TM_SQDIFF_NORMED
             )
-        ) > 0
-        is_dim_visible = len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
-                needle=cls.READY_BUTTON_DIM_IMAGE,
-                confidence=0.99,
-                method=cv2.TM_CCORR_NORMED,
-                mask=cls.READY_BUTTON_DIM_IMAGE_MASK
-            )
-        ) > 0
-        return is_lit_visible or is_dim_visible
+        ) > 0:
+            return True
+        return False
 
     @classmethod
     def _get_ready_button_pos(cls):
         rectangles = ImageDetection.find_images(
             haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
-            needles=[cls.READY_BUTTON_LIT_IMAGE, cls.READY_BUTTON_DIM_IMAGE],
+            needles=cls.READY_BUTTON_IMAGES,
             confidence=0.99,
-            method=cv2.TM_SQDIFF,
-            masks=[cls.READY_BUTTON_LIT_IMAGE_MASK, cls.READY_BUTTON_DIM_IMAGE_MASK]
+            method=cv2.TM_SQDIFF
         )
         if len(rectangles) > 0:
             return ImageDetection.get_rectangle_center_point((

@@ -1,6 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+import glob
 from time import perf_counter, sleep
 import os
 
@@ -9,7 +10,7 @@ import pyautogui as pyag
 
 from image_detection import ImageDetection
 from screen_capture import ScreenCapture
-from src.utilities import load_image
+from src.utilities import load_image_full_path, move_mouse_off_game_area
 from ._map_data.getter import Getter as MapDataGetter
 from ..banking.bank_data import Getter as BankDataGetterGetter
 from src.bot._interfaces.interfaces import Interfaces
@@ -23,24 +24,34 @@ class Hunter:
 
     IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images"
     READY_BUTTON_AREA = (678, 507, 258, 91)
-    READY_BUTTON_LIT_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_lit.png")
-    READY_BUTTON_LIT_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_LIT_IMAGE)
-    READY_BUTTON_DIM_IMAGE = load_image(IMAGE_FOLDER_PATH, "ready_button_dim.png")
-    READY_BUTTON_DIM_IMAGE_MASK = ImageDetection.create_mask(READY_BUTTON_DIM_IMAGE)
+    READY_BUTTON_IMAGES = [
+        load_image_full_path(path) 
+        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "ready_button\\*.png"))
+    ]
+    JOIN_SWORD_IMAGES = [
+        load_image_full_path(path) 
+        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "join_sword\\*.png"))
+    ]
+    JOIN_SWORD_IMAGE_MASKS = ImageDetection.create_masks(JOIN_SWORD_IMAGES)
 
     def __init__(self, script: str, game_window_title: str):
+        self._script = script
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
         self._pods_percentage_limit = 90
         # Map data
-        map_data = MapDataGetter.get_data_object(script)
+        map_data = MapDataGetter.get_data_object(self._script)
         self._pathing_data = map_data.get_pathing_data()
         self._map_type_data = map_data.get_map_type_data()
-        self._monster_image_data = self._load_monster_image_data()
-        self._join_sword_detection_data = self._load_join_sword_detection_data()
+        # Monster data
+        monster_images = self._load_monster_images()
+        monster_image_masks = ImageDetection.create_masks(monster_images)
+        segment_size = 4
+        self._segmented_monster_images = self._segment_data(monster_images, segment_size)
+        self._segmented_monster_image_masks = self._segment_data(monster_image_masks, segment_size)
         # Bank data
-        bank_data = BankDataGetterGetter.get_data(script)
+        bank_data = BankDataGetterGetter.get_data(self._script)
         self._bank_map_coords = bank_data["bank_map"]
         self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
         self._bank_exit_coords = bank_data["exit_coords"]
@@ -96,8 +107,9 @@ class Hunter:
     
     def _handle_fightable_map(self, map_coords):
         log.info(f"Hunting on map: {map_coords} ... ")
-        for segment_index in range(len(self._monster_image_data[0])):
-            matches = self._search_segment(segment_index, ScreenCapture.game_window())
+        haystack_image = ScreenCapture.game_window()
+        for image_segment, mask_segment in zip(self._segmented_monster_images, self._segmented_monster_image_masks):
+            matches = self._search_segment(image_segment, mask_segment, haystack_image)
             if len(matches) > 0:
                 monster_x, monster_y = matches[0][0], matches[0][1]
                 log.info(f"Found monster at {monster_x, monster_y}.")
@@ -119,6 +131,11 @@ class Hunter:
                     self._consecutive_fights_counter += 1
                     return Status.SUCCESSFULLY_ATTACKED_MONSTER
                 else:
+                    # Clicking off the game area after a failed attack to
+                    # close any unwanted tooltips like 'Cut' a tree or another
+                    # character's option menu.
+                    move_mouse_off_game_area()
+                    pyag.click()
                     if map_coords != MapChanger.get_current_map_coords():
                         log.error("Map was accidentally changed during the attack.")
                         self._change_map_back_to_original(map_coords)
@@ -134,58 +151,26 @@ class Hunter:
             return Status.MAP_FULLY_SEARCHED
         raise RecoverableException("Failed to change map.")
 
-    def _load_monster_image_data(self):
-        image_folder_path = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\monster_images"
-        image_names = [
-            "Boar_BL_1.png", "Boar_BR_1.png", "Boar_TL_1.png", "Boar_TR_1.png",
-            "Pres_BL_1.png", "Pres_BR_1.png", "Pres_TL_1.png", "Pres_TR_1.png",
-            "Pres_BL_2.png", "Pres_BR_2.png",
-            "Mosk_BL_1.png", "Mosk_BR_1.png", "Mosk_TL_1.png", "Mosk_TR_1.png",
-            "Mosk_BR_2.png", "Mosk_BL_2.png",
-            "Mush_BL_1.png", "Mush_BR_1.png", "Mush_TL_1.png", "Mush_TR_1.png",
-            "Mush_BL_2.png", "Mush_BR_2.png", "Mush_TL_2.png", "Mush_TR_2.png",
-            "Wolf_BL_1.png", "Wolf_BR_1.png", "Wolf_TL_1.png", "Wolf_TR_1.png",
-        ]
-        loaded_images = []
-        for name in image_names:
-            path = os.path.join(image_folder_path, name)
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"Image path '{path}' does not exist.")
-            loaded_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
-        return (
-            self._segment_data(loaded_images, 4),
-            self._segment_data(ImageDetection.create_masks(loaded_images), 4)
-        )
+    def _load_monster_images(self):
+        if "af_" in self._script:
+            folder_path =  os.path.join(self.IMAGE_FOLDER_PATH, "monster\\astrub_forest")
+        return [load_image_full_path(path) for path in glob.glob(os.path.join(folder_path, "*.png"))]
 
-    def _load_join_sword_detection_data(self):
-        paths = [
-            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_1.png",
-            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_2.png",
-            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_ally_3.png",
-            "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\j_sword_enemy.png",
-        ]
-        read_images = []
-        for path in paths:
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"Image path '{path}' does not exist.")
-            read_images.append(cv2.imread(path, cv2.IMREAD_UNCHANGED))
-        return read_images, ImageDetection.create_masks(read_images)
-
-    def _segment_data(self, data: list, segment_size) -> list[list]:
+    @staticmethod
+    def _segment_data(data: list, segment_size) -> list[list]:
         segments = []
         for i in range(0, len(data), segment_size):
             segments.append(data[i:i + segment_size])
         return segments
 
-    def _search_segment(self, segment_index, haystack_image) -> list[tuple[int, int]]:
-        images_segment = self._monster_image_data[0][segment_index]
-        masks_segment = self._monster_image_data[1][segment_index]
+    @staticmethod
+    def _search_segment(image_segment, mask_segment, haystack_image) -> list[tuple[int, int]]:
         matches = ImageDetection.find_images(
             haystack=haystack_image,
-            needles=images_segment,
+            needles=image_segment,
             confidence=0.9837,
             method=cv2.TM_CCORR_NORMED,
-            masks=masks_segment,
+            masks=mask_segment,
             remove_alpha_channels=True
         )
         click_coords = []
@@ -211,10 +196,9 @@ class Hunter:
             if len(
                 ImageDetection.find_images(
                     haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
-                    needles=[cls.READY_BUTTON_LIT_IMAGE, cls.READY_BUTTON_DIM_IMAGE],
-                    confidence=0.99,
-                    method=cv2.TM_CCORR_NORMED,
-                    masks=[cls.READY_BUTTON_LIT_IMAGE_MASK, cls.READY_BUTTON_DIM_IMAGE_MASK],
+                    needles=cls.READY_BUTTON_IMAGES,
+                    confidence=0.98,
+                    method=cv2.TM_SQDIFF_NORMED
                 )
             ) > 0:
                 log.info("Attack successful.")
@@ -222,19 +206,18 @@ class Hunter:
         log.error("Attack failed.")
         return False  
 
-    def _is_join_sword_on_pos(self, x, y):
-        haystack = ScreenCapture.around_pos((x, y), 65)
-        for i, image in enumerate(self._join_sword_detection_data[0]):
-            result = ImageDetection.find_image(
-                haystack,
-                image,
+    @classmethod
+    def _is_join_sword_on_pos(cls, x, y):
+        if len(
+            ImageDetection.find_images(
+                haystack=ScreenCapture.around_pos((x, y), 65),
+                needles=cls.JOIN_SWORD_IMAGES,
                 confidence=0.98,
                 method=cv2.TM_CCORR_NORMED,
-                mask=self._join_sword_detection_data[1][i],
-                remove_alpha_channels=True
+                masks=cls.JOIN_SWORD_IMAGE_MASKS
             )
-            if len(result) > 0:
-                return True
+        ) > 0:
+            return True
         return False
 
     @staticmethod
