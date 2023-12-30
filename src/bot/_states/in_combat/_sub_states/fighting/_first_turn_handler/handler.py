@@ -4,8 +4,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 from ._character_mover import Mover as CharacterMover
 from ._spell_caster import Caster as SpellCaster
 from .._character_finder import Finder as CharacterFinder
-from src.bot._states.in_combat._combat_options.models import Models
-from src.bot._states.in_combat._combat_options.turn_bar import TurnBar
+from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 
 
@@ -15,13 +14,13 @@ class Handler:
     def handle(cls, script: str, character_name: str):
         log.info("Handling first turn actions ...")
         
-        if not TurnBar.is_shrunk():
+        if not CombatOptions.TURN_BAR.is_shrunk():
             log.info("Shrinking turn bar.")
-            result = TurnBar.shrink()
+            result = CombatOptions.TURN_BAR.shrink()
             if result == Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR:
                 return Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS
 
-        if Models.is_toggle_icon_visible(): # It's invisible after a reconnect.
+        if CombatOptions.MODELS.is_toggle_icon_visible(): # It's invisible after a reconnect.
             log.info("Models toggle icon is visible.")
             result = cls._handle_models_toggle_icon_visible(script, character_name)
             if (
@@ -43,8 +42,8 @@ class Handler:
 
     @classmethod
     def _handle_models_toggle_icon_visible(cls, script: str, character_name: str):
-        if not Models.are_disabled():
-            result = Models.disable()
+        if not CombatOptions.MODELS.is_on():
+            result = CombatOptions.MODELS.turn_on()
             if (
                 result == Status.FAILED_TO_GET_MODELS_TOGGLE_ICON_POS
                 or result == Status.TIMED_OUT_WHILE_DISABLING_MODELS

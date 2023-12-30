@@ -12,7 +12,7 @@ from src.ocr.ocr import OCR
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image, move_mouse_off_game_area
-from src.bot._states.in_combat._combat_options.turn_bar import TurnBar
+from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 
 
@@ -55,8 +55,8 @@ class Finder:
         """Find the character's card on the turn bar."""
         log.info("Detecting character position by turn bar.")
 
-        if TurnBar.is_shrunk():
-            if TurnBar.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
+        if CombatOptions.TURN_BAR.is_shrunk():
+            if CombatOptions.TURN_BAR.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
                 return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
 
         red_health_pixels = cls._find_pixels(cls._screenshot_turn_bar_area(), (255, 0, 0))

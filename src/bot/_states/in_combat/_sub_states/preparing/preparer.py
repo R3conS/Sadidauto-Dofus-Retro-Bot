@@ -14,8 +14,7 @@ from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 from src.utilities import move_mouse_off_game_area, load_image, load_image_full_path
 from src.bot._map_changer.map_changer import MapChanger
-from src.bot._states.in_combat._combat_options.lock import Lock as FightLock
-from src.bot._states.in_combat._combat_options.tactical_mode import TacticalMode
+from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 
 
@@ -83,19 +82,19 @@ class Preparer:
 
     @staticmethod
     def _handle_fight_lock():
-        if FightLock.is_on():
+        if CombatOptions.FIGHT_LOCK.is_on():
             log.info("Fight lock is on.")
             return Status.FIGHT_LOCK_IS_ALREADY_ON
         log.info("Fight lock is off.")
-        return FightLock.turn_on()
+        return CombatOptions.FIGHT_LOCK.turn_on()
 
     @staticmethod
     def _handle_tactical_mode():
-        if TacticalMode.is_on():
+        if CombatOptions.TACTICAL_MODE.is_on():
             log.info("Tactical mode is on.")
             return Status.TACTICAL_MODE_IS_ALREADY_ON
         log.info("Tactical mode is off.")
-        return TacticalMode.turn_on()
+        return CombatOptions.TACTICAL_MODE.turn_on()
 
     def _handle_dummy_cells(self, map_coords: str):
         log.info(f"Checking for dummy cells on map: {map_coords} ... ")

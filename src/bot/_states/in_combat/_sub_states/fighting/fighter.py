@@ -12,7 +12,7 @@ from ._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.bot._states.in_combat._combat_options.tactical_mode import TacticalMode
+from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 
 
@@ -44,7 +44,7 @@ class Fighter:
                 return Status.FAILED_TO_FINISH_FIGHTING
 
             if not is_tactical_mode_enabled:
-                result = TacticalMode.turn_on()
+                result = CombatOptions.TACTICAL_MODE.turn_on()
                 if (
                     result == Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR
                     or result == Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS

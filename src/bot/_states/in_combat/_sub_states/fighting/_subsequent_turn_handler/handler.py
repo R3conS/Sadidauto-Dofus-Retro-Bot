@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from .._spells.spells import Spells
 from ._spell_caster import Caster as SpellCaster
-from src.bot._states.in_combat._combat_options.turn_bar import TurnBar
+from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 
 
@@ -16,8 +16,8 @@ class Handler:
         if not cls._is_any_spell_available():
             return Status.NO_SPELLS_AVAILABLE
         
-        if TurnBar.is_shrunk():
-            result = TurnBar.unshrink()
+        if CombatOptions.TURN_BAR.is_shrunk():
+            result = CombatOptions.TURN_BAR.unshrink()
             if result == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
                 return Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS
             
