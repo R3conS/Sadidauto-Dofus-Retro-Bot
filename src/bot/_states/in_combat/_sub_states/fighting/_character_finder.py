@@ -13,7 +13,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image, move_mouse_off_game_area
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
-from src.bot._states.in_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException
 
 
 class Finder:
@@ -30,17 +30,17 @@ class Finder:
     @classmethod
     def find_by_circles(cls, character_name: str) -> tuple[int, int]:
         """Find character position on the map by red model circles."""
-        log.info("Detecting character position by model circles.")
+        log.info("Detecting character position by model circles ...")
 
         red_circle_locations = cls.get_red_circle_locations()
         if len(red_circle_locations) == 0:
-            raise Exception("Failed to detect circles.")
+            raise RecoverableException("Failed to detect circles.")
         
         for location in red_circle_locations:
             pyag.moveTo(location[0], location[1])
-            cls.wait_for_info_card_to_appear()
-            if not cls.is_info_card_visible():
-                log.error("Timed out while waiting for info card to appear during detection by circles.")
+            try:
+                cls.wait_for_info_card_to_appear()
+            except TimedOutWhileWaitingForInfoCard:
                 continue
             name_area = cls.screenshot_name_area_on_info_card()
             if cls.read_name_area_screenshot(name_area) == character_name:
@@ -48,7 +48,7 @@ class Finder:
                 move_mouse_off_game_area()
                 return location
             
-        raise Exception("Failed to find character by circles.")
+        raise RecoverableException("Failed to detect character position by circles.")
 
     @classmethod
     def find_by_turn_bar(cls, character_name: str) -> tuple[int, int]:
@@ -56,8 +56,7 @@ class Finder:
         log.info("Detecting character position by turn bar.")
 
         if CombatOptions.TURN_BAR.is_shrunk():
-            if CombatOptions.TURN_BAR.unshrink() == Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR:
-                return Status.TIMED_OUT_WHILE_UNSHRINKING_TURN_BAR
+            CombatOptions.TURN_BAR.unshrink()
 
         red_health_pixels = cls._find_pixels(cls._screenshot_turn_bar_area(), (255, 0, 0))
         middle_pixel = cls._find_most_middle_pixel(red_health_pixels)
@@ -70,11 +69,12 @@ class Finder:
             # the game area.
             x, y = middle_pixel[0] - 15, middle_pixel[1]
             pyag.moveTo(x, y)
-            cls.wait_for_info_card_to_appear()
-            if not cls.is_info_card_visible():
-                log.error("Timed out while waiting for info card to appear during detection by turn bar.")
+
+            try:
+                cls.wait_for_info_card_to_appear()
+            except TimedOutWhileWaitingForInfoCard:
                 move_mouse_off_game_area()
-                return Status.TIMED_OUT_WHILE_WAITING_FOR_INFO_CARD_TO_APPEAR
+                return
 
             name_area = cls.screenshot_name_area_on_info_card()
             name = cls.read_name_area_screenshot(name_area)
@@ -83,7 +83,7 @@ class Finder:
                 move_mouse_off_game_area()
                 return x, y
         
-        return Status.FAILED_TO_GET_CHARACTER_POS_BY_TURN_BAR
+        raise RecoverableException("Failed to detect character position by turn bar.")
 
     @classmethod
     def get_red_circle_locations(cls) -> list[tuple[int, int]]:
@@ -152,11 +152,14 @@ class Finder:
 
     @classmethod
     def wait_for_info_card_to_appear(cls):
+        timeout = 1.5
         start_time = perf_counter()
-        while perf_counter() - start_time <= 1.5:
+        while perf_counter() - start_time <= timeout:
             if cls.is_info_card_visible():
-                return True
-        return False
+                return
+        raise TimedOutWhileWaitingForInfoCard(
+            f"Timed out while waiting for info card to appear: {timeout} seconds."
+        )
 
     @classmethod
     def _find_pixels(cls, image: np.ndarray | Image.Image, rgb_color):
@@ -184,3 +187,11 @@ class Finder:
         distances = np.sqrt(np.sum((pixel_cluster - center)**2, axis=1))
         closest_index = np.argmin(distances)
         return pixel_cluster[closest_index]
+
+
+class TimedOutWhileWaitingForInfoCard(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
