@@ -12,6 +12,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image, move_mouse_off_game_area
 from src.bot._states.in_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException
 
 
 class TurnDetector:
@@ -29,14 +30,15 @@ class TurnDetector:
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
         log.info("Waiting for character's turn ...")
+        timeout = 120
         start_time = perf_counter()
-        while perf_counter() - start_time <= 120:
+        while perf_counter() - start_time <= timeout:
             if (
                 cls._is_character_turn_illustration_visible(character_name)
                 or cls._is_turn_timer_filling_up()
             ):
                 log.info("Successfully detected character's turn.")
-                return Status.SUCCESSFULLY_DETECTED_TURN
+                return
 
             if not cls.is_ap_counter_visible():
                 if cls._is_close_button_visible():
@@ -44,30 +46,28 @@ class TurnDetector:
                     return Status.FIGHT_RESULTS_WINDOW_DETECTED
                 # If code reaches this point it most likely means that the
                 # account got disconnected.
-                log.error("Failed to detect AP counter while trying to detect character's turn.")
-                return Status.FAILED_TO_DETECT_AP_COUNTER
+                raise RecoverableException("Failed to detect AP counter while trying to detect character's turn.")
             
-        else:
-            log.error("Timed out while trying to detect character's turn.")
-            return Status.TIMED_OUT_WHILE_DETECTING_TURN
+        raise RecoverableException(f"Failed to detect character's turn. Timed out: {timeout} seconds.")
 
     @classmethod
     def pass_turn(cls, character_name: str):
+        log.info("Passing turn ...")
         pyag.moveTo(618, 726)
         pyag.click()
         move_mouse_off_game_area()
 
+        timeout = 5
         start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
+        while perf_counter() - start_time <= timeout:
             if (
                 not cls._is_character_turn_illustration_visible(character_name)
                 and not cls._is_turn_timer_filling_up()
             ):
                 log.info("Successfully passed turn.")
-                return Status.SUCCESSFULLY_PASSED_TURN
-        else:
-            log.error("Timed out while detecting if turn was passed.")
-            return Status.FAILED_TO_PASS_TURN
+                return
+            
+        raise RecoverableException(f"Failed to detect if turn was passed.. Timed out: {timeout} seconds.")
 
     @classmethod
     def is_first_turn(cls):
