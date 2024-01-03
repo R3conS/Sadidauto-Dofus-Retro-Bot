@@ -3,6 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from .._spells.spells import Spells
 from src.bot._states.in_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException
 
 
 class Caster:
@@ -14,19 +15,19 @@ class Caster:
             if Spells.EARTHQUAKE.is_available():
                 result = Spells.EARTHQUAKE.cast(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
-                    return Status.FAILED_TO_CAST_SPELL
+                    raise RecoverableException("First turn spell casting failed.")
             elif Spells.POISONED_WIND.is_available():
                 result = Spells.POISONED_WIND.cast(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
-                    return Status.FAILED_TO_CAST_SPELL
+                    raise RecoverableException("First turn spell casting failed.")
             elif Spells.SYLVAN_POWER.is_available():
                 result = Spells.SYLVAN_POWER.cast(cast_coords[0], cast_coords[1])
                 if result != Status.SUCCESSFULLY_CAST_SPELL:
-                    return Status.FAILED_TO_CAST_SPELL
+                    raise RecoverableException("First turn spell casting failed.")
             if (
                 not Spells.EARTHQUAKE.is_available()
                 and not Spells.POISONED_WIND.is_available()
                 and not Spells.SYLVAN_POWER.is_available()
             ):
                 log.info("Finished casting spells.")
-                return Status.SUCCESSFULLY_FINISHED_FIRST_TURN_SPELL_CASTING
+                break

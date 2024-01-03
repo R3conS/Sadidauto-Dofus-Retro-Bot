@@ -24,6 +24,8 @@ class BaseOption:
         self._off_icon_image_masks = ImageDetection.create_masks(self._off_icon_images)
 
     def _turn_on(self, is_on: callable, get_icon_pos: callable, shrink_turn_bar: bool):
+        log.info(f"Turning on '{self._name}' option ...")
+        
         if shrink_turn_bar:
             if not TurnBar.is_shrunk():
                 TurnBar.shrink()

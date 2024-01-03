@@ -24,6 +24,7 @@ class TurnBar:
 
     @classmethod
     def shrink(cls):
+        log.info("Shrinking turn bar ...")
         pyag.moveTo(924, 567)
         pyag.click()
 

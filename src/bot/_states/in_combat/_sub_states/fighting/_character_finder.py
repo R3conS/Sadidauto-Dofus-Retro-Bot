@@ -53,7 +53,7 @@ class Finder:
     @classmethod
     def find_by_turn_bar(cls, character_name: str) -> tuple[int, int]:
         """Find the character's card on the turn bar."""
-        log.info("Detecting character position by turn bar.")
+        log.info("Detecting character position by turn bar ... ")
 
         if CombatOptions.TURN_BAR.is_shrunk():
             CombatOptions.TURN_BAR.unshrink()
@@ -74,12 +74,15 @@ class Finder:
                 cls.wait_for_info_card_to_appear()
             except TimedOutWhileWaitingForInfoCard:
                 move_mouse_off_game_area()
-                return
+                raise RecoverableException(
+                    "Failed to detect character position by turn bar because "
+                    "the info card did not appear."
+                )
 
             name_area = cls.screenshot_name_area_on_info_card()
             name = cls.read_name_area_screenshot(name_area)
             if name == character_name:
-                log.info(f"Found character at: {x, y}")
+                log.info(f"Found character at: {x, y}.")
                 move_mouse_off_game_area()
                 return x, y
         

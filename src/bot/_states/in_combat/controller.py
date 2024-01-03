@@ -27,15 +27,9 @@ class Controller:
         sub_state = self._determine_sub_state()
         while True:
             if sub_state == _SubState.PREPARING:
-                status = self._preparer.prepare()
-                if status == Status.SUCCESSFULLY_FINISHED_PREPARING:
-                    sub_state = _SubState.FIGHTING
-                    continue
-                elif status == Status.FAILED_TO_FINISH_PREPARING:
-                    log.error(f"Failed to finish preparing. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotState.RECOVERY)
-                    return
-                
+                self._preparer.prepare()
+                sub_state = _SubState.FIGHTING
+
             elif sub_state == _SubState.FIGHTING:
                 result = self._fighter.fight()
                 if result == Status.SUCCESSFULLY_FINISHED_FIGHTING:
@@ -43,16 +37,8 @@ class Controller:
                     log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
                     self._set_main_bot_state_callback(MainBotState.OUT_OF_COMBAT)
                     return
-                elif result == Status.FAILED_TO_FINISH_FIGHTING:
-                    log.error(f"Failed to finish fighting. Attempting to recover ...")
-                    self._set_main_bot_state_callback(MainBotState.RECOVERY)
-                    return
 
-            elif sub_state == _SubState.RECOVERY:
-                log.error("'In Combat' controller failed to determine its sub state. Attempting to recover ...")
-                self._set_main_bot_state_callback(MainBotState.RECOVERY)
-                return
-
+    # ToDo: Check only for the AP image.
     def _determine_sub_state(self):
         ap_icon_rectangle = ImageDetection.find_image(
             haystack=ScreenCapture.custom_area((452, 598, 41, 48)),

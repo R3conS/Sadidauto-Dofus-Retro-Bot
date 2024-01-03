@@ -1,6 +1,7 @@
 from logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
+import os
 from time import perf_counter
 
 import cv2
@@ -14,6 +15,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
+from src.bot._exceptions import RecoverableException
 
 
 class Fighter:
@@ -31,59 +33,49 @@ class Fighter:
     def fight(self):
         is_tactical_mode_enabled = False
         while True:
-            result = TurnDetector.detect_start_of_turn(self._character_name)
-            if result == Status.FIGHT_RESULTS_WINDOW_DETECTED:
-                result = self._close_fight_results_window()
-                if result == Status.FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW:
-                    return Status.FAILED_TO_FINISH_FIGHTING
-                return Status.SUCCESSFULLY_FINISHED_FIGHTING
-            elif (
-                result == Status.FAILED_TO_DETECT_AP_COUNTER
-                or result == Status.TIMED_OUT_WHILE_DETECTING_TURN
-            ):
-                return Status.FAILED_TO_FINISH_FIGHTING
+            try:
+                result = TurnDetector.detect_start_of_turn(self._character_name)
+                if result == Status.FIGHT_RESULTS_WINDOW_DETECTED:
+                    self._close_fight_results_window()
+                    return
 
-            if not is_tactical_mode_enabled:
-                result = CombatOptions.TACTICAL_MODE.turn_on()
-                if (
-                    result == Status.TIMED_OUT_WHILE_SHRINKING_TURN_BAR
-                    or result == Status.FAILED_TO_GET_TACTICAL_MODE_TOGGLE_ICON_POS
-                    or result == Status.TIMED_OUT_WHILE_TURNING_ON_TACTICAL_MODE
-                ):
-                    return Status.FAILED_TO_FINISH_FIGHTING
-                else:
+                if not is_tactical_mode_enabled:
+                    CombatOptions.TACTICAL_MODE.turn_on()
                     is_tactical_mode_enabled = True
 
-            if TurnDetector.is_first_turn():
-                result = FirstTurnHandler.handle(self._script, self._character_name)
-                if result == Status.FAILED_TO_HANDLE_FIRST_TURN_ACTIONS:
+                if TurnDetector.is_first_turn():
+                    FirstTurnHandler.handle(self._script, self._character_name)
+                else:
+                    result = SubsequentTurnHandler.handle(self._character_name)
+                    if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
+                        return Status.FAILED_TO_FINISH_FIGHTING
+                        
+                result = TurnDetector.pass_turn(self._character_name)
+                if result == Status.FAILED_TO_PASS_TURN:
                     return Status.FAILED_TO_FINISH_FIGHTING
-            else:
-                result = SubsequentTurnHandler.handle(self._character_name)
-                if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
-                    return Status.FAILED_TO_FINISH_FIGHTING
-                    
-            result = TurnDetector.pass_turn(self._character_name)
-            if result == Status.FAILED_TO_PASS_TURN:
-                return Status.FAILED_TO_FINISH_FIGHTING
+                
+            except RecoverableException:
+                # ToDo: implement recovery code here.
+                log.error("Recoverable exception occurred while fighting. Exiting ...")
+                os._exit(1)
 
     @classmethod
     def _close_fight_results_window(cls):
+        log.info("Closing 'Fight Results' window ...")
         close_button_pos = cls._get_close_button_pos()
         if close_button_pos is None:
-            log.error("Failed to close 'Fight Results' screen because the close button's position was not found.")
-            return Status.FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW
+            raise RecoverableException("Close button's position was not found.")
         pyag.moveTo(*close_button_pos)
         pyag.click()
 
+        timeout = 5
         start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
+        while perf_counter() - start_time <= timeout:
             if not cls._is_close_button_visible():
                 log.info("Successfully closed 'Fight Results' window.")
                 return Status.SUCCESSFULLY_CLOSED_FIGHT_RESULTS_WINDOW
-        else:
-            log.error("Timed out while waiting for 'Fight Results' window to close.")
-            return Status.FAILED_TO_CLOSE_FIGHT_RESULTS_WINDOW
+            
+        raise RecoverableException(f"Failed to detect if 'Fight Results' window was closed. Timed out: {timeout} seconds.")
 
     @classmethod
     def _get_close_button_pos(cls):

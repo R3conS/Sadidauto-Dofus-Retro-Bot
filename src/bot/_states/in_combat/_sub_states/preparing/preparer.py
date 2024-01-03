@@ -57,7 +57,7 @@ class Preparer:
                     self._select_starting_cell(map_coords)
                 
                 self._start_combat()
-            
+                break
             except RecoverableException:
                 # ToDo: Call recovery code and try again until 3-4 times.
                 log.error("Recoverable exception occurred while banking. Exiting ...")

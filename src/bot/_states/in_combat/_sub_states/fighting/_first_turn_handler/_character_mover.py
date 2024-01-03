@@ -12,7 +12,6 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot._map_changer.map_changer import MapChanger
 from .._map_data.getter import Getter as FightingDataGetter
-from src.bot._states.in_combat._status_enum import Status
 
 
 class Mover:
@@ -29,51 +28,68 @@ class Mover:
         self._movement_data = FightingDataGetter.get_data_object(script).get_movement_data()
 
     def move(self):
-        if not self._is_valid_starting_position():
-            log.error(f"Character did not start first turn on a valid starting cell.")
-            return Status.CHARACTER_DID_NOT_START_FIRST_TURN_ON_VALID_CELL
-
         if self._is_char_already_on_destination_cell():
             log.info(f"Character is already on the correct cell.")
+            # ToDo: remove this after you handle moving mouse off game area
+            # in the Spells logic itself. Like detecting if spell is available
+            # or before casting it.
             move_mouse_off_game_area() # To make sure that info card is not blocking spell bar.
-            return Status.CHARACTER_IS_ALREADY_ON_CORRECT_CELL
+            return
         
-        destination_coords = self._get_destination_cell_coords()
-        log.info(f"Attempting to move character to: {destination_coords} ... ")
-        pyag.moveTo(destination_coords[0], destination_coords[1])
-        if self._is_cell_highlighted(destination_coords):
+        try:
+            if not self._is_valid_starting_position():
+                raise _CharacterDidNotStartTurnOnValidCell("Character did not start first turn on a valid starting cell.")
+
+            destination_coords = self._get_destination_cell_coords()
+            log.info(f"Attempting to move character to: {destination_coords} ... ")
+            pyag.moveTo(destination_coords[0], destination_coords[1])
+            self._wait_cell_highlighted(destination_coords)
             mp_area_before_moving = ScreenCapture.custom_area(self.MP_AREA)
             pyag.click()
-            start_time = perf_counter()
-            while perf_counter() - start_time <= 5:
-                mp_area_after = ScreenCapture.custom_area(self.MP_AREA)
-                rectangle = ImageDetection.find_image(
-                    haystack=mp_area_after,
-                    needle=mp_area_before_moving,
-                    confidence=0.98,
-                    method=cv2.TM_CCOEFF_NORMED,
-                )
-                if len(rectangle) <= 0: # If images are different then moving animation has finished.
-                    log.info(f"Successfully moved character to: {destination_coords}.")
-                    move_mouse_off_game_area() # To make sure that character is not hovered over.
-                    return Status.SUCCESSFULLY_MOVED_CHARACTER
-            log.error(f"Timed out while detecting if character moved to: {destination_coords}.")
-            return Status.TIMED_OUT_WHILE_DETECTING_IF_CHARACTER_MOVED
-        log.error(f"Failed to detect if destination cell {destination_coords} is highlighted.")
-        return Status.FAILED_TO_DETECT_IF_DESTINATION_CELL_IS_HIGHIGHTED
+            self._wait_char_moved(destination_coords, mp_area_before_moving)
+        except (
+            _CharacterDidNotStartTurnOnValidCell,
+            _FailedToDetectIfCellIsHighlighted, 
+            _FailedToDetectIfCharacterMoved
+        ):
+            raise FailedToMoveCharacter("Failed to move character.")
     
+    def _wait_char_moved(self, destination_coords, mp_area_before_moving):
+        timeout = 5
+        start_time = perf_counter()
+        while perf_counter() - start_time <= timeout:
+            mp_area_after = ScreenCapture.custom_area(self.MP_AREA)
+            rectangle = ImageDetection.find_image(
+                haystack=mp_area_after,
+                needle=mp_area_before_moving,
+                confidence=0.98,
+                method=cv2.TM_CCOEFF_NORMED,
+            )
+            if len(rectangle) <= 0: # If images are different then moving animation has finished.
+                log.info(f"Successfully moved character to: {destination_coords}.")
+                move_mouse_off_game_area() # To make sure that character is not hovered over.
+                return
+        raise _FailedToDetectIfCharacterMoved(
+            f"Failed to detect if character moved to: {destination_coords}. "
+            f"Timed out: {timeout} seconds."
+        )
+
     @staticmethod
-    def _is_cell_highlighted(click_coords):
+    def _wait_cell_highlighted(click_coords):
         """
         Checking with a timer to give time for the game to draw orange
         color over the cells after mouse was moved over the destination cell.
         """
+        timeout = 3
         start_time = perf_counter()
-        while perf_counter() - start_time <= 3:
+        while perf_counter() - start_time <= timeout:
             pixel_color_after = pyag.pixel(click_coords[0], click_coords[1])
             if pixel_color_after == (255, 102, 0):
-                return True
-        return False
+                return
+        raise _FailedToDetectIfCellIsHighlighted(
+            f"Failed to detect if cell {click_coords} is highlighted. "
+            f"Timed out: {timeout} seconds."
+        )
 
     def _is_valid_starting_position(self):
         for map_coords, data in self._starting_cells_data.items():
@@ -169,3 +185,35 @@ class Mover:
             if coords == map_coords:
                 return True
         return False
+
+
+class FailedToMoveCharacter(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class _CharacterDidNotStartTurnOnValidCell(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class _FailedToDetectIfCharacterMoved(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class _FailedToDetectIfCellIsHighlighted(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
