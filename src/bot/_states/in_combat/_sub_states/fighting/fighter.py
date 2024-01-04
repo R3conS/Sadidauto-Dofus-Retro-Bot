@@ -31,28 +31,18 @@ class Fighter:
         self._character_name = character_name
 
     def fight(self):
-        is_tactical_mode_enabled = False
         while True:
             try:
-                result = TurnDetector.detect_start_of_turn(self._character_name)
-                if result == Status.FIGHT_RESULTS_WINDOW_DETECTED:
+                if TurnDetector.detect_start_of_turn(self._character_name) == Status.FIGHT_RESULTS_WINDOW_DETECTED:
                     self._close_fight_results_window()
                     return
-
-                if not is_tactical_mode_enabled:
-                    CombatOptions.TACTICAL_MODE.turn_on()
-                    is_tactical_mode_enabled = True
-
+                
                 if TurnDetector.is_first_turn():
                     FirstTurnHandler.handle(self._script, self._character_name)
                 else:
-                    result = SubsequentTurnHandler.handle(self._character_name)
-                    if result == Status.FAILED_TO_HANDLE_SUBSEQUENT_TURN_ACTIONS:
-                        return Status.FAILED_TO_FINISH_FIGHTING
+                    SubsequentTurnHandler.handle(self._character_name)
                         
-                result = TurnDetector.pass_turn(self._character_name)
-                if result == Status.FAILED_TO_PASS_TURN:
-                    return Status.FAILED_TO_FINISH_FIGHTING
+                TurnDetector.pass_turn(self._character_name)
                 
             except RecoverableException:
                 # ToDo: implement recovery code here.

@@ -31,12 +31,11 @@ class Controller:
                 sub_state = _SubState.FIGHTING
 
             elif sub_state == _SubState.FIGHTING:
-                result = self._fighter.fight()
-                if result == Status.SUCCESSFULLY_FINISHED_FIGHTING:
-                    self._fight_counter += 1
-                    log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
-                    self._set_main_bot_state_callback(MainBotState.OUT_OF_COMBAT)
-                    return
+                self._fighter.fight()
+                self._fight_counter += 1
+                log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
+                self._set_main_bot_state_callback(MainBotState.OUT_OF_COMBAT)
+                return
 
     # ToDo: Check only for the AP image.
     def _determine_sub_state(self):

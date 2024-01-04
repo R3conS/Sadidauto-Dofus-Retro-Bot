@@ -6,7 +6,6 @@ from ._character_mover import FailedToMoveCharacter
 from ._spell_caster import Caster as SpellCaster
 from .._character_finder import Finder as CharacterFinder
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
-from src.bot._states.in_combat._status_enum import Status
 
 
 class Handler:
@@ -14,14 +13,17 @@ class Handler:
     @classmethod
     def handle(cls, script: str, character_name: str):
         log.info("Handling first turn actions ...")
+        if not CombatOptions.TACTICAL_MODE.is_on():
+            CombatOptions.TACTICAL_MODE.turn_on()
+        
         if not CombatOptions.TURN_BAR.is_shrunk():
             CombatOptions.TURN_BAR.shrink()
 
         if CombatOptions.MODELS.is_toggle_icon_visible(): # It's invisible after a reconnect.
-            log.info("Models toggle icon is visible.")
+            log.info("'Models' toggle icon is visible.")
             cls._handle_models_toggle_icon_visible(script, character_name)
         else:
-            log.error("Models toggle icon is not visible.")
+            log.error("'Models' toggle icon is not visible.")
             cls._handle_models_toggle_icon_not_visible(character_name)
             
     @classmethod

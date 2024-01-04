@@ -67,7 +67,7 @@ class TurnDetector:
                 log.info("Successfully passed turn.")
                 return
             
-        raise RecoverableException(f"Failed to detect if turn was passed.. Timed out: {timeout} seconds.")
+        raise RecoverableException(f"Failed to detect if turn was passed. Timed out: {timeout} seconds.")
 
     @classmethod
     def is_first_turn(cls):
