@@ -11,7 +11,13 @@ import pyautogui as pyag
 from src.utilities import move_mouse_off_game_area, load_image_full_path
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.bot._states.in_combat._status_enum import Status
+from ._exceptions import (
+    FailedToCastSpell,
+    FailedToGetSpellIconPosition, 
+    FailedToDetectIfSpellIsSelected,
+    SpellIsNotCastableOnProvidedPosition,
+    FailedToDetectIfSpellWasCastSuccessfully
+)
 
 
 class BaseSpell:
@@ -97,7 +103,7 @@ class BaseSpell:
         pyag.moveTo(x, y)
         return len(
             ImageDetection.find_images(
-                haystack=ScreenCapture.around_pos(pyag.position(), 75),
+                haystack=ScreenCapture.around_pos((x, y), 75),
                 needles=self._selected_can_cast_images_loaded,
                 confidence=0.97,
                 method=cv2.TM_SQDIFF_NORMED
@@ -105,6 +111,7 @@ class BaseSpell:
         ) > 0
 
     def select(self):
+        log.info(f"Selecting '{self._name}' spell ... ")
         # Making sure to deselect any other spells just in case. Otherwise
         # the can/cannot cast image might block one of the spell icon 
         # images and the get_spell_icon_pos() might return None causing this
@@ -114,57 +121,66 @@ class BaseSpell:
 
         icon_pos = self.get_icon_pos()
         if icon_pos is None:
-            return Status.FAILED_TO_GET_SPELL_ICON_POS
+            raise FailedToGetSpellIconPosition(f"Failed to get '{self._name}' spell icon position.")
         
         pyag.moveTo(*icon_pos)
         pyag.click()
 
         # Checking within a timer to give the game time to draw the
         # can cast/cannot cast image once spell pos is clicked.
+        timeout = 5
         start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
+        while perf_counter() - start_time <= timeout:
             if self.is_selected():
-                return Status.SUCCESSFULLY_SELECTED_SPELL
-        return Status.FAILED_TO_SELECT_SPELL
+                log.info(f"Successfully selected '{self._name}' spell.")
+                return
+            
+        raise FailedToDetectIfSpellIsSelected(
+            f"Failed to detect if '{self._name}' spell was selected. Timed out: {timeout} seconds."
+        )
 
     def cast(self, x, y):
         log.info(f"Attempting to cast: '{self._name}' ... ")
 
-        log.info(f"Selecting the spell ... ")
-        result = self.select()
-        if (
-            result == Status.FAILED_TO_GET_SPELL_ICON_POS
-            or result == Status.FAILED_TO_SELECT_SPELL
-        ):
-            log.error(f"Failed to cast: '{self._name}'. Reason: {result.value.replace('_', ' ')}.")
-            return Status.FAILED_TO_CAST_SPELL
-        log.info(f"Successfully selected.")
+        try:
+            self.select()
         
-        log.info(f"Checking if spell is castable on position: {x, y} ... ")
-        pyag.moveTo(x, y)
-        if not self.is_castable_on_pos(x, y):
-            log.info(f"Spell is not castable.")
-            return Status.SPELL_IS_NOT_CASTABLE_ON_PROVIDED_POS
-        log.info(f"Spell is castable.")
+            if not self.is_castable_on_pos(x, y):
+                raise SpellIsNotCastableOnProvidedPosition(f"Spell is not castable on position: {x, y}.")
 
-        log.info(f"Casting ... ")
-        ap_area_before_casting = ScreenCapture.custom_area(self.AP_AREA)
-        pyag.click()
-        move_mouse_off_game_area() # To make sure the vision of spell bar is not blocked.
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
-            _ap_area_after_casting = ScreenCapture.custom_area(self.AP_AREA)
-            rectangle = ImageDetection.find_image(
-                haystack=_ap_area_after_casting,
-                needle=ap_area_before_casting,
-                confidence=0.98,
-                method=cv2.TM_CCOEFF_NORMED,
+            log.info(f"Casting ... ")
+            ap_area_before_casting = ScreenCapture.custom_area(self.AP_AREA)
+            pyag.click() # No need to move before clicking because is_castable_on_pos() already does that.
+            
+            timeout = 5
+            start_time = perf_counter()
+            while perf_counter() - start_time <= timeout:
+                ap_area_after_casting = ScreenCapture.custom_area(self.AP_AREA)
+                rectangle = ImageDetection.find_image(
+                    haystack=ap_area_after_casting,
+                    needle=ap_area_before_casting,
+                    confidence=0.98,
+                    method=cv2.TM_CCOEFF_NORMED,
+                )
+                if len(rectangle) <= 0: # If images are different then the spell animation has finished.
+                    log.info(f"Successfully cast: '{self._name}'.")
+                    return
+            
+            raise FailedToDetectIfSpellWasCastSuccessfully(
+                f"Timed out while detecting if '{self._name}' was cast successfully. "
+                f"Timeout: {timeout} seconds."
             )
-            if len(rectangle) <= 0: # If images are different then spell animation has finished.
-                log.info(f"Successfully cast: '{self._name}'.")
-                return Status.SUCCESSFULLY_CAST_SPELL
-        log.error(f"Timed out while detecting if '{self._name}' was cast successfully.")
-        return Status.TIMED_OUT_WHILE_DETECTING_IF_SPELL_CAST_SUCCESSFULLY
+        
+        except (FailedToGetSpellIconPosition, FailedToDetectIfSpellIsSelected):
+            raise FailedToCastSpell(f"Failed to cast '{self._name}' because it couldn't be selected.")
+        except SpellIsNotCastableOnProvidedPosition:
+            raise FailedToCastSpell(f"Failed to cast '{self._name}' because it is not castable on provided position: {x, y}.")
+        except FailedToDetectIfSpellWasCastSuccessfully:
+            raise FailedToCastSpell(f"Failed to cast '{self._name}' because couldn't detect if spell animation has finished.")
+        finally:
+            # To make sure the vision of spell bar is not blocked for any
+            # subsequent cast attempts.
+            move_mouse_off_game_area() 
 
     def _load_images(self, sub_folder_name: str):
         image_folder = os.path.join(self._image_folder_path, sub_folder_name)

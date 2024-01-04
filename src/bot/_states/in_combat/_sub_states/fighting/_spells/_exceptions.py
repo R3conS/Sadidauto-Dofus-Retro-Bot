@@ -1,0 +1,42 @@
+from logger import Logger
+log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+
+
+class FailedToCastSpell(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class FailedToGetSpellIconPosition(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class FailedToDetectIfSpellIsSelected(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class SpellIsNotCastableOnProvidedPosition(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
+
+
+class FailedToDetectIfSpellWasCastSuccessfully(Exception):
+    
+    def __init__(self, message):
+        self.message = message
+        log.error(f"{message}")
+        super().__init__(message)
