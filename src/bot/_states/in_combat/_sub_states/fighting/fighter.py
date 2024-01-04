@@ -13,7 +13,6 @@ from ._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
 from src.utilities import load_image
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 from src.bot._exceptions import RecoverableException
 
@@ -36,13 +35,12 @@ class Fighter:
                 if TurnDetector.detect_start_of_turn(self._character_name) == Status.FIGHT_RESULTS_WINDOW_DETECTED:
                     self._close_fight_results_window()
                     return
-                
-                if TurnDetector.is_first_turn():
-                    FirstTurnHandler.handle(self._script, self._character_name)
                 else:
-                    SubsequentTurnHandler.handle(self._character_name)
-                        
-                TurnDetector.pass_turn(self._character_name)
+                    if TurnDetector.is_first_turn():
+                        FirstTurnHandler.handle(self._script, self._character_name)
+                    else:
+                        SubsequentTurnHandler.handle(self._character_name)
+                    TurnDetector.pass_turn(self._character_name)
                 
             except RecoverableException:
                 # ToDo: implement recovery code here.
@@ -63,9 +61,12 @@ class Fighter:
         while perf_counter() - start_time <= timeout:
             if not cls._is_close_button_visible():
                 log.info("Successfully closed 'Fight Results' window.")
-                return Status.SUCCESSFULLY_CLOSED_FIGHT_RESULTS_WINDOW
+                return
             
-        raise RecoverableException(f"Failed to detect if 'Fight Results' window was closed. Timed out: {timeout} seconds.")
+        raise RecoverableException(
+            f"Failed to detect if 'Fight Results' window was closed. "
+            f"Timed out: {timeout} seconds."
+        )
 
     @classmethod
     def _get_close_button_pos(cls):

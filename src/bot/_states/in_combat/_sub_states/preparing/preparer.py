@@ -77,13 +77,11 @@ class Preparer:
         blue_dummy_cells = self._get_free_dummy_cells(self.BLUE, map_coords)
 
         for cell_coords in red_dummy_cells:
-            status = self._move_char_to_cell(*cell_coords)
-            if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
+            if self._move_char_to_cell(*cell_coords) == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully selected red side dummy cell: {cell_coords}.")
                 return self.RED
         for cell_coords in blue_dummy_cells:
-            status = self._move_char_to_cell(*cell_coords)
-            if status == Status.SUCCESSFULLY_MOVED_TO_CELL:
+            if self._move_char_to_cell(*cell_coords) == Status.SUCCESSFULLY_MOVED_TO_CELL:
                 log.info(f"Successfully selected blue side dummy cell: {cell_coords}.")
                 return self.BLUE
         

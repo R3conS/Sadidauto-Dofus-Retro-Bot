@@ -38,7 +38,7 @@ class TurnDetector:
                 or cls._is_turn_timer_filling_up()
             ):
                 log.info("Successfully detected character's turn.")
-                return
+                return Status.CHARACTERS_TURN_DETECTED
 
             if not cls.is_ap_counter_visible():
                 if cls._is_close_button_visible():
