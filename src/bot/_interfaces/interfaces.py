@@ -5,6 +5,7 @@ from ._offer_or_invite import OfferOrInvite
 from ._main_menu import MainMenu
 from ._caution import Caution
 from ._information import Information
+from ._connection import Connection
 
 
 class Interfaces:
@@ -16,3 +17,4 @@ class Interfaces:
     MAIN_MENU = MainMenu()
     CAUTION = Caution()
     INFORMATION = Information()
+    CONNECTION = Connection()
