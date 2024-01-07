@@ -23,6 +23,13 @@ class Recoverer:
         (563, 478, 135, 23),
         (723, 478, 135, 23)
     ]
+    CHARACTER_NAME_AREAS = [
+        (78, 531, 136, 23),
+        (239, 531, 136, 23),
+        (399, 532, 136, 23),
+        (562, 531, 136, 23),
+        (725, 531, 136, 23)
+    ]
 
     def __init__(self, character_name: str, server_name: str):
         self._character_name = character_name
@@ -51,6 +58,16 @@ class Recoverer:
         area = OCR.resize_image(area, 200, 50)
         return OCR.get_text_from_image(area)
 
+    @staticmethod
+    def read_character_name(name_area):
+        area = ScreenCapture.custom_area(name_area)
+        area = OCR.convert_to_grayscale(area)
+        area = OCR.invert_image(area)
+        area = OCR.resize_image(area, area.shape[1] * 3, area.shape[0] * 2)
+        area = OCR.dilate_image(area, 2)
+        area = OCR.binarize_image(area, 130)
+        return OCR.get_text_from_image(area)
+
     def _choose_server(self):
         log.info("Choosing the server ... ")
         for name_area in self.SERVER_NAME_AREAS:
@@ -62,6 +79,9 @@ class Recoverer:
                 timeout = 10
                 start_time = perf_counter()
                 while perf_counter() - start_time <= timeout:
+                    # ToDo: Also check if the account gets logged in straight
+                    # into the game. This happens when the character is in 
+                    # combat and was disconnected during it.
                     if self._is_choose_your_character_visible():
                         log.info("Successfully chose the server!")
                         return
@@ -74,10 +94,8 @@ class Recoverer:
 
 
 if __name__ == "__main__":
-    # print(Recoverer._is_choose_a_server_visible())
-    # print(Recoverer._read_server_name(Recoverer.SERVER_NAME_AREAS["server_1"]))
     recoverer = Recoverer("Juni", "Semi-like")
-    # print(recoverer._is_choose_a_server_visible())
-    # print(recoverer._is_choose_your_character_visible())
-    # print(recoverer._read_server_name(recoverer.SERVER_NAME_AREAS[0]))
-    recoverer._choose_server()
+    # recoverer._choose_server()
+    # print(recoverer.read_character_name(recoverer.CHARACTER_NAME_AREAS[0]))
+    for name_area in recoverer.CHARACTER_NAME_AREAS:
+        print(recoverer.read_character_name(name_area))
