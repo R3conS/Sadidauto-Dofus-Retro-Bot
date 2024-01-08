@@ -59,7 +59,7 @@ class Recoverer:
         return OCR.get_text_from_image(area)
 
     @staticmethod
-    def read_character_name(name_area):
+    def _read_character_name(name_area):
         area = ScreenCapture.custom_area(name_area)
         area = OCR.convert_to_grayscale(area)
         area = OCR.invert_image(area)
@@ -68,10 +68,33 @@ class Recoverer:
         area = OCR.binarize_image(area, 130)
         return OCR.get_text_from_image(area)
 
+    def _choose_character(self):
+        log.info(f"Looking for a character named: '{self._character_name}' ... ")
+        for name_area in self.CHARACTER_NAME_AREAS:
+            if self._read_character_name(name_area) == self._character_name:
+                log.info(f"Character found! Selecting ... ")
+                click_coords = ImageDetection.get_rectangle_center_point(name_area)
+                pyag.moveTo(*click_coords)
+                pyag.click(clicks=2, interval=0.1)
+
+                timeout = 10
+                start_time = perf_counter()
+                while perf_counter() - start_time <= timeout:
+                    if not self._is_choose_a_server_visible():
+                        log.info("Successfully chose the character!")
+                        return
+                else:
+                    raise UnrecoverableException(
+                        "Timed out while choosing the character. "
+                        f"Timeout: {timeout} seconds."
+                    )
+        raise UnrecoverableException(f"Couldn't find a character named: '{self._character_name}'!")
+
     def _choose_server(self):
-        log.info("Choosing the server ... ")
+        log.info(f"Looking for a server named: '{self._server_name}' ... ")
         for name_area in self.SERVER_NAME_AREAS:
             if self._read_server_name(name_area) == self._server_name:
+                log.info(f"Server found! Selecting ... ")
                 click_coords = ImageDetection.get_rectangle_center_point(name_area)
                 pyag.moveTo(*click_coords)
                 pyag.click(clicks=2, interval=0.1)
@@ -83,19 +106,21 @@ class Recoverer:
                     # into the game. This happens when the character is in 
                     # combat and was disconnected during it.
                     if self._is_choose_your_character_visible():
-                        log.info("Successfully chose the server!")
+                        log.info(f"Successfully chose server: '{self._server_name}'!")
                         return
                 else:
                     raise UnrecoverableException(
                         "Timed out while choosing the server. "
                         f"Timeout: {timeout} seconds."
                     )
-        raise UnrecoverableException(f"Couldn't find server with name '{self._server_name}'!")
+        raise UnrecoverableException(f"Couldn't find a server named: '{self._server_name}'!")
 
 
 if __name__ == "__main__":
-    recoverer = Recoverer("Juni", "Semi-like")
+    recoverer = Recoverer("Longestnamepossibleh", "Semi-like")
     # recoverer._choose_server()
-    # print(recoverer.read_character_name(recoverer.CHARACTER_NAME_AREAS[0]))
-    for name_area in recoverer.CHARACTER_NAME_AREAS:
-        print(recoverer.read_character_name(name_area))
+    # print(recoverer._read_character_name(recoverer.CHARACTER_NAME_AREAS[0]))
+    # for name_area in recoverer.CHARACTER_NAME_AREAS:
+    #     print(recoverer._read_character_name(name_area))
+    # recoverer._choose_server()
+    # recoverer._choose_character()
