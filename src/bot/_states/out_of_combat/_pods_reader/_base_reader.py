@@ -72,6 +72,9 @@ class BaseReader(ABC):
                     tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
                     text = cls._read_tooltip_text(tooltip)
                     return cls._parse_tooltip_text(text)
+        # ToDo: Raise an unrecoverable exception if None when getting
+        # bank numbers because the view of the tooltip shouldn't ever be 
+        # obstructed by anything.
         return None
 
     @classmethod
@@ -109,7 +112,7 @@ class BaseReader(ABC):
                 raise RecoverableException(
                     f"Failed to read defined tooltip pattern. "
                     f"Received: '{text}'. "
-                    f"Expected: 'number+podsoutof+number'."
+                    f"Expected: '\d+podsoutof\d+'."
                 )
 
     @staticmethod
