@@ -69,6 +69,15 @@ class Recoverer:
         name = OCR.get_text_from_image(area)
         return name.translate(str.maketrans("", "", ". ,:;'"))
 
+    @classmethod
+    def _read_character_names(cls):
+        names = []
+        for name_area in cls.CHARACTER_NAME_AREAS:
+            name = cls._read_character_name(name_area)
+            if name != "":
+                names.append(name)
+        return names
+
     def _select_character(self, name_area):
         log.info(f"Selecting the character ... ")
         click_coords = ImageDetection.get_rectangle_center_point(name_area)
@@ -90,9 +99,9 @@ class Recoverer:
 
     def _choose_character(self):
         """
-        This method can be greatly improved if the name tooltip can be
-        read reliably. Explanation as to why the method is currently 
-        implemented in this dirty/hacky way:
+        This method can be greatly simplified and improved if the name 
+        tooltip can be read reliably. Explanation as to why the method 
+        is currently implemented in this dirty/hacky way:
 
         Above a certain nickname length Dofus doesn't display the full name
         of the character on the name plate in the character selection screen.
@@ -120,8 +129,7 @@ class Recoverer:
         """
         log.info(f"Attempting to choose the character ... ")
         log.info(f"Reading character name plates ... ")
-        names = [self._read_character_name(name_area) for name_area in self.CHARACTER_NAME_AREAS]
-        names_and_areas = dict(zip(names, self.CHARACTER_NAME_AREAS))
+        names_and_areas = dict(zip(self._read_character_names(), self.CHARACTER_NAME_AREAS))
 
         log.info(f"Looking for character by its full name: '{self._character_name}' ... ")
         for name, area in names_and_areas.items():
