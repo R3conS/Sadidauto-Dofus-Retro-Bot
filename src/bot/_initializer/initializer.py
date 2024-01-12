@@ -27,12 +27,14 @@ class Initializer:
         self._script = script
         self._character_name = character_name
         self._disturbance_checker = DisturbanceChecker()
+        self.character_level = None
 
     def initialize(self):
         log.info("Initializing bot ...")
         self._verify_script(self._script)
         self._prepare_game_window()
         self._verify_character_name()
+        self.character_level = self._read_character_level()
         self._start_disturbance_checker()
         log.info("Successfully initialized bot!")
 
@@ -78,6 +80,19 @@ class Initializer:
                 f"match the one in-game '{text}'! Exiting ..."
             )
             os._exit(1)
+
+    @staticmethod
+    def _read_character_level():
+        log.info("Reading character's level ... ")
+        Interfaces.CHARACTERISTICS.open()
+        sc = ScreenCapture.custom_area((735, 129, 39, 21))
+        level = OCR.get_text_from_image(sc)
+        if level.isdigit():
+            log.info(f"Successfully read character's level: {level}!")
+            Interfaces.CHARACTERISTICS.close()
+            return int(level)
+        log.critical(f"Failed to read character's level! Exiting ...")
+        os._exit(1)
 
     def _start_disturbance_checker(self):
         log.info("Starting disturbance checker ... ")
