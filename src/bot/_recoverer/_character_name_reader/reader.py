@@ -17,6 +17,11 @@ from src.utilities import load_image_full_path, move_mouse_off_game_area
 class Reader:
 
     # Dofus client size must be 1000x785 for areas to be accurate.
+    # At certain client sizes some character's lower halves (like q, j, g etc.) 
+    # on the name tooltip are being cut off which makes it impossible to read 
+    # accurately. If a need arises to change the client size, make sure to 
+    # choose one that fully displays the characters on the tooltip. Also
+    # adjust all the coords in the CHAR_SLOT_INFO dict accordingly.
     CHAR_SLOT_INFO = {
         1: {
             "name_area": (81, 534, 190, 28), 
