@@ -59,6 +59,27 @@ class Reader:
         self._character_name = character_name
         self._character_level = character_level
 
+    def _find_character_by_full_name(self):
+        log.info(f"Searching for character by full name ... ")
+        for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
+            if self._character_name == self._read_name_area(char_slot, read_tooltip=True):
+                log.info(f"Found character at slot: '{char_slot}'.")
+                return ImageDetection.get_rectangle_center_point(self.CHAR_SLOT_INFO[char_slot]["name_area"])
+        log.error(f"Failed to find character by full name.")
+        return None
+
+    def _find_character_by_partial_name(self):
+        log.info(f"Searching for character by partial name and level ... ")
+        for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
+            if (
+                self._character_name[:9] in self._read_name_area(char_slot, read_tooltip=False)
+                and self._character_level >= self._read_level_area(char_slot)
+            ):
+                log.info(f"Found character at slot: '{char_slot}'.")
+                return ImageDetection.get_rectangle_center_point(self.CHAR_SLOT_INFO[char_slot]["name_area"])
+        log.error(f"Failed to find character by partial name.")
+        return None
+
     @classmethod
     def _read_name_area(cls, char_slot: int, read_tooltip: bool):
         if read_tooltip and cls._are_name_tooltip_dots_visible(char_slot):
@@ -84,19 +105,6 @@ class Reader:
         return name.strip()
 
     @classmethod
-    def _trigger_name_tooltip(cls, char_slot: int):
-        sc_before = ScreenCapture.custom_area(cls.CHAR_SLOT_INFO[char_slot]["name_area"])
-        timeout = 3
-        start_time = perf_counter()
-        while perf_counter() - start_time < timeout:
-            pyag.moveTo(*cls.CHAR_SLOT_INFO[char_slot]["tooltip_trigger_pos"])
-            sc_after = ScreenCapture.custom_area(cls.CHAR_SLOT_INFO[char_slot]["name_area"])
-            if not np.array_equal(sc_before, sc_after):
-                return
-            sleep(0.1)
-        raise UnrecoverableException(f"Failed to trigger name tooltip in {timeout} seconds.")
-
-    @classmethod
     def _read_level_area(cls, char_slot: int):
         area = ScreenCapture.custom_area(cls.CHAR_SLOT_INFO[char_slot]["level_area"])
         area = OCR.convert_to_grayscale(area)
@@ -110,6 +118,19 @@ class Reader:
         return int(text.split(" ")[-1].strip())
 
     @classmethod
+    def _trigger_name_tooltip(cls, char_slot: int):
+        sc_before = ScreenCapture.custom_area(cls.CHAR_SLOT_INFO[char_slot]["name_area"])
+        timeout = 3
+        start_time = perf_counter()
+        while perf_counter() - start_time < timeout:
+            pyag.moveTo(*cls.CHAR_SLOT_INFO[char_slot]["tooltip_trigger_pos"])
+            sc_after = ScreenCapture.custom_area(cls.CHAR_SLOT_INFO[char_slot]["name_area"])
+            if not np.array_equal(sc_before, sc_after):
+                return
+            sleep(0.1)
+        raise UnrecoverableException(f"Failed to trigger name tooltip in {timeout} seconds.")
+
+    @classmethod
     def _are_name_tooltip_dots_visible(cls, char_slot: int):
         return len(
             ImageDetection.find_image(
@@ -119,27 +140,7 @@ class Reader:
             )
         ) > 0
 
-    def _find_character_by_full_name(self):
-        log.info(f"Searching for character by full name ... ")
-        for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
-            if self._character_name == self._read_name_area(char_slot, read_tooltip=True):
-                log.info(f"Found character at slot: '{char_slot}'.")
-                return ImageDetection.get_rectangle_center_point(self.CHAR_SLOT_INFO[char_slot]["name_area"])
-        log.error(f"Failed to find character by full name.")
-        return None
-
-    def _find_character_by_partial_name(self):
-        log.info(f"Searching for character by partial name and level ... ")
-        for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
-            if (
-                self._character_name[:9] in self._read_name_area(char_slot, read_tooltip=False)
-                and self._character_level >= self._read_level_area(char_slot)
-            ):
-                log.info(f"Found character at slot: '{char_slot}'.")
-                return ImageDetection.get_rectangle_center_point(self.CHAR_SLOT_INFO[char_slot]["name_area"])
-        log.error(f"Failed to find character by partial name.")
-        return None
-
 
 if __name__ == "__main__":
-    reader = Reader("Qyjlgjgqjli-qyjgqyjg", 2)
+    # reader = Reader("Qyjlgjgqjli-qyjgqyjg", 2)
+    reader = Reader("Blabeliblala", 2)
