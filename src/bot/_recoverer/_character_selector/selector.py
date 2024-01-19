@@ -60,7 +60,7 @@ class Selector:
         }
     }
     NAME_TOOLTIP_DOTS_IMAGE = load_image_full_path(
-        "src\\bot\\_recoverer\\_character_name_reader\\_images\\tooltip_dots.png"
+        "src\\bot\\_recoverer\\_character_selector\\_images\\tooltip_dots.png"
     )
     FORBIDDEN_CHARACTERS = [
         ".", ",", ":", ";", "!", "?", "|", "/", "\\", "(", ")", "{", "}", "<", ">", " "
