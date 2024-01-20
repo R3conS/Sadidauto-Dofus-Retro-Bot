@@ -77,7 +77,6 @@ class Selector:
             slot_pos = self._find_character_by_partial_name()
         if slot_pos is None:
             raise UnrecoverableException(f"Failed to select character.")
-        
         log.info(f"Double clicking character slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
@@ -173,12 +172,12 @@ class Selector:
 
     @staticmethod
     def _wait_loading_screen_end():
-        log.info(f"Waiting for loading screen to end ... ")
+        log.info(f"Waiting for the loading screen to end ... ")
         timeout = 20
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
-            if pyag.pixelMatchesColor(973, 769, (213, 207, 170)):
-                log.info(f"Loading screen ended.")
+            if pyag.pixelMatchesColor(636, 753, (213, 207, 170)):
+                log.info(f"Loading screen has ended.")
                 return
             sleep(0.1)
         raise UnrecoverableException(
