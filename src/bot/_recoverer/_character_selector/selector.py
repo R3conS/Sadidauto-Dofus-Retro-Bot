@@ -76,7 +76,7 @@ class Selector:
         if slot_pos is None:
             slot_pos = self._find_character_by_partial_name()
         if slot_pos is None:
-            raise UnrecoverableException(f"Failed to select character.")
+            raise UnrecoverableException(f"Failed to select the character.")
         log.info(f"Double clicking character slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
