@@ -1,4 +1,4 @@
-from logger import Logger
+from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import os
@@ -6,15 +6,14 @@ import os
 import pygetwindow as gw
 import ctypes
 
-from ._disturbance_checker import DisturbanceChecker
-from screen_capture import ScreenCapture
+from src.screen_capture import ScreenCapture
 from src.ocr.ocr import OCR
 from src.bot._interfaces.interfaces import Interfaces
+from src.bot._initializer._disturbance_checker import DisturbanceChecker
 
 
 class Initializer:
 
-    WINDOW_TITLE = None
     WINDOW_SUFFIXES = ["Dofus Retro", "Abrak"]
     WINDOW_SIZE = (950, 785)
     WINDOW_POS = (-8, 0)
@@ -28,6 +27,8 @@ class Initializer:
         self._character_name = character_name
         self._disturbance_checker = DisturbanceChecker()
         self.character_level = None
+        self.window_title = None
+        self.window_hwnd = None
 
     def initialize(self):
         log.info("Initializing bot ...")
@@ -60,7 +61,8 @@ class Initializer:
                     w.activate()
                     w.resizeTo(*self.WINDOW_SIZE)
                     w.moveTo(*self.WINDOW_POS)
-                    self.WINDOW_TITLE = w.title
+                    self.window_title = w.title
+                    self.window_hwnd = w._hWnd
                     log.info(f"Successfully prepared '{w.title}' Dofus window!")
                     return
         log.critical(f"Failed to detect Dofus window for '{self._character_name}'! Exiting ...")
@@ -98,3 +100,8 @@ class Initializer:
         log.info("Starting disturbance checker ... ")
         self._disturbance_checker.start()
         log.info("Successfully started disturbance checker!")
+
+
+if __name__ == "__main__":
+    initializer = Initializer("af_clockwise", "Juni")
+    initializer.initialize()
