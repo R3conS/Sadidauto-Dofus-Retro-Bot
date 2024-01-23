@@ -81,7 +81,7 @@ class Selector:
 
     @staticmethod
     def _is_character_logged_in():
-        return pyag.pixelMatchesColor(636, 753, (213, 207, 170))
+        return pyag.pixelMatchesColor(673, 747, (213, 207, 170))
 
 
 if __name__ == "__main__":
