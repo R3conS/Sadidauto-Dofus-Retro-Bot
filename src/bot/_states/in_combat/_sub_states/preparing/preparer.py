@@ -1,4 +1,4 @@
-from logger import Logger
+from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import os
