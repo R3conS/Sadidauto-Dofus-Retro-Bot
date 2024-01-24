@@ -1,11 +1,6 @@
 from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from time import perf_counter, sleep
-
-import pyautogui as pyag
-
-from src.bot._interfaces._interface import Interface
 from src.bot._interfaces._characteristics import Characteristics
 from src.bot._interfaces._inventory import Inventory
 from src.bot._interfaces._right_click_menu import RightClickMenu
