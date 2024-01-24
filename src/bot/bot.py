@@ -61,8 +61,9 @@ class Bot(threading.Thread):
                         self._ooc_controller.run()
                     elif self._state == State.IN_COMBAT:
                         self._ic_controller.run()
-                except RecoverableException:
-                    self._state = self._recoverer.recover()
+                except RecoverableException as e:
+                    self._state = self._recoverer.recover(e.reason)
+                    log.info(f"Recovered successfully. Current state: {self._state.name}.")
                     continue
 
         except UnrecoverableException:

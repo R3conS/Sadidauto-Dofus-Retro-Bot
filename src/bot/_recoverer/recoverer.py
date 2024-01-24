@@ -11,7 +11,7 @@ from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 from src.ocr.ocr import OCR
 from src.utilities import load_image
-from src.bot._exceptions import UnrecoverableException
+from src.bot._exceptions import UnrecoverableException, ExceptionReason
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector
 from src.bot._recoverer._server_selector.selector import Selector as ServerSelector
@@ -41,7 +41,14 @@ class Recoverer:
         self._server_selector = ServerSelector(server_name)
         self._character_selector = CharacterSelector(character_name, character_level)
 
-    def recover(self):
+    def recover(self, exception_reason: ExceptionReason = None):
+        log.info(f"Attempting to recover ... ")
+        if exception_reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
+            if not self._is_control_area_visible():
+                self._login()
+                return self._determine_bot_state()
+            raise UnrecoverableException("Failed to get map coords because the map image is missing.")
+        
         if not self._is_control_area_visible():
             self._login()
             return self._determine_bot_state()

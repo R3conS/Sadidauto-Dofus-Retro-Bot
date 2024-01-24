@@ -9,10 +9,11 @@ import re
 import cv2
 import pyautogui as pyag
 
-from image_detection import ImageDetection
-from screen_capture import ScreenCapture
+from src.image_detection import ImageDetection
+from src.screen_capture import ScreenCapture
 from src.utilities import load_image
-from ._map_data import DATA as MAP_DATA
+from src.bot._map_changer._map_data import DATA as MAP_DATA
+from src.bot._exceptions import RecoverableException, ExceptionReason
 
 
 class MapChanger:
@@ -39,7 +40,10 @@ class MapChanger:
                 match = re.search(r'-?\d{1,2},-?\d{1,2}', map_coords)
                 if match:
                     return match.group()
-        raise ValueError(f"Failed to find current map coords. Perhaps the map image is missing?")
+        raise RecoverableException(
+            message=f"Failed to get current map coords.",
+            reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
+        )
 
     @classmethod
     def change_map(cls, from_map: str, to_map: str):
