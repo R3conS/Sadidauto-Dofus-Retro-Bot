@@ -6,3 +6,4 @@ m-tst.py
 logs
 tst.png
 src/bot/states/out_of_combat/pods_reader/reading_failed_images/
+src/bot/_recoverer/_images/for_testing.png
