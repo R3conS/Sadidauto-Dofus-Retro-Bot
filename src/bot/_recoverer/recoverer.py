@@ -3,206 +3,157 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from time import perf_counter, sleep
 
-import cv2
 import pyautogui as pyag
+import pygetwindow as gw
 
 from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 from src.ocr.ocr import OCR
+from src.utilities import load_image
 from src.bot._exceptions import UnrecoverableException
+from src.bot._interfaces.interfaces import Interfaces
+from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector
+from src.bot._recoverer._server_selector.selector import Selector as ServerSelector
+from src.bot._states.states_enum import State as BotState
 
 
 class Recoverer:
 
-    CHOOSE_A_SERVER_AREA = (59, 254, 233, 30)
-    CHOOSE_YOUR_CHARACTER_AREA = (61, 300, 226, 32)
-    SERVER_NAME_AREAS = [
-        (83, 478, 135, 23),
-        (243, 478, 135, 23),
-        (403, 478, 135, 23),
-        (563, 478, 135, 23),
-        (723, 478, 135, 23)
-    ]
-    CHARACTER_NAME_AREAS = [
-        (78, 531, 136, 23),
-        (239, 531, 135, 23),
-        (399, 532, 136, 23),
-        (562, 531, 136, 23),
-        (725, 531, 136, 23)
-    ]
+    WINDOW_SIZE_FOR_SERVER_AND_CHAR_SELECTION = (1000, 785)
+    IMAGE_FOLDER_PATH = "src\\bot\\_recoverer\\_images"
+    LOGIN_BUTTON_IMAGE = load_image(IMAGE_FOLDER_PATH, "login_button.png")
+    BOT_STATE_DETERMINER_IMAGE = load_image(IMAGE_FOLDER_PATH, "bot_state_determiner.png")
 
-    def __init__(self, character_name: str, server_name: str):
+    def __init__(
+            self, 
+            character_name: str, 
+            server_name: str, 
+            character_level: int,
+            game_window_identifier: int | str, # String (title) only used for dev/testing.
+            game_window_default_size: tuple[int, int]
+        ):
         self._character_name = character_name
         self._server_name = server_name
-    
+        self._character_level = character_level
+        self._game_window = self._get_game_window(game_window_identifier)
+        self._game_window_default_size = game_window_default_size
+        self._server_selector = ServerSelector(server_name)
+        self._character_selector = CharacterSelector(character_name, character_level)
+
     def recover(self):
-        pass
+        if not self._is_character_logged_in():
+            self._login()
+            return self._determine_bot_state()
+        Interfaces.close_all()
+        return self._determine_bot_state()
+
+    def _is_character_logged_in(self):
+        return (
+            pyag.pixelMatchesColor(673, 747, (213, 207, 170))
+            # Color is different when an offer (exchange, group invite, etc.) is on screen.
+            or pyag.pixelMatchesColor(673, 747, (192, 186, 153))
+        )
+
+    def _login(self):
+        log.info("Attempting to log in ... ")
+        if Interfaces.CONNECTION.is_open():
+            log.info("Connecting via the 'Connection' interface ... ")
+            Interfaces.CONNECTION.click_yes()
+        elif self._is_login_button_visible():
+            log.info("Connecting via the 'Log in' button ... ")
+            pyag.moveTo(*self._get_login_button_pos())
+            pyag.click()
+        else:
+            raise UnrecoverableException(
+                "Failed to log in the character because neither 'Connection' "
+                "interface is open nor is the 'Log in' button visible."
+            )
+
+        self._wait_loading_screen_end()
+        self._resize_game_window(self.WINDOW_SIZE_FOR_SERVER_AND_CHAR_SELECTION)
+        self._server_selector.select_server()
+        # Character selection screen is skipped if character is in combat.
+        if self._is_character_logged_in():
+            log.info(f"Succesfully logged in")
+            self._resize_game_window(self._game_window_default_size)
+            return
+        self._character_selector.select_character()
+        if self._is_character_logged_in():
+            log.info(f"Succesfully logged in.")
+            self._resize_game_window(self._game_window_default_size)
+            return
+
+    def _resize_game_window(self, size: tuple[int, int]):
+        log.info(f"Resizing game window to: {size}.")
+        self._game_window.resizeTo(*size)
 
     @classmethod
-    def _is_choose_a_server_visible(cls):
+    def _determine_bot_state(cls):
+        if len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.custom_area((456, 595, 31, 22)),
+                needle=cls.BOT_STATE_DETERMINER_IMAGE,
+                confidence=0.95,
+            )
+        ) > 0:
+            return BotState.IN_COMBAT
+        return BotState.OUT_OF_COMBAT
+
+    @staticmethod
+    def _get_game_window(game_window_identifier: int | str):
+        """Can be either a window handle (int) or a window title (str)."""
+        if isinstance(game_window_identifier, int):
+            return gw.Win32Window(game_window_identifier)
+        elif isinstance(game_window_identifier, str):
+            try:
+                return gw.getWindowsWithTitle(game_window_identifier)[0]
+            except IndexError:
+                raise UnrecoverableException(f"Couldn't find window with title '{game_window_identifier}'!")
+        else:
+            raise UnrecoverableException("Invalid 'game_window_identifier' type!")
+
+    @classmethod
+    def _wait_loading_screen_end(cls):
+        log.info(f"Waiting for the loading screen to end ... ")
+        timeout = 30
+        start_time = perf_counter()
+        while perf_counter() - start_time < timeout:
+            if cls._is_server_selection_screen_visible():
+                log.info(f"Loading screen has ended.")
+                return
+            sleep(0.1)
+        raise UnrecoverableException(
+            "Failed to detect end of the loading screen. "
+            f"Timed out: {timeout} seconds."
+        )
+
+    @staticmethod
+    def _is_server_selection_screen_visible():
         return OCR.get_text_from_image(
-            ScreenCapture.custom_area(cls.CHOOSE_A_SERVER_AREA)
+            ScreenCapture.custom_area((62, 253, 227, 31))
         ) == "Choose a server"
 
     @classmethod
-    def _is_choose_your_character_visible(cls):
-        return OCR.get_text_from_image(
-            ScreenCapture.custom_area(cls.CHOOSE_YOUR_CHARACTER_AREA)
-        ) == "Choose your character"
-
-    @staticmethod
-    def _read_server_name(name_area):
-        area = ScreenCapture.custom_area(name_area)
-        area = OCR.convert_to_grayscale(area)
-        area = OCR.binarize_image(area, 215)
-        area = OCR.resize_image(area, 200, 50)
-        return OCR.get_text_from_image(area)
-
-    @staticmethod
-    def _read_character_name(name_area):
-        area = ScreenCapture.custom_area(name_area)
-        area = OCR.convert_to_grayscale(area)
-        area = OCR.invert_image(area)
-        area = OCR.resize_image(area, area.shape[1] * 5, area.shape[0] * 5)
-        area = OCR.dilate_image(area, 2)
-        area = OCR.binarize_image(area, 115)
-        name = OCR.get_text_from_image(area)
-        return name.translate(str.maketrans("", "", ". ,:;'"))
-
-    @classmethod
-    def _read_character_names(cls):
-        names = []
-        for name_area in cls.CHARACTER_NAME_AREAS:
-            name = cls._read_character_name(name_area)
-            if name != "":
-                names.append(name)
-        return names
-
-    def _select_character(self, name_area):
-        log.info(f"Selecting the character ... ")
-        click_coords = ImageDetection.get_rectangle_center_point(name_area)
-        pyag.moveTo(*click_coords)
-        pyag.click(clicks=2, interval=0.1)
-
-        timeout = 10
-        start_time = perf_counter()
-        while perf_counter() - start_time <= timeout:
-            if not self._is_choose_your_character_visible():
-                log.info("Successfully chose the character!")
-                return
-            sleep(0.5)
-        else:
-            raise UnrecoverableException(
-                "Timed out while choosing the character. "
-                f"Timeout: {timeout} seconds."
+    def _is_login_button_visible(cls):
+        return len(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.game_window(),
+                needle=cls.LOGIN_BUTTON_IMAGE,
+                confidence=0.95,
             )
-
-    def _choose_character(self):
-        """
-        This method can be greatly simplified and improved if the name 
-        tooltip can be read reliably. Explanation as to why the method 
-        is currently implemented in this dirty/hacky way:
-
-        Above a certain nickname length Dofus doesn't display the full name
-        of the character on the name plate in the character selection screen.
-        It varies from 8 to 14 depending on the size of the letters. At the
-        point where the name doesn't fit on the name plate, Dofus instead
-        displays a '...' which can be hovered over with a mouse to see the 
-        full name on a tooltip similar to pods. Best solution would be to read 
-        it and compare the contents to the character's name, but it's difficult 
-        to read it reliably (at least with tesserocr) due to several reasons:
-
-        1) MAIN REASON: When 'q' and 'j' (qj) are next to each other there's no 
-        white space in between their lower halves AT ALL.
-        2) Letters are very close to each other in general. Almost no blank space.
-        3) Lower halves of letters like 'g, j, p, q, y' are cut off. This
-        could be solved by increasing the size of the Dofus client. At certain
-        sizes the halves are preserved.
-        4) Lower case 'j' and 'i' are barely distinguishable.
-
-        I haven't tested other OCR libraries like PaddleOCR or EasyOCR, but
-        they are dependent on a lot of other libraries and it seems like an
-        overkill for just this one use case. In addition I found that tesserocr
-        is WAY faster on CPU which is important since most of the time the bot
-        is going to be running on VMs with no GPU.
-
-        """
-        log.info(f"Attempting to choose the character ... ")
-        log.info(f"Reading character name plates ... ")
-        names_and_areas = dict(zip(self._read_character_names(), self.CHARACTER_NAME_AREAS))
-
-        log.info(f"Looking for character by its full name: '{self._character_name}' ... ")
-        for name, area in names_and_areas.items():
-            if name == self._character_name:
-                log.info(f"Character found!")
-                self._select_character(area)
-                return
-        log.error(f"Failed to find a match by full character name!")
-
-        # Check if the name plate's contents are a substring of the full
-        # character name. The names' length on the name plate varies from 
-        # 8 to 14 depending on the size of the letters.
-        log.info(
-            f"Looking for character by checking if the content of the name "
-            "plate is a substring of the full character name ... "
+        ) > 0
+    
+    @classmethod
+    def _get_login_button_pos(cls):
+        return ImageDetection.get_rectangle_center_point(
+            ImageDetection.find_image(
+                haystack=ScreenCapture.game_window(),
+                needle=cls.LOGIN_BUTTON_IMAGE,
+                confidence=0.95,
+            )
         )
-        for name, area in names_and_areas.items():
-            if name in self._character_name:
-                log.info(f"Character found!")
-                self._select_character(area)
-                return
-        log.error(f"Failed to find a match!")
-
-        # In some cases the closest letter to the '...' dots is cut off
-        # slightly but it's still being read as a part of the name and most
-        # of the time incorrectly. In these cases the above code won't work
-        # and the last resort is to check the characters that ALWAYS fit
-        # on the name plate (the first 8) regardless of letter size.
-        log.info(
-            f"Looking for character by checking if the first 8 characters of "
-            "the name plate are a substring of the full character name ... "
-        )
-        for name, area in names_and_areas.items():
-            if name[:8] in self._character_name:
-                log.info(f"Character found!")
-                self._select_character(area)
-                return
-        log.error(f"Failed to find a match!")
-
-        raise UnrecoverableException(f"Failed to choose the character because a matching name couldn't be found!")
-
-
-    def _choose_server(self):
-        log.info(f"Looking for a server named: '{self._server_name}' ... ")
-        for name_area in self.SERVER_NAME_AREAS:
-            if self._read_server_name(name_area) == self._server_name:
-                log.info(f"Server found! Selecting ... ")
-                click_coords = ImageDetection.get_rectangle_center_point(name_area)
-                pyag.moveTo(*click_coords)
-                pyag.click(clicks=2, interval=0.1)
-        
-                timeout = 10
-                start_time = perf_counter()
-                while perf_counter() - start_time <= timeout:
-                    # ToDo: Also check if the account gets logged in straight
-                    # into the game. This happens when the character is in 
-                    # combat and was disconnected during it.
-                    if self._is_choose_your_character_visible():
-                        log.info(f"Successfully chose server: '{self._server_name}'!")
-                        return
-                    sleep(0.5)
-                else:
-                    raise UnrecoverableException(
-                        "Timed out while choosing the server. "
-                        f"Timeout: {timeout} seconds."
-                    )
-        raise UnrecoverableException(f"Couldn't find a server named: '{self._server_name}'!")
 
 
 if __name__ == "__main__":
-    recoverer = Recoverer("Longestnamepossibleh", "Semi-like")
-    # print(recoverer._read_character_name(recoverer.CHARACTER_NAME_AREAS[0]))
-    for name_area in recoverer.CHARACTER_NAME_AREAS:
-        print(recoverer._read_character_name(name_area))
-    # recoverer._choose_server()
-    recoverer._choose_character()
+    recoverer = Recoverer("Juni", "Semi-like", 65, "Abrak", (950, 785))
+    recoverer._login()

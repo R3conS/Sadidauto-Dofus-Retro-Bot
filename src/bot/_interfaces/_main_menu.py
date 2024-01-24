@@ -13,6 +13,12 @@ class MainMenu:
         self._name = "Main Menu"
         self._interface = Interface(self._name)
 
+    def open(self):
+        return self._interface.open(920, 63, self.is_open)
+    
+    def close(self):
+        return self._interface.close(468, 407, self.is_open)
+
     @staticmethod
     def is_open():
         return all((

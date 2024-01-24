@@ -82,6 +82,7 @@ class Selector:
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
         log.info(f"Character selected successfully.")
+        move_mouse_off_game_area()
 
     def _find_character_by_full_name(self):
         log.info(f"Searching for character by full name ... ")

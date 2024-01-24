@@ -9,6 +9,7 @@ from src.screen_capture import ScreenCapture
 from src.image_detection import ImageDetection
 from src.ocr.ocr import OCR
 from src.bot._exceptions import UnrecoverableException
+from src.utilities import move_mouse_off_game_area
 
 
 class Selector:
@@ -35,6 +36,7 @@ class Selector:
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
         log.info(f"Server selected successfully.")
+        move_mouse_off_game_area()
 
     def _find_server(self):
         log.info(f"Looking for a server named: '{self._server_name}' ... ")

@@ -5,6 +5,7 @@ from time import perf_counter
 
 from pyautogui import pixelMatchesColor, moveTo, click
 
+from ._interface import Interface
 from src.bot._exceptions import RecoverableException
 
 
@@ -13,6 +14,10 @@ class Connection:
 
     def __init__(self):
         self._name = "Connection"
+        self._interface = Interface(self._name)
+
+    def close(self):
+        return self._interface.close(562, 453, self.is_open)
 
     @staticmethod
     def is_open():
