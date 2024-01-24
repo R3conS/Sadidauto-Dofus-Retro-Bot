@@ -1,4 +1,6 @@
+from functools import wraps
 import os
+from time import perf_counter
 
 import cv2
 import pyautogui as pyag
@@ -23,3 +25,14 @@ def load_image_full_path(image_path: str):
 
 def move_mouse_off_game_area():
     pyag.moveTo(929, 752)
+
+
+def measure_execution_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = perf_counter()
+        result = func(*args, **kwargs)
+        end_time = perf_counter()
+        print(f"'{func.__name__}' took '{end_time - start_time}' seconds to execute.")
+        return result
+    return wrapper
