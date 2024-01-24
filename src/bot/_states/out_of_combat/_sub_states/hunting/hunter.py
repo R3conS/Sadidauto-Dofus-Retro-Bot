@@ -1,4 +1,4 @@
-from logger import Logger
+from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import glob
@@ -58,38 +58,32 @@ class Hunter:
 
     def hunt(self):
         while True:
-            try:
-                if self._consecutive_fights_counter >= self._check_pods_every_x_fights:
-                    pods_percentage = self._get_pods_percentage()
-                    self._consecutive_fights_counter = 0
-                    if pods_percentage >= self._pods_percentage_limit:
-                        log.info(f"Reached pods limit of: {self._pods_percentage_limit}%. Going to bank ... ")
-                        # Setting these values to equal so that pods are checked on 
-                        # the first call to 'hunt()' after banking.
-                        self._consecutive_fights_counter = self._check_pods_every_x_fights
-                        return Status.REACHED_PODS_LIMIT
+            if self._consecutive_fights_counter >= self._check_pods_every_x_fights:
+                pods_percentage = self._get_pods_percentage()
+                self._consecutive_fights_counter = 0
+                if pods_percentage >= self._pods_percentage_limit:
+                    log.info(f"Reached pods limit of: {self._pods_percentage_limit}%. Going to bank ... ")
+                    # Setting these values to equal so that pods are checked on 
+                    # the first call to 'hunt()' after banking.
+                    self._consecutive_fights_counter = self._check_pods_every_x_fights
+                    return Status.REACHED_PODS_LIMIT
 
-                map_coords = MapChanger.get_current_map_coords()
-                if map_coords == self._bank_map_coords:
-                    log.info("Character is inside the bank.")
-                    self._leave_bank()
+            map_coords = MapChanger.get_current_map_coords()
+            if map_coords == self._bank_map_coords:
+                log.info("Character is inside the bank.")
+                self._leave_bank()
 
-                map_type = self._map_type_data[map_coords]
-                if map_type == "traversable":
-                    result = self._handle_traversable_map(map_coords)
-                    if result == Status.SUCCESSFULLY_TRAVERSED_MAP:
-                        continue
-                elif map_type == "fightable":
-                    result = self._handle_fightable_map(map_coords)
-                    if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
-                        return Status.SUCCESSFULLY_ATTACKED_MONSTER
-                    elif result == Status.MAP_FULLY_SEARCHED:
-                        continue
-            except RecoverableException:
-                # ToDo: Call recovery code and try again a few times before
-                # raising UnrecoverableException.
-                log.error("Recoverable exception occurred while hunting. Exiting ...")
-                os._exit(1)
+            map_type = self._map_type_data[map_coords]
+            if map_type == "traversable":
+                result = self._handle_traversable_map(map_coords)
+                if result == Status.SUCCESSFULLY_TRAVERSED_MAP:
+                    continue
+            elif map_type == "fightable":
+                result = self._handle_fightable_map(map_coords)
+                if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
+                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
+                elif result == Status.MAP_FULLY_SEARCHED:
+                    continue
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
