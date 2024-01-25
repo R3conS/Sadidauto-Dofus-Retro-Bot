@@ -6,7 +6,7 @@ from src.bot._map_changer._map_data import DATA as MAP_DATA
 
 class TestMapChanger(unittest.TestCase):
 
-    _IMAGE_FOLDER_FOLDER_PATH = "src\\bot\\map_changer\\_map_images"
+    _IMAGE_FOLDER_FOLDER_PATH = "src\\bot\\_map_changer\\_images"
 
     def test_map_data(self):
         """Make sure that all map coords in map data have a corresponding image file."""
