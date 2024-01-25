@@ -31,21 +31,15 @@ class Fighter:
 
     def fight(self):
         while True:
-            try:
-                if TurnDetector.detect_start_of_turn(self._character_name) == Status.FIGHT_RESULTS_WINDOW_DETECTED:
-                    self._close_fight_results_window()
-                    return
+            if TurnDetector.detect_start_of_turn(self._character_name) == Status.FIGHT_RESULTS_WINDOW_DETECTED:
+                self._close_fight_results_window()
+                return
+            else:
+                if TurnDetector.is_first_turn():
+                    FirstTurnHandler.handle(self._script, self._character_name)
                 else:
-                    if TurnDetector.is_first_turn():
-                        FirstTurnHandler.handle(self._script, self._character_name)
-                    else:
-                        SubsequentTurnHandler.handle(self._character_name)
-                    TurnDetector.pass_turn(self._character_name)
-                
-            except RecoverableException:
-                # ToDo: implement recovery code here.
-                log.error("Recoverable exception occurred while fighting. Exiting ...")
-                os._exit(1)
+                    SubsequentTurnHandler.handle(self._character_name)
+                TurnDetector.pass_turn(self._character_name)
 
     @classmethod
     def _close_fight_results_window(cls):

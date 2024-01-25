@@ -13,7 +13,7 @@ from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image
 from src.bot._map_changer._map_data import DATA as MAP_DATA
-from src.bot._exceptions import RecoverableException, ExceptionReason
+from src.bot._exceptions import UnrecoverableException, RecoverableException, ExceptionReason
 
 
 class MapChanger:
@@ -103,7 +103,7 @@ class MapChanger:
                     queue.append((next_node, path + [next_node]))
                     visited.add(next_node)
         
-        raise Exception(f"Impossible to generate path from '{start}' to '{end}' because there are no maps conecting them.")
+        raise UnrecoverableException(f"Impossible to generate path from '{start}' to '{end}' because there are no maps conecting them.")
 
     @staticmethod
     def _is_loading_screen_visible():

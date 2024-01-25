@@ -15,7 +15,6 @@ from src.bot._exceptions import UnrecoverableException, ExceptionReason
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector
 from src.bot._recoverer._server_selector.selector import Selector as ServerSelector
-from src.bot._states.states_enum import State as BotState
 
 
 class Recoverer:
@@ -46,14 +45,13 @@ class Recoverer:
         if exception_reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
             if not self._is_control_area_visible():
                 self._login()
-                return self._determine_bot_state()
+                return
             raise UnrecoverableException("Failed to get map coords because the map image is missing.")
         
         if not self._is_control_area_visible():
             self._login()
-            return self._determine_bot_state()
+            return
         Interfaces.close_all()
-        return self._determine_bot_state()
 
     def _login(self):
         log.info("Attempting to log in ... ")
@@ -66,8 +64,8 @@ class Recoverer:
             pyag.click()
         else:
             raise UnrecoverableException(
-                "Failed to log in the character because neither 'Connection' "
-                "interface is open nor is the 'Log in' button visible."
+                "Failed to log in because neither 'Connection' interface "
+                "is open nor is the 'Log in' button visible."
             )
 
         self._wait_for_server_selection_screen()
@@ -94,18 +92,6 @@ class Recoverer:
         # Putting the window back to most top left corner. After resizing
         # it's for some reason slightly moved off the left side of the screen.
         self._game_window.moveTo(-8, 0)
-
-    @classmethod
-    def _determine_bot_state(cls):
-        if len(
-            ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area((456, 595, 31, 22)),
-                needle=cls.BOT_STATE_DETERMINER_IMAGE,
-                confidence=0.95,
-            )
-        ) > 0:
-            return BotState.IN_COMBAT
-        return BotState.OUT_OF_COMBAT
 
     @staticmethod
     def _get_game_window(game_window_identifier: int | str):

@@ -38,30 +38,21 @@ class Preparer:
         self._dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
 
     def prepare(self):
-        while True:
-            try:
-                CombatOptions.FIGHT_LOCK.turn_on()
-                CombatOptions.TACTICAL_MODE.turn_on()
-
-                map_coords = MapChanger.get_current_map_coords()
-                if self._are_there_any_dummy_cells_on_map(map_coords):
-                    final_dummy_cell_color = self._select_dummy_cell(map_coords)
-                    # Mouse cursor will stay hovered over the character's model
-                    # which in turn will display the black character's info
-                    # tooltip (Name (lvl)) that blocks the view of the starting 
-                    # cell locations on some maps. The cursor needs to be moved 
-                    # off to make sure it doesn't happen.
-                    move_mouse_off_game_area()
-                    self._select_starting_cell(map_coords, final_dummy_cell_color)
-                else:
-                    self._select_starting_cell(map_coords)
-                
-                self._start_combat()
-                break
-            except RecoverableException:
-                # ToDo: Call recovery code and try again until 3-4 times.
-                log.error("Recoverable exception occurred while banking. Exiting ...")
-                os._exit(1)
+        CombatOptions.FIGHT_LOCK.turn_on()
+        CombatOptions.TACTICAL_MODE.turn_on()
+        map_coords = MapChanger.get_current_map_coords()
+        if self._are_there_any_dummy_cells_on_map(map_coords):
+            final_dummy_cell_color = self._select_dummy_cell(map_coords)
+            # Mouse cursor will stay hovered over the character's model
+            # which in turn will display the black character's info
+            # tooltip (Name (lvl)) that blocks the view of the starting 
+            # cell locations on some maps. The cursor needs to be moved 
+            # off to make sure it doesn't happen.
+            move_mouse_off_game_area()
+            self._select_starting_cell(map_coords, final_dummy_cell_color)
+        else:
+            self._select_starting_cell(map_coords)
+        self._start_combat()
 
     def _are_there_any_dummy_cells_on_map(self, map_coords: str):
         for map, cell_data in self._dummy_cell_data.items():
