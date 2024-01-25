@@ -106,7 +106,7 @@ class Bot(threading.Thread):
                 ImageDetection.find_images(
                     haystack=ScreenCapture.custom_area((678, 507, 258, 91)),
                     needles=ready_button_images,
-                    confidence=0.98,
+                    confidence=0.95,
                     method=cv2.TM_CCOEFF_NORMED
                 )
             ) > 0
