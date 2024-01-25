@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import re
 
-from src.ocr.ocr import OCR
+from src.utilities.ocr.ocr import OCR
 from src.bot._exceptions import RecoverableException
 
 

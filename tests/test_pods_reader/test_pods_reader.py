@@ -1,7 +1,7 @@
 import unittest
 
+from src.utilities.general import load_image
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
-from src.utilities import load_image
 
 
 class TestPodsReader(unittest.TestCase):

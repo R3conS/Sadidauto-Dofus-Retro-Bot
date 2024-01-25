@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import pyautogui as pyag
 
-from src.utilities import move_mouse_off_game_area
+from src.utilities.general import move_mouse_off_game_area
 from src.bot._exceptions import RecoverableException
 from src.bot._states.in_combat._sub_states.fighting._character_finder import Finder as CharacterFinder
 from src.bot._states.in_combat._sub_states.fighting._character_finder import TimedOutWhileWaitingForInfoCard

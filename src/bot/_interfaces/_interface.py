@@ -5,8 +5,8 @@ from time import perf_counter
 
 from pyautogui import moveTo, click
 
+from src.utilities.general import move_mouse_off_game_area
 from src.bot._exceptions import RecoverableException
-from src.utilities import move_mouse_off_game_area
 
 
 class Interface:

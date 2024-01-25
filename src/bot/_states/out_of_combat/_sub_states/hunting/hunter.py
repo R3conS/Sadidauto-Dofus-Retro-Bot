@@ -8,9 +8,9 @@ import os
 import cv2
 import pyautogui as pyag
 
-from image_detection import ImageDetection
-from screen_capture import ScreenCapture
-from src.utilities import load_image_full_path, move_mouse_off_game_area
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image_full_path, move_mouse_off_game_area
 from src.bot._exceptions import RecoverableException
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger

@@ -7,10 +7,10 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.ocr.ocr import OCR
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
-from src.utilities import load_image, move_mouse_off_game_area
+from src.utilities.ocr.ocr import OCR
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image, move_mouse_off_game_area
 from src.bot._states.in_combat._status_enum import Status
 from src.bot._exceptions import RecoverableException
 

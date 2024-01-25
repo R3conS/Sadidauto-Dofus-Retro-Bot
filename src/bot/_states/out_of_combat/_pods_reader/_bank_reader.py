@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.ocr.ocr import OCR
-from src.screen_capture import ScreenCapture
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 from src.bot._states.out_of_combat._pods_reader._base_reader import BaseReader
 
 

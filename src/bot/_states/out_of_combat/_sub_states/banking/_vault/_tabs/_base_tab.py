@@ -8,9 +8,9 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
-from src.utilities import load_image_full_path
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image_full_path
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.bot._exceptions import RecoverableException
 

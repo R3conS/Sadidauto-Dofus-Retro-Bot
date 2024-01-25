@@ -6,8 +6,8 @@ import os
 import pygetwindow as gw
 import ctypes
 
-from src.screen_capture import ScreenCapture
-from src.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.ocr.ocr import OCR
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._initializer._disturbance_checker import DisturbanceChecker
 

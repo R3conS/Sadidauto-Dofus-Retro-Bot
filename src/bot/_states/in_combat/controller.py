@@ -3,11 +3,11 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from enum import Enum
 
+from src.utilities.general import load_image
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
 from src.bot._states.in_combat._sub_states.preparing.preparer import Preparer
 from src.bot._states.in_combat._sub_states.fighting.fighter import Fighter
-from src.utilities import load_image
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
 from src.bot._states.states_enum import State as MainBotState
 
 

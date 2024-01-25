@@ -1,5 +1,5 @@
 import os
-os.environ["TESSDATA_PREFIX"] = "src\\ocr"
+os.environ["TESSDATA_PREFIX"] = "src\\utilities\\ocr"
 
 import cv2
 import numpy as np

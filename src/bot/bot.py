@@ -7,9 +7,9 @@ import os
 import traceback
 import threading
 
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
-from src.utilities import load_image_full_path
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image_full_path
 from src.bot._exceptions import UnrecoverableException, RecoverableException
 from src.bot._states.states_enum import State
 from src.bot._initializer.initializer import Initializer

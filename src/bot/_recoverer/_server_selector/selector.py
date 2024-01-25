@@ -5,11 +5,11 @@ from time import perf_counter, sleep
 
 import pyautogui as pyag
 
-from src.screen_capture import ScreenCapture
-from src.image_detection import ImageDetection
-from src.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
+from src.utilities.general import move_mouse_off_game_area
 from src.bot._exceptions import UnrecoverableException
-from src.utilities import move_mouse_off_game_area
 
 
 class Selector:

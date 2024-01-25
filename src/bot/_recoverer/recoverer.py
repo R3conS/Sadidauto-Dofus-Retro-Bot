@@ -7,10 +7,10 @@ import numpy as np
 import pyautogui as pyag
 import pygetwindow as gw
 
-from src.screen_capture import ScreenCapture
-from src.image_detection import ImageDetection
-from src.ocr.ocr import OCR
-from src.utilities import load_image
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
+from src.utilities.general import load_image
 from src.bot._exceptions import UnrecoverableException, ExceptionReason
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector

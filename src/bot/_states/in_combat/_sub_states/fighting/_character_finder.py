@@ -8,10 +8,10 @@ import numpy as np
 import pyautogui as pyag
 from PIL import Image
 
-from src.ocr.ocr import OCR
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
-from src.utilities import load_image, move_mouse_off_game_area
+from src.utilities.ocr.ocr import OCR
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image, move_mouse_off_game_area
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._exceptions import RecoverableException
 

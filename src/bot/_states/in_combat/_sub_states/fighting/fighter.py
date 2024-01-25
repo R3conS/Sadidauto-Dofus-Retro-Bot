@@ -1,15 +1,14 @@
 from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-import os
 from time import perf_counter
 
 import cv2
 import pyautogui as pyag
 
-from src.utilities import load_image
-from src.image_detection import ImageDetection
-from src.screen_capture import ScreenCapture
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.general import load_image
 from src.bot._states.in_combat._status_enum import Status
 from src.bot._exceptions import RecoverableException
 from src.bot._states.in_combat._sub_states.fighting._turn_detector import TurnDetector

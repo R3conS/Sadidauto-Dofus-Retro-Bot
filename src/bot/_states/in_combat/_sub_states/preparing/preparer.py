@@ -9,9 +9,9 @@ import glob
 import pyautogui as pyag
 from PIL import Image
 
-from src.screen_capture import ScreenCapture
-from src.image_detection import ImageDetection
-from src.utilities import move_mouse_off_game_area, load_image, load_image_full_path
+from src.utilities.screen_capture import ScreenCapture
+from src.utilities.image_detection import ImageDetection
+from src.utilities.general import move_mouse_off_game_area, load_image, load_image_full_path
 from src.bot._exceptions import RecoverableException
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
