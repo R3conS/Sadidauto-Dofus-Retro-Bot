@@ -1,19 +1,19 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-from collections import deque
 import os
-from time import perf_counter
 import re
+from collections import deque
+from time import perf_counter
 
 import cv2
 import pyautogui as pyag
 
+from src.bot._exceptions import ExceptionReason, RecoverableException, UnrecoverableException
+from src.bot._map_changer._map_data import DATA as MAP_DATA
+from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import load_image
-from src.bot._map_changer._map_data import DATA as MAP_DATA
-from src.bot._exceptions import UnrecoverableException, RecoverableException, ExceptionReason
 
 
 class MapChanger:

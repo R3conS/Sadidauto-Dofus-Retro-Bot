@@ -5,11 +5,11 @@ from time import perf_counter
 
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import load_image_full_path
 from src.bot._exceptions import RecoverableException
 from src.bot._states.in_combat._combat_options._turn_bar import TurnBar
+from src.utilities.general import load_image_full_path
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
 
 
 class BaseOption:

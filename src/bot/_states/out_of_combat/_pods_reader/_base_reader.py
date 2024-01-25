@@ -1,15 +1,15 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
+import re
 from abc import ABC, abstractstaticmethod
 from time import perf_counter
 
 import cv2
 import numpy as np
-import re
 
-from src.utilities.ocr.ocr import OCR
 from src.bot._exceptions import RecoverableException
+from src.utilities.ocr.ocr import OCR
 
 
 class BaseReader(ABC):

@@ -7,15 +7,15 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.ocr.ocr import OCR
-from src.utilities.general import load_image
-from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 from src.bot._exceptions import RecoverableException
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.equipment_tab import EquipmentTab
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.miscellaneous_tab import MiscellaneousTab
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.resources_tab import ResourcesTab
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
+from src.utilities.general import load_image
+from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Vault:

@@ -3,10 +3,10 @@ log = Logger.get_logger(Logger.DEBUG, True, True)
 
 import cv2
 
+from src.bot._interfaces._interface import Interface
+from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import load_image
-from src.bot._interfaces._interface import Interface
 
 
 class RightClickMenu:

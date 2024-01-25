@@ -7,15 +7,15 @@ import numpy as np
 import pyautogui as pyag
 import pygetwindow as gw
 
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.image_detection import ImageDetection
-from src.utilities.ocr.ocr import OCR
-from src.utilities.general import load_image
-from src.bot._exceptions import UnrecoverableException, ExceptionReason
+from src.bot._exceptions import ExceptionReason, UnrecoverableException
 from src.bot._interfaces.interfaces import Interfaces
+from src.bot._map_changer.map_changer import MapChanger
 from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector
 from src.bot._recoverer._server_selector.selector import Selector as ServerSelector
-from src.bot._map_changer.map_changer import MapChanger
+from src.utilities.general import load_image
+from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Recoverer:

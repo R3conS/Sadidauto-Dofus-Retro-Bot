@@ -3,12 +3,12 @@ log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from enum import Enum
 
+from src.bot._states.in_combat._sub_states.fighting.fighter import Fighter
+from src.bot._states.in_combat._sub_states.preparing.preparer import Preparer
+from src.bot._states.states_enum import State as MainBotState
 from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
-from src.bot._states.in_combat._sub_states.preparing.preparer import Preparer
-from src.bot._states.in_combat._sub_states.fighting.fighter import Fighter
-from src.bot._states.states_enum import State as MainBotState
 
 
 class Controller:

@@ -1,17 +1,17 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-from time import perf_counter
 from math import sqrt
+from time import perf_counter
 
 import cv2
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import move_mouse_off_game_area
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._sub_states.fighting._map_data.getter import Getter as FightingDataGetter
+from src.utilities.general import move_mouse_off_game_area
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Mover:

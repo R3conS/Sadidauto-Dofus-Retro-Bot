@@ -6,14 +6,14 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import load_image
-from src.bot._states.in_combat._status_enum import Status
 from src.bot._exceptions import RecoverableException
-from src.bot._states.in_combat._sub_states.fighting._turn_detector import TurnDetector
+from src.bot._states.in_combat._status_enum import Status
 from src.bot._states.in_combat._sub_states.fighting._first_turn_handler.handler import Handler as FirstTurnHandler
 from src.bot._states.in_combat._sub_states.fighting._subsequent_turn_handler.handler import Handler as SubsequentTurnHandler
+from src.bot._states.in_combat._sub_states.fighting._turn_detector import TurnDetector
+from src.utilities.general import load_image
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Fighter:

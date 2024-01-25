@@ -1,26 +1,26 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-from src.bot._interfaces._characteristics import Characteristics
-from src.bot._interfaces._inventory import Inventory
-from src.bot._interfaces._right_click_menu import RightClickMenu
-from src.bot._interfaces._offer_or_invite import OfferOrInvite
-from src.bot._interfaces._main_menu import MainMenu
 from src.bot._interfaces._caution import Caution
-from src.bot._interfaces._information import Information
+from src.bot._interfaces._characteristics import Characteristics
 from src.bot._interfaces._connection import Connection
+from src.bot._interfaces._information import Information
+from src.bot._interfaces._inventory import Inventory
+from src.bot._interfaces._main_menu import MainMenu
+from src.bot._interfaces._offer_or_invite import OfferOrInvite
+from src.bot._interfaces._right_click_menu import RightClickMenu
 
 
 class Interfaces:
 
-    CHARACTERISTICS = Characteristics()
-    INVENTORY = Inventory()
-    RIGHT_CLICK_MENU = RightClickMenu()
-    OFFER_OR_INVITE = OfferOrInvite()
-    MAIN_MENU = MainMenu()
     CAUTION = Caution()
-    INFORMATION = Information()
+    CHARACTERISTICS = Characteristics()
     CONNECTION = Connection()
+    INFORMATION = Information()
+    INVENTORY = Inventory()
+    MAIN_MENU = MainMenu()
+    OFFER_OR_INVITE = OfferOrInvite()
+    RIGHT_CLICK_MENU = RightClickMenu()
 
     @classmethod
     def close_all(cls):

@@ -5,8 +5,8 @@ import os
 
 from pynput import keyboard
 
-from src.bot.bot import Bot
 from cmd_line_parser import Parser
+from src.bot.bot import Bot
 
 
 def exit_with_hotkey():

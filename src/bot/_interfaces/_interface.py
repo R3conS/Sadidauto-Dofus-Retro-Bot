@@ -3,10 +3,10 @@ log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from time import perf_counter
 
-from pyautogui import moveTo, click
+from pyautogui import click, moveTo
 
-from src.utilities.general import move_mouse_off_game_area
 from src.bot._exceptions import RecoverableException
+from src.utilities.general import move_mouse_off_game_area
 
 
 class Interface:

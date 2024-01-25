@@ -7,11 +7,11 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.ocr.ocr import OCR
-from src.utilities.general import load_image_full_path, move_mouse_off_game_area
 from src.bot._exceptions import UnrecoverableException
+from src.utilities.general import load_image_full_path, move_mouse_off_game_area
+from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Selector:

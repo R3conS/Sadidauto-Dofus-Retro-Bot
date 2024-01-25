@@ -1,21 +1,22 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-import cv2
 import glob
 import os
-import traceback
 import threading
+import traceback
 
+import cv2
+
+from src.bot._exceptions import RecoverableException, UnrecoverableException
+from src.bot._initializer.initializer import Initializer
+from src.bot._recoverer.recoverer import Recoverer
+from src.bot._states.in_combat.controller import Controller as IC_Controller
+from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
+from src.bot._states.states_enum import State
+from src.utilities.general import load_image_full_path
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import load_image_full_path
-from src.bot._exceptions import UnrecoverableException, RecoverableException
-from src.bot._states.states_enum import State
-from src.bot._initializer.initializer import Initializer
-from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
-from src.bot._states.in_combat.controller import Controller as IC_Controller
-from src.bot._recoverer.recoverer import Recoverer
 
 
 class Bot(threading.Thread):

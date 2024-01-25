@@ -1,15 +1,15 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
+import ctypes
 import os
 
 import pygetwindow as gw
-import ctypes
 
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.ocr.ocr import OCR
-from src.bot._interfaces.interfaces import Interfaces
 from src.bot._initializer._disturbance_checker import DisturbanceChecker
+from src.bot._interfaces.interfaces import Interfaces
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Initializer:

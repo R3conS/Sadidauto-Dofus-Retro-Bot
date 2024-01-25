@@ -8,16 +8,16 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
-from src.utilities.image_detection import ImageDetection
-from src.utilities.screen_capture import ScreenCapture
-from src.utilities.general import move_mouse_off_game_area, load_image_full_path
 from src.bot._states.in_combat._sub_states.fighting._spells._exceptions import (
     FailedToCastSpell,
-    FailedToGetSpellIconPosition, 
     FailedToDetectIfSpellIsSelected,
-    SpellIsNotCastableOnProvidedPosition,
-    FailedToDetectIfSpellWasCastSuccessfully
+    FailedToDetectIfSpellWasCastSuccessfully,
+    FailedToGetSpellIconPosition,
+    SpellIsNotCastableOnProvidedPosition
 )
+from src.utilities.general import load_image_full_path, move_mouse_off_game_area
+from src.utilities.image_detection import ImageDetection
+from src.utilities.screen_capture import ScreenCapture
 
 
 class BaseSpell:

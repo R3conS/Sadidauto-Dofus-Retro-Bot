@@ -3,10 +3,10 @@ log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from time import perf_counter
 
-from pyautogui import pixelMatchesColor, moveTo, click
+from pyautogui import click, moveTo, pixelMatchesColor
 
-from src.bot._interfaces._interface import Interface
 from src.bot._exceptions import RecoverableException
+from src.bot._interfaces._interface import Interface
 
 
 class Connection:
