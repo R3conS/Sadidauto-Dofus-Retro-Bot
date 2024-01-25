@@ -36,7 +36,11 @@ class Bot(threading.Thread):
 
     def run(self):
         try:
-            self._initializer = Initializer(self._script, self._character_name)
+            self._initializer = Initializer(
+                self._script, 
+                self._character_name,
+                self._server_name
+            )
             self._initializer.initialize()
             self._ooc_controller = OOC_Controller(
                 self._set_state, 
