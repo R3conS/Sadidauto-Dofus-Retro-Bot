@@ -9,7 +9,7 @@ class Logger:
     if not os.path.exists(LOGS_DIR_PATH):
         os.mkdir(LOGS_DIR_PATH)
 
-    LOGGER_NAME = datetime.now().strftime("[%Y-%m-%d] %H-%M-%S")
+    LOGGER_NAME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
     LOGGER_DIR_PATH = os.path.join(LOGS_DIR_PATH, LOGGER_NAME)
     if not os.path.exists(LOGGER_DIR_PATH):
         os.mkdir(LOGGER_DIR_PATH)

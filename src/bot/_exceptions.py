@@ -1,7 +1,22 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
+import os
+from datetime import datetime
 from enum import Enum
+
+from cv2 import imwrite as save_image
+
+from src.utilities.screen_capture import ScreenCapture
+
+
+def take_a_screenshot(exception_reason):
+    log.info("Screenshotting the game window ... ")
+    sc = ScreenCapture.game_window()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {exception_reason}.png")
+    save_image(path, sc)
+    log.info("Screenshot saved.")
 
 
 class ExceptionReason(Enum):
@@ -17,12 +32,19 @@ class RecoverableException(Exception):
         self.message = message
         self.reason = reason
         log.error(f"RecoverableException: {message}")
+        take_a_screenshot(self.reason)
         super().__init__(message)
 
 
 class UnrecoverableException(Exception):
     
-    def __init__(self, message=None):
+    def __init__(self, message, reason=ExceptionReason.UNSPECIFIED):
         self.message = message
+        self.reason = reason
         log.critical(f"UnrecoverableExpection: {message}")
+        take_a_screenshot(self.reason)
         super().__init__(message)
+
+
+if __name__ == "__main__":
+    take_a_screenshot(ExceptionReason.UNSPECIFIED)
