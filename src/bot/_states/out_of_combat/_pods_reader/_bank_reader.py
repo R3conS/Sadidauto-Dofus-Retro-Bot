@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 import cv2
 import numpy as np

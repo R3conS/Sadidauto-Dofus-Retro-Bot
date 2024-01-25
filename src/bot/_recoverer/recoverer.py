@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from time import perf_counter, sleep
 
@@ -80,7 +80,7 @@ class Recoverer:
     def _manage_exception(self, reason: ExceptionReason):
         if reason == ExceptionReason.UNSPECIFIED:
             if not self._is_control_area_visible():
-                # self._login()
+                self._login()
                 return
             Interfaces.close_all()
         elif reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
@@ -259,5 +259,5 @@ class Recoverer:
 
 
 if __name__ == "__main__":
-    recoverer = Recoverer("Juni", "Semi-like", 65, "Abrak", (950, 785))
-                
+    # recoverer = Recoverer("Juni", "Semi-like", 65, "Abrak", (950, 785))
+    log.info("Starting ... ")

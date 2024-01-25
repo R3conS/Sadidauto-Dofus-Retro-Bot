@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._sub_states.banking._handlers.not_on_bank_map import Handler as Handler_NotOnBankMap

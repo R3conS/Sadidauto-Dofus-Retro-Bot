@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from abc import ABC, abstractstaticmethod
 from time import perf_counter

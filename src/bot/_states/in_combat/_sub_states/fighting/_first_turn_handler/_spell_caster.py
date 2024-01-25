@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from src.bot._states.in_combat._sub_states.fighting._spells.spells import Spells
 from src.bot._states.in_combat._sub_states.fighting._spells._exceptions import FailedToCastSpell

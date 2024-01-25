@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
+log = Logger.get_logger(Logger.DEBUG, True, True)
 
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._sub_states.fighting._first_turn_handler._character_mover import Mover as CharacterMover
