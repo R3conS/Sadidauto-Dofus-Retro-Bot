@@ -95,12 +95,10 @@ class Hunter:
 
     def _handle_traversable_map(self, map_coords):
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
-        if MapChanger.has_loading_screen_passed():
-            return Status.SUCCESSFULLY_TRAVERSED_MAP
-        raise RecoverableException("Failed to traverse map.")
+        return Status.SUCCESSFULLY_TRAVERSED_MAP
     
     def _handle_fightable_map(self, map_coords):
-        log.info(f"Hunting on map: {map_coords} ... ")
+        log.info(f"Hunting on map: '{map_coords}' ... ")
         haystack_image = ScreenCapture.game_window()
         for image_segment, mask_segment in zip(self._segmented_monster_images, self._segmented_monster_image_masks):
             matches = self._search_segment(image_segment, mask_segment, haystack_image)
@@ -139,11 +137,9 @@ class Hunter:
                         self._leave_lumberjacks_workshop()
                         continue
 
-        log.info(f"Map {map_coords} fully searched. Changing map ... ")
+        log.info(f"Map '{map_coords}' fully searched.")
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
-        if MapChanger.has_loading_screen_passed():
-            return Status.MAP_FULLY_SEARCHED
-        raise RecoverableException("Failed to change map.")
+        return Status.MAP_FULLY_SEARCHED
 
     def _load_monster_images(self):
         if "af_" in self._script:
@@ -230,11 +226,10 @@ class Hunter:
         pyag.moveTo(667, 507)
         pyag.click()
         pyag.keyUp("e")
-        if MapChanger.has_loading_screen_passed():
+        MapChanger.wait_loading_screen_pass()
+        if not Hunter._is_char_in_lumberjack_workshop():
             log.info("Successfully left 'Lumberjack's Workshop'.")
             return
-        # ToDo: If recovery fails multiple times then maybe emergency
-        # recall teleport?
         raise RecoverableException("Failed to leave 'Lumberjack's Workshop'.")
 
     def _leave_bank(self):
@@ -243,18 +238,13 @@ class Hunter:
         pyag.moveTo(*self._bank_exit_coords)
         pyag.click()
         pyag.keyUp('e')
-        if MapChanger.has_loading_screen_passed():
-            if not self._is_char_inside_bank():
-                log.info("Successfully left the bank.")
-                return 
-            raise RecoverableException("Failed to leave the bank.")
-        raise RecoverableException("Failed to detect loading screen after trying to leave the bank.")
+        MapChanger.wait_loading_screen_pass()
+        if not self._is_char_inside_bank():
+            log.info("Successfully left the bank.")
+            return 
+        raise RecoverableException("Failed to leave the bank.")
 
     @staticmethod
     def _change_map_back_to_original(original_map_coords):
         log.info("Attempting to change map back to original ...")
         MapChanger.change_map(MapChanger.get_current_map_coords(), original_map_coords)
-        if MapChanger.has_loading_screen_passed():
-            log.info("Successfully changed map back to original!")
-            return
-        raise RecoverableException("Failed to change map back to original map.")

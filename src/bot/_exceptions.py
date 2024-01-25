@@ -8,6 +8,7 @@ class ExceptionReason(Enum):
 
     UNSPECIFIED = 1 # Default.
     FAILED_TO_GET_MAP_COORDS = 2
+    FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE = 3
 
 
 class RecoverableException(Exception):

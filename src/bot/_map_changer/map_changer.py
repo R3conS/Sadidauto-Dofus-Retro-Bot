@@ -60,9 +60,10 @@ class MapChanger:
         pyag.moveTo(sun_x, sun_y)
         pyag.click()
         pyag.keyUp("e")
+        cls.wait_loading_screen_pass()
 
     @staticmethod
-    def has_loading_screen_passed():
+    def wait_loading_screen_pass():
         log.info(f"Waiting for loading screen ... ")
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
@@ -70,17 +71,21 @@ class MapChanger:
                 log.info(f"Loading screen detected ... ")
                 break
         else:
-            log.error(f"Failed to detect loading screen.")
-            return False
+            raise RecoverableException(
+                message="Failed to detect map change loading screen.",
+                reason=ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE
+            )
         
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
             if not MapChanger._is_loading_screen_visible():
                 log.info(f"Loading screen finished.")
-                return True
+                return
         else:
-            log.error(f"Failed to detect end of loading screen.")
-            return False
+            raise RecoverableException(
+                message="Failed to detect end of map change loading screen.",
+                reason=ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE
+            )
 
     @classmethod
     def get_shortest_path(cls, start, end) -> dict[str, str]: # {from_map: to_map}

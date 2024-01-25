@@ -30,10 +30,6 @@ class Mover:
     def move(self):
         if self._is_char_already_on_destination_cell():
             log.info(f"Character is already on the correct cell.")
-            # ToDo: remove this after you handle moving mouse off game area
-            # in the Spells logic itself. Like detecting if spell is available
-            # or before casting it.
-            move_mouse_off_game_area() # To make sure that info card is not blocking spell bar.
             return
         
         try:

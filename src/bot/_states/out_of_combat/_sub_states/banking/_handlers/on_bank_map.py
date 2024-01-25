@@ -34,12 +34,11 @@ class Handler:
         pyag.moveTo(*self._enter_coords)
         pyag.click()
         pyag.keyUp('e')
-        if MapChanger.has_loading_screen_passed():
-            if self._is_char_inside_bank():
-                log.info("Successfully entered the bank.")
-                return
-            raise RecoverableException("Failed to enter the bank.")
-        raise RecoverableException("Failed to detect loading screen after trying to enter the bank.")
+        MapChanger.wait_loading_screen_pass()
+        if self._is_char_inside_bank():
+            log.info("Successfully entered the bank.")
+            return
+        raise RecoverableException("Failed to enter the bank.")
 
     def _leave_bank(self):
         log.info("Attempting to leave the bank ... ")
@@ -47,9 +46,8 @@ class Handler:
         pyag.moveTo(*self._exit_coords)
         pyag.click()
         pyag.keyUp('e')
-        if MapChanger.has_loading_screen_passed():
-            if not self._is_char_inside_bank():
-                log.info("Successfully left the bank.")
-                return 
-            raise RecoverableException("Failed to leave the bank.")
-        raise RecoverableException("Failed to detect loading screen after trying to leave the bank.")
+        MapChanger.wait_loading_screen_pass()
+        if not self._is_char_inside_bank():
+            log.info("Successfully left the bank.")
+            return 
+        raise RecoverableException("Failed to leave the bank.")

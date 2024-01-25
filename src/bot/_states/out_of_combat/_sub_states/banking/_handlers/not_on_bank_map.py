@@ -34,12 +34,13 @@ class Handler:
         return MapChanger.get_current_map_coords() in self._no_recall_maps
 
     def _use_recall_potion(self):
+        log.info("Attempting to recall ... ")
         pyag.moveTo(664, 725)
         pyag.click(clicks=2, interval=0.1)
-        if MapChanger.has_loading_screen_passed():
-            if MapChanger.get_current_map_coords() == self._zaap_map:
-                log.info("Successfully recalled.")
-                return
+        MapChanger.wait_loading_screen_pass()
+        if MapChanger.get_current_map_coords() == self._zaap_map:
+            log.info("Successfully recalled.")
+            return
         raise RecoverableException("Failed to recall.")
     
     @staticmethod
@@ -53,9 +54,5 @@ class Handler:
             if map_coords == self._bank_map:
                 log.info("Arrived at Astrub bank map.")
                 return
-
             log.info(f"Running to bank. Current map coords: {map_coords}.")
             MapChanger.change_map(map_coords, path_to_bank[map_coords])
-            if MapChanger.has_loading_screen_passed():
-                continue
-            raise RecoverableException("Failed to detect loading screen after changing map.")

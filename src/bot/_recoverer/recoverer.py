@@ -15,6 +15,7 @@ from src.bot._exceptions import UnrecoverableException, ExceptionReason
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._recoverer._character_selector.selector import Selector as CharacterSelector
 from src.bot._recoverer._server_selector.selector import Selector as ServerSelector
+from src.bot._map_changer.map_changer import MapChanger
 
 
 class Recoverer:
@@ -22,7 +23,6 @@ class Recoverer:
     WINDOW_SIZE_FOR_SERVER_AND_CHAR_SELECTION = (1000, 785)
     IMAGE_FOLDER_PATH = "src\\bot\\_recoverer\\_images"
     LOGIN_BUTTON_IMAGE = load_image(IMAGE_FOLDER_PATH, "login_button.png")
-    BOT_STATE_DETERMINER_IMAGE = load_image(IMAGE_FOLDER_PATH, "bot_state_determiner.png")
 
     def __init__(
             self, 
@@ -39,19 +39,61 @@ class Recoverer:
         self._game_window_default_size = game_window_default_size
         self._server_selector = ServerSelector(server_name)
         self._character_selector = CharacterSelector(character_name, character_level)
+        self._exception_tracker = {}
+        self._max_consecutive_exceptions = 3
+        self._max_consecutive_exceptions_period = 120 # Seconds.
 
-    def recover(self, exception_reason: ExceptionReason = None):
+    def recover(self, exception_reason: ExceptionReason):
+        if not isinstance(exception_reason, ExceptionReason):
+            raise ValueError(f"Invalid 'exception_reason' type: {type(exception_reason)}.")
         log.info(f"Attempting to recover ... ")
-        if exception_reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
+        self._check_exception_consecutiveness(exception_reason)
+        self._manage_exception(exception_reason)
+        log.info(f"Successfully recovered.")
+
+    def _check_exception_consecutiveness(self, reason: ExceptionReason):
+        """
+        Check if the same exception has occured a specified number of times
+        within a specified period of time. When this happens it means
+        that the bot can't recover from the exception.
+        """
+        if reason not in self._exception_tracker:
+            self._exception_tracker = {}
+
+        current_time = perf_counter()
+        if reason in self._exception_tracker:
+            if (
+                self._exception_tracker[reason]["count"] >= self._max_consecutive_exceptions
+                and current_time - self._exception_tracker[reason]["timestamp"] <= self._max_consecutive_exceptions_period
+            ):
+                raise UnrecoverableException(
+                    f"Same exception '{reason}' "
+                    f"occurred over '{self._max_consecutive_exceptions}' times in a row "
+                    f"within '{self._max_consecutive_exceptions_period}' seconds."
+                )
+            else:
+                self._exception_tracker[reason]["count"] += 1
+                self._exception_tracker[reason]["timestamp"] = current_time
+        else:
+            self._exception_tracker[reason] = {"count": 1, "timestamp": current_time}
+
+    def _manage_exception(self, reason: ExceptionReason):
+        if reason == ExceptionReason.UNSPECIFIED:
+            if not self._is_control_area_visible():
+                # self._login()
+                return
+            Interfaces.close_all()
+        elif reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
             if not self._is_control_area_visible():
                 self._login()
                 return
             raise UnrecoverableException("Failed to get map coords because the map image is missing.")
-        
-        if not self._is_control_area_visible():
-            self._login()
-            return
-        Interfaces.close_all()
+        elif reason == ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE:
+            if not self._is_control_area_visible():
+                self._login()
+                pass
+            Interfaces.close_all()
+            self._emergency_recall()
 
     def _login(self):
         log.info("Attempting to log in ... ")
@@ -200,8 +242,22 @@ class Recoverer:
             f"Timed out: {timeout} seconds."
         )
 
+    @classmethod
+    def _emergency_recall(cls):
+        log.info("Attempting to recall ... ")
+        if cls._is_recall_potion_available():
+            pyag.moveTo(664, 725)
+            pyag.click(clicks=2, interval=0.1)
+            MapChanger.wait_loading_screen_pass()
+            log.info("Successfully recalled.")
+            return
+        raise UnrecoverableException("Recall potion is not available.")
+            
+    @staticmethod
+    def _is_recall_potion_available():
+        return pyag.pixelMatchesColor(664, 725, (120, 151, 154), tolerance=20)
+
 
 if __name__ == "__main__":
-    # recoverer = Recoverer("Kofas", "Boune", 65, "Dofus Retro", (950, 785))
     recoverer = Recoverer("Juni", "Semi-like", 65, "Abrak", (950, 785))
-    recoverer._login()
+                

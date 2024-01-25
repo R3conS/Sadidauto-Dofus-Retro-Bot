@@ -164,6 +164,10 @@ class BaseSpell:
                 )
                 if len(rectangle) <= 0: # If images are different then the spell animation has finished.
                     log.info(f"Successfully cast: '{self._name}'.")
+                    # Making sure the cursor doesn't remain on the casting position
+                    # because it might hover over the character or monster and
+                    # make the info card appear.
+                    move_mouse_off_game_area() 
                     return
             
             raise FailedToDetectIfSpellWasCastSuccessfully(
