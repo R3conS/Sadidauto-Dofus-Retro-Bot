@@ -3,10 +3,10 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from enum import Enum
 
-from ._sub_states.hunting.hunter import Hunter
-from ._sub_states.banking.banker import Banker
-from ._status_enum import Status
 from src.bot._states.states_enum import State as MainBotState
+from src.bot._states.out_of_combat._sub_states.hunting.hunter import Hunter
+from src.bot._states.out_of_combat._sub_states.banking.banker import Banker
+from src.bot._states.out_of_combat._status_enum import Status
 
 
 class Controller:

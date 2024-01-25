@@ -11,13 +11,13 @@ import pyautogui as pyag
 from image_detection import ImageDetection
 from screen_capture import ScreenCapture
 from src.utilities import load_image_full_path, move_mouse_off_game_area
-from ._map_data.getter import Getter as MapDataGetter
-from ..banking.bank_data import Getter as BankDataGetterGetter
+from src.bot._exceptions import RecoverableException
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.bot._states.out_of_combat._status_enum import Status
-from src.bot._exceptions import RecoverableException
+from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 
 
 class Hunter:
@@ -51,7 +51,7 @@ class Hunter:
         self._segmented_monster_images = self._segment_data(monster_images, segment_size)
         self._segmented_monster_image_masks = self._segment_data(monster_image_masks, segment_size)
         # Bank data
-        bank_data = BankDataGetterGetter.get_data(self._script)
+        bank_data = BankDataGetter.get_data(self._script)
         self._bank_map_coords = bank_data["bank_map"]
         self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
         self._bank_exit_coords = bank_data["exit_coords"]

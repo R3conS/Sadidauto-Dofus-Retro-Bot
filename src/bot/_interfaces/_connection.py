@@ -5,7 +5,7 @@ from time import perf_counter
 
 from pyautogui import pixelMatchesColor, moveTo, click
 
-from ._interface import Interface
+from src.bot._interfaces._interface import Interface
 from src.bot._exceptions import RecoverableException
 
 

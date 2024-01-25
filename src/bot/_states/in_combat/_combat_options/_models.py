@@ -2,7 +2,7 @@ import os
 
 import cv2
 
-from ._base_option import BaseOption
+from src.bot._states.in_combat._combat_options._base_option import BaseOption
 
 
 class Models(BaseOption):

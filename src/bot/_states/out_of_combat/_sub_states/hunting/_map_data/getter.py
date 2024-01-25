@@ -1,5 +1,5 @@
-from ._af_anticlock import Anticlock
-from ._af_clockwise import Clockwise
+from src.bot._states.out_of_combat._sub_states.hunting._map_data._af_anticlock import Anticlock
+from src.bot._states.out_of_combat._sub_states.hunting._map_data._af_clockwise import Clockwise
 
 
 class Getter:

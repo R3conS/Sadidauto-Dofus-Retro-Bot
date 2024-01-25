@@ -11,7 +11,7 @@ from utilities import move_mouse_off_game_area
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.bot._map_changer.map_changer import MapChanger
-from .._map_data.getter import Getter as FightingDataGetter
+from src.bot._states.in_combat._sub_states.fighting._map_data.getter import Getter as FightingDataGetter
 
 
 class Mover:

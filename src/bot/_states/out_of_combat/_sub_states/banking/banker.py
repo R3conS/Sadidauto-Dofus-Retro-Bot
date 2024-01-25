@@ -1,10 +1,10 @@
 from src.logger import Logger
 log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
-from ._handlers.not_on_bank_map import Handler as Handler_NotOnBankMap
-from ._handlers.on_bank_map import Handler as Handler_OnBankMap
 from src.bot._map_changer.map_changer import MapChanger
-from .bank_data import Getter as BankDataGetter
+from src.bot._states.out_of_combat._sub_states.banking._handlers.not_on_bank_map import Handler as Handler_NotOnBankMap
+from src.bot._states.out_of_combat._sub_states.banking._handlers.on_bank_map import Handler as Handler_OnBankMap
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 
 
 class Banker:

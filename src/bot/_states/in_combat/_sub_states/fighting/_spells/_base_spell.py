@@ -11,7 +11,7 @@ import pyautogui as pyag
 from src.utilities import move_mouse_off_game_area, load_image_full_path
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
-from ._exceptions import (
+from src.bot._states.in_combat._sub_states.fighting._spells._exceptions import (
     FailedToCastSpell,
     FailedToGetSpellIconPosition, 
     FailedToDetectIfSpellIsSelected,

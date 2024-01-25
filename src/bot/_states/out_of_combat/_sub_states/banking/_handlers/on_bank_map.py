@@ -3,10 +3,10 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import pyautogui as pyag
 
-from .._vault.vault import Vault
-from ..bank_data import Getter as BankDataGetter
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._exceptions import RecoverableException
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
+from src.bot._states.out_of_combat._sub_states.banking._vault.vault import Vault
 
 
 class Handler:

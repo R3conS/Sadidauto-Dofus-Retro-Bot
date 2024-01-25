@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 from pyautogui import pixelMatchesColor
 
-from ._interface import Interface
+from src.bot._interfaces._interface import Interface
 
 
 class Inventory:

@@ -3,7 +3,7 @@ log = Logger.setup_logger("GLOBAL", Logger.DEBUG, True, True)
 
 import cv2
 
-from ._interface import Interface
+from src.bot._interfaces._interface import Interface
 from src.image_detection import ImageDetection
 from src.screen_capture import ScreenCapture
 from src.utilities import load_image

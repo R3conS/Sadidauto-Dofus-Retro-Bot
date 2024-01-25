@@ -1,4 +1,4 @@
-from ._base_spell import BaseSpell
+from src.bot._states.in_combat._sub_states.fighting._spells._base_spell import BaseSpell
 
 
 class Earthquake(BaseSpell):

@@ -1,4 +1,4 @@
-from ._astrub_forest import AstrubForest
+from src.bot._states.in_combat._sub_states.fighting._map_data._astrub_forest import AstrubForest
 
 
 class Getter:

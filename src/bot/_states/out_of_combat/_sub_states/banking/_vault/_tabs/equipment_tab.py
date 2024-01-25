@@ -1,6 +1,6 @@
 import os
 
-from ._base_tab import BaseTab
+from src.bot._states.out_of_combat._sub_states.banking._vault._tabs._base_tab import BaseTab
 
 
 class EquipmentTab(BaseTab):
