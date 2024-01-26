@@ -4,28 +4,58 @@ os.environ["TESSDATA_PREFIX"] = "src\\utilities\\ocr"
 import cv2
 import numpy as np
 from PIL import Image
-from tesserocr import PyTessBaseAPI
+from tesserocr import PyTessBaseAPI, RIL
 
 
 class OCR:
 
     @classmethod
-    def get_text_from_image(cls, image: Image.Image | np.ndarray | str):
+    def get_text_from_image(
+        cls, 
+        image: Image.Image | np.ndarray | str,
+        with_rectangles: bool = False
+    ):
+        if not with_rectangles:
+            method = cls._read_text_from_image
+        else:
+            method = cls._read_text_from_image_with_rectangles
+
         if isinstance(image, str):
             if not os.path.exists(image):
                 raise FileNotFoundError(f"File {image} not found!")
-            return cls._read_text_from_image(Image.open(image))
+            return method(Image.open(image))
         elif isinstance(image, Image.Image):
-            return cls._read_text_from_image(image)
+            return method(image)
         elif isinstance(image, np.ndarray):
-            return cls._read_text_from_image(Image.fromarray(image))
+            return method(Image.fromarray(image))
+        
         raise TypeError(f"Invalid image type: {type(image)}")
 
     @staticmethod
-    def _read_text_from_image(image: Image):
+    def _read_text_from_image(image: Image) -> str:
         with PyTessBaseAPI() as api:
             api.SetImage(image)
             return api.GetUTF8Text().strip()
+
+    @staticmethod
+    def _read_text_from_image_with_rectangles(image: Image) -> list[tuple[str, tuple]]:
+        with PyTessBaseAPI() as api:
+            api.SetImage(image)
+            api.Recognize()
+            ri = api.GetIterator()
+            level = RIL.WORD
+            results = []
+            while ri:
+                if ri.Empty(level):
+                    break
+                try:
+                    box = ri.BoundingBox(level)
+                    word = ri.GetUTF8Text(level)
+                    results.append((word, (box[0], box[1], box[2] - box[0], box[3] - box[1])))
+                except:
+                    pass
+                ri.Next(level)
+            return results
 
     @staticmethod
     def convert_to_grayscale(image: np.ndarray):

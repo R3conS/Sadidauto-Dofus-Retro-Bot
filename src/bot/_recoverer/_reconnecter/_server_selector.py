@@ -5,16 +5,18 @@ from time import perf_counter, sleep
 
 import pyautogui as pyag
 
-from src.bot._exceptions import UnrecoverableException
+from src.bot._exceptions import RecoverableException
+from src.bot._recoverer._reconnecter._game_window import get_game_window, resize_game_window
 from src.utilities.general import move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
 from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
 
-class Selector:
+class ServerSelector:
 
-    # Dofus client size must be 1000x785 for areas to be accurate.
+    # Dofus client size must be 1000x785 for search areas to be accurate.
+    WINDOW_SIZE = (1000, 785)
     SERVER_SLOTS = { # server_slot: server_name_area
         1: (88, 482, 138, 23),
         2: (257, 482, 138, 23),
@@ -23,20 +25,31 @@ class Selector:
         5: (763, 482, 138, 23)
     }
 
-    def __init__(self, server_name: str):
+    def __init__(
+        self, 
+        server_name: str,
+        game_window_identifier: int | str, # hwnd (int) or title (str).
+    ):
         self._server_name = server_name
+        self._game_window = get_game_window(game_window_identifier)
     
     def select_server(self):
-        log.info(f"Attemping to select the server ...")
+        log.info("Attemping to select the server ...")
+        if self._game_window.size != self.WINDOW_SIZE:
+            resize_game_window(self._game_window, self.WINDOW_SIZE)
         slot_pos = self._find_server()
-        if slot_pos is None:
-            raise UnrecoverableException(f"Failed to select the server.")
         log.info(f"Double clicking the server slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
-        log.info(f"Server selected successfully.")
         move_mouse_off_game_area()
+        log.info("Successfully selected the server!")
+
+    @staticmethod
+    def is_on_server_selection_screen():
+        return OCR.get_text_from_image(
+            ScreenCapture.custom_area((62, 253, 227, 31))
+        ) == "Choose a server"
 
     def _find_server(self):
         log.info(f"Looking for a server named: '{self._server_name}' ... ")
@@ -44,8 +57,7 @@ class Selector:
             if self._server_name == self._read_server_name(server_slot):
                 log.info(f"Found server at slot: '{server_slot}'.")
                 return ImageDetection.get_rectangle_center_point(self.SERVER_SLOTS[server_slot])
-        log.error(f"Failed to find the server.")
-        return None
+        raise RecoverableException("Failed to find the server.")
 
     @classmethod
     def _read_server_name(cls, server_slot: int):
@@ -59,33 +71,34 @@ class Selector:
     @classmethod
     def _wait_loading_screen_end(cls):
         log.info(f"Waiting for the loading screen to end ... ")
-        timeout = 20
+        timeout = 15
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
             if (
-                cls._is_character_selection_screen_visible()
+                cls._is_on_character_selection_screen()
                 # Character selection screen is skipped if character is in combat.
-                or cls._is_character_logged_in() 
+                or cls._is_control_area_visible() 
             ):
                 log.info(f"Loading screen has ended.")
                 return
-            sleep(0.1)
-        raise UnrecoverableException(
+            sleep(0.25)
+        raise RecoverableException(
             "Failed to detect end of loading screen. "
             f"Timed out: {timeout} seconds."
         )
 
     @staticmethod
-    def _is_character_selection_screen_visible():
+    def _is_on_character_selection_screen():
         return OCR.get_text_from_image(
-            ScreenCapture.custom_area((61, 296, 248, 32))
+            ScreenCapture.custom_area((61, 297, 246, 32))
         ) == "Choose your character"
 
     @staticmethod
-    def _is_character_logged_in():
+    def _is_control_area_visible():
+        """Chat, minimap, interface icons, spell/item bar etc."""
         return pyag.pixelMatchesColor(673, 747, (213, 207, 170))
 
 
 if __name__ == "__main__":
-    selector = Selector("Semi-like")
+    selector = ServerSelector("Boune", "Dofus Retro")
     selector.select_server()

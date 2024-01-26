@@ -10,7 +10,7 @@ from cv2 import imwrite as save_image
 from src.utilities.screen_capture import ScreenCapture
 
 
-def take_a_screenshot(exception_reason):
+def _take_a_screenshot(exception_reason):
     log.info("Screenshotting the game window ... ")
     sc = ScreenCapture.game_window()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
@@ -32,7 +32,7 @@ class RecoverableException(Exception):
         self.message = message
         self.reason = reason
         log.error(f"RecoverableException: {message}")
-        take_a_screenshot(self.reason)
+        _take_a_screenshot(self.reason)
         super().__init__(message)
 
 
@@ -42,9 +42,9 @@ class UnrecoverableException(Exception):
         self.message = message
         self.reason = reason
         log.critical(f"UnrecoverableExpection: {message}")
-        take_a_screenshot(self.reason)
+        _take_a_screenshot(self.reason)
         super().__init__(message)
 
 
 if __name__ == "__main__":
-    take_a_screenshot(ExceptionReason.UNSPECIFIED)
+    _take_a_screenshot(ExceptionReason.UNSPECIFIED)

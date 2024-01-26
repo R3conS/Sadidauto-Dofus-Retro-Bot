@@ -7,21 +7,23 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.bot._exceptions import UnrecoverableException
+from src.bot._exceptions import RecoverableException, UnrecoverableException
+from src.bot._recoverer._reconnecter._game_window import get_game_window, resize_game_window
 from src.utilities.general import load_image_full_path, move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
 from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
 
-class Selector:
+class CharacterSelector:
 
-    # Dofus client size must be 1000x785 for areas to be accurate.
+    # Dofus client size must be 1000x785 for search areas to be accurate.
     # At certain client sizes some character's lower halves (like q, j, g etc.) 
     # on the name tooltip are being cut off which makes it impossible to read 
     # accurately. If a need arises to change the client size, make sure to 
     # choose one that fully displays the characters on the tooltip. Also
     # adjust all the coords in the CHAR_SLOT_INFO dict accordingly.
+    WINDOW_SIZE = (1000, 785)
     CHAR_SLOT_INFO = {
         1: {
             "name_area_with_tooltip": (81, 534, 190, 28), 
@@ -60,29 +62,43 @@ class Selector:
         }
     }
     NAME_TOOLTIP_DOTS_IMAGE = load_image_full_path(
-        "src\\bot\\_recoverer\\_character_selector\\_images\\tooltip_dots.png"
+        "src\\bot\\_recoverer\\_reconnecter\\_images\\tooltip_dots.png"
     )
     FORBIDDEN_CHARACTERS = [
         ".", ",", ":", ";", "!", "?", "|", "/", "\\", "(", ")", "{", "}", "<", ">", " "
     ]
 
-    def __init__(self, character_name: str, character_level: int):
+    def __init__(
+        self, 
+        character_name: str, 
+        character_level: int,
+        game_window_identifier: int | str, # hwnd (int) or title (str).
+    ):
         self._character_name = character_name
         self._character_level = character_level
+        self._game_window = get_game_window(game_window_identifier)
 
     def select_character(self):
-        log.info(f"Attempting to select character: '{self._character_name}' ... ")
+        log.info("Attempting to select the character ...")
+        if self._game_window.size != self.WINDOW_SIZE:
+            resize_game_window(self._game_window, self.WINDOW_SIZE)
         slot_pos = self._find_character_by_full_name()
         if slot_pos is None:
             slot_pos = self._find_character_by_partial_name()
         if slot_pos is None:
-            raise UnrecoverableException(f"Failed to select the character.")
-        log.info(f"Double clicking character slot ... ")
+            raise RecoverableException("Failed to select the character.")
+        log.info(f"Double clicking the character slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
-        log.info(f"Character selected successfully.")
+        log.info("Successfully selected the character!")
         move_mouse_off_game_area()
+
+    @staticmethod
+    def is_on_character_selection_screen():
+        return OCR.get_text_from_image(
+            ScreenCapture.custom_area((61, 297, 246, 32))
+        ) == "Choose your character"
 
     def _find_character_by_full_name(self):
         log.info(f"Searching for character by full name ... ")
@@ -171,22 +187,31 @@ class Selector:
             )
         ) > 0
 
-    @staticmethod
-    def _wait_loading_screen_end():
+    @classmethod
+    def _wait_loading_screen_end(cls):
         log.info(f"Waiting for the loading screen to end ... ")
-        timeout = 20
+        timeout = 15
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
-            if pyag.pixelMatchesColor(636, 753, (213, 207, 170)):
+            if cls._is_control_area_visible():
                 log.info(f"Loading screen has ended.")
                 return
-            sleep(0.1)
-        raise UnrecoverableException(
+            sleep(0.25)
+        raise RecoverableException(
             "Failed to detect end of loading screen. "
             f"Timed out: {timeout} seconds."
         )
 
+    @staticmethod
+    def _is_control_area_visible():
+        """Chat, minimap, interface icons, spell/item bar etc."""
+        return (
+            pyag.pixelMatchesColor(673, 747, (213, 207, 170))
+            # Color is different when an offer (exchange, group invite, etc.) is on screen.
+            or pyag.pixelMatchesColor(673, 747, (192, 186, 153))
+        )
+
 
 if __name__ == "__main__":
-    selector = Selector("Juni", 65)
+    selector = CharacterSelector("Juni", 65, "Abrak")
     selector.select_character()
