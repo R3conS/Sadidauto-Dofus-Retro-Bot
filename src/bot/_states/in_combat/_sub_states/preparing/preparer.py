@@ -89,7 +89,7 @@ class Preparer:
         raise RecoverableException("Failed to select a dummy cell.")
 
     def _select_starting_cell(self, map_coords: str, dummy_cell_color: str = None):
-        log.info(f"Selecting a starting cell ...")
+        log.info("Selecting a starting cell ...")
         if dummy_cell_color is not None:
             starting_cells = self._get_free_starting_cells(dummy_cell_color, map_coords)
         else:

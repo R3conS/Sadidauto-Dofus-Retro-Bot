@@ -87,7 +87,7 @@ class CharacterSelector:
             slot_pos = self._find_character_by_partial_name()
         if slot_pos is None:
             raise RecoverableException("Failed to select the character.")
-        log.info(f"Double clicking the character slot ... ")
+        log.info("Double clicking the character slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
@@ -101,12 +101,12 @@ class CharacterSelector:
         ) == "Choose your character"
 
     def _find_character_by_full_name(self):
-        log.info(f"Searching for character by full name ... ")
+        log.info("Searching for character by full name ... ")
         for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
             if self._character_name == self._read_name_area(char_slot, read_tooltip=True):
                 log.info(f"Found character at slot: '{char_slot}'.")
                 return self.CHAR_SLOT_INFO[char_slot]["slot_pos"]
-        log.error(f"Failed to find character by full name.")
+        log.error("Failed to find character by full name.")
         return None
 
     def _find_character_by_partial_name(self):
@@ -116,7 +116,7 @@ class CharacterSelector:
         read properly, which happens quite often due to letters like 
         'q', 'j', 'g'.
         """
-        log.info(f"Searching for character by partial name and level ... ")
+        log.info("Searching for character by partial name and level ... ")
         for char_slot in range(1, len(self.CHAR_SLOT_INFO) + 1):
             if (
                 self._character_name[:9] in self._read_name_area(char_slot, read_tooltip=False)
@@ -124,7 +124,7 @@ class CharacterSelector:
             ):
                 log.info(f"Found character at slot: '{char_slot}'.")
                 return self.CHAR_SLOT_INFO[char_slot]["slot_pos"]
-        log.error(f"Failed to find character by partial name.")
+        log.error("Failed to find character by partial name.")
         return None
 
     @classmethod
@@ -189,12 +189,12 @@ class CharacterSelector:
 
     @classmethod
     def _wait_loading_screen_end(cls):
-        log.info(f"Waiting for the loading screen to end ... ")
+        log.info("Waiting for the loading screen to end ... ")
         timeout = 15
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
             if cls._is_control_area_visible():
-                log.info(f"Loading screen has ended.")
+                log.info("Loading screen has ended.")
                 return
             sleep(0.25)
         raise RecoverableException(

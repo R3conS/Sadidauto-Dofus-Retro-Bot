@@ -103,7 +103,7 @@ class BaseTab(ABC):
         while True:
             if self._is_slot_empty(*slot_coords):
                 log.info(
-                    f"Successfully deposited all items in the tab! "
+                    "Successfully deposited all items in the tab! "
                     f"Total items deposited: {deposited_items_count}. "
                     f"Pods freed: {pods_before_deposit - PodsReader.BANK.get_occupied_pods()}."
                 )
@@ -328,7 +328,7 @@ class BaseTab(ABC):
             if confidence < 0 or confidence > 1:
                 raise ValueError("Argument's 'image_paths' keys (confidence) must be between 0.0 and 1.0.")
             if not isinstance(image_paths_list, list):
-                raise ValueError(f"Argument's 'image_paths' key values must be of type 'list'.")
+                raise ValueError("Argument's 'image_paths' key values must be of type 'list'.")
             
             loaded_images = []
             for path in image_paths_list:

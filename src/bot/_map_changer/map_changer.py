@@ -43,7 +43,7 @@ class MapChanger:
         
         if not cls._is_minimap_visible():
             raise RecoverableException(
-                message=f"Failed to get current map coords because the minimap is not visible.",
+                message="Failed to get current map coords because the minimap is not visible.",
                 reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
             )
 
@@ -68,11 +68,11 @@ class MapChanger:
 
     @staticmethod
     def wait_loading_screen_pass():
-        log.info(f"Waiting for loading screen ... ")
+        log.info("Waiting for loading screen ... ")
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
             if MapChanger._is_loading_screen_visible():
-                log.info(f"Loading screen detected ... ")
+                log.info("Loading screen detected ... ")
                 break
         else:
             raise RecoverableException(
@@ -83,7 +83,7 @@ class MapChanger:
         start_time = perf_counter()
         while perf_counter() - start_time <= 10:
             if not MapChanger._is_loading_screen_visible():
-                log.info(f"Loading screen finished.")
+                log.info("Loading screen finished.")
                 return
         else:
             raise RecoverableException(

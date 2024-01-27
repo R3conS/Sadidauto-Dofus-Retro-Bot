@@ -44,10 +44,10 @@ class Recoverer:
         ):
         if not isinstance(exception_reason, ExceptionReason):
             raise ValueError(f"Invalid 'exception_reason' type: {type(exception_reason)}.")
-        log.info(f"Attempting to recover ... ")
+        log.info("Attempting to recover ... ")
         self._check_exception_consecutiveness(exception_reason)
         self._manage_exception(exception_reason, exception_occured_in_sub_state)
-        log.info(f"Successfully recovered!")
+        log.info("Successfully recovered!")
 
     def _check_exception_consecutiveness(self, reason: ExceptionReason):
         """

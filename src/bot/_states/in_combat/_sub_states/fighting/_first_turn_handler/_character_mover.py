@@ -29,7 +29,7 @@ class Mover:
 
     def move(self):
         if self._is_char_already_on_destination_cell():
-            log.info(f"Character is already on the correct cell.")
+            log.info("Character is already on the correct cell.")
             return
         
         try:

@@ -110,9 +110,9 @@ class BaseReader(ABC):
             binarization_value += 5
             if binarization_value > 255:
                 raise RecoverableException(
-                    f"Failed to read defined tooltip pattern. "
+                    "Failed to read defined tooltip pattern. "
                     f"Received: '{text}'. "
-                    f"Expected: '\d+podsoutof\d+'."
+                    "Expected: '\d+podsoutof\d+'."
                 )
 
     @staticmethod

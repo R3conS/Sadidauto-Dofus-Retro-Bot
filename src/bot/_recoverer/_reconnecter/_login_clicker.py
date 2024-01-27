@@ -27,7 +27,7 @@ class LoginClicker:
         self._game_window = get_game_window(game_window_identifier)
 
     def login(self):
-        log.info(f"Attempting to log in ...")
+        log.info("Attempting to log in ...")
         if self._game_window.size != self.WINDOW_SIZE:
             resize_game_window(self._game_window, self.WINDOW_SIZE)
 
@@ -44,7 +44,7 @@ class LoginClicker:
                 "is open nor is the 'Log in' button visible."
             )
         self._wait_loading_screen_pass()
-        log.info(f"Successfully logged in!")
+        log.info("Successfully logged in!")
 
     @classmethod
     def is_on_login_screen(cls):
@@ -78,12 +78,12 @@ class LoginClicker:
 
     @classmethod
     def _wait_loading_screen_pass(cls):
-        log.info(f"Waiting for the loading screen to pass ...")
+        log.info("Waiting for the loading screen to pass ...")
         timeout = 15
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
             if cls._is_on_server_selection_screen():
-                log.info(f"Loading screen passed!")
+                log.info("Loading screen passed!")
                 return
             sleep(0.25)
         raise RecoverableException(

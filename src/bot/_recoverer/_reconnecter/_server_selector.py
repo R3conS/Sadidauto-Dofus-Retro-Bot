@@ -38,7 +38,7 @@ class ServerSelector:
         if self._game_window.size != self.WINDOW_SIZE:
             resize_game_window(self._game_window, self.WINDOW_SIZE)
         slot_pos = self._find_server()
-        log.info(f"Double clicking the server slot ... ")
+        log.info("Double clicking the server slot ... ")
         pyag.moveTo(*slot_pos)
         pyag.click(clicks=2, interval=0.1)
         self._wait_loading_screen_end()
@@ -70,7 +70,7 @@ class ServerSelector:
 
     @classmethod
     def _wait_loading_screen_end(cls):
-        log.info(f"Waiting for the loading screen to end ... ")
+        log.info("Waiting for the loading screen to end ... ")
         timeout = 15
         start_time = perf_counter()
         while perf_counter() - start_time < timeout:
@@ -79,7 +79,7 @@ class ServerSelector:
                 # Character selection screen is skipped if character is in combat.
                 or cls._is_control_area_visible() 
             ):
-                log.info(f"Loading screen has ended.")
+                log.info("Loading screen has ended.")
                 return
             sleep(0.25)
         raise RecoverableException(

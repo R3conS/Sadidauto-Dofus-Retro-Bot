@@ -62,7 +62,7 @@ class Fighter:
                 return
             
         raise RecoverableException(
-            f"Failed to detect if 'Fight Results' window was closed. "
+            "Failed to detect if 'Fight Results' window was closed. "
             f"Timed out: {timeout} seconds."
         )
 

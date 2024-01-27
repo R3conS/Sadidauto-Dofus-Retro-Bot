@@ -44,7 +44,7 @@ class ImageDetection:
         n_channels = cls.get_number_of_channels(needle)
         if h_channels != n_channels:
             raise ValueError(
-                f"Number of channels in haystack and needle images do not match. "
+                "Number of channels in haystack and needle images do not match. "
                 f"Haystack = {h_channels}, needle = {n_channels}."
             )
         

@@ -51,21 +51,21 @@ class Connection:
                     )
                     x, y = ImageDetection.get_rectangle_center_point(rectangle)
                     
-                    log.info(f"Clicking the 'Yes' button ... ")
+                    log.info("Clicking the 'Yes' button ... ")
                     moveTo(x, y)
                     click()
                     timeout = 5
                     start_time = perf_counter()
                     while perf_counter() - start_time <= timeout:
                         if not cls.is_open():
-                            log.info(f"Successfully clicked the 'Yes' button!")
+                            log.info("Successfully clicked the 'Yes' button!")
                             return
                     raise RecoverableException(
                         "Timed out while detecting if 'Yes' button was clicked successfully. "
                         f"Timeout: {timeout} seconds."
                     )
 
-        raise UnrecoverableException(f"Failed to find the 'Yes' button.")
+        raise UnrecoverableException("Failed to find the 'Yes' button.")
 
 
 if __name__ == "__main__":

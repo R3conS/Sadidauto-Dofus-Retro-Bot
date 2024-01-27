@@ -148,7 +148,7 @@ class BaseSpell:
             if not self.is_castable_on_pos(x, y):
                 raise SpellIsNotCastableOnProvidedPosition(f"Spell is not castable on position: {x, y}.")
 
-            log.info(f"Casting ... ")
+            log.info("Casting ... ")
             ap_area_before_casting = ScreenCapture.custom_area(self.AP_AREA)
             pyag.click() # No need to move before clicking because is_castable_on_pos() already does that.
             

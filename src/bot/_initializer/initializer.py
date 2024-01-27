@@ -52,14 +52,14 @@ class Initializer:
         if self._script not in self.VALID_SCRIPTS:
             log.critical(f"Script name is invalid: '{self._script}'! Exiting ... ")
             os._exit(1)
-        log.info(f"Successfully verified script!")
+        log.info("Successfully verified script!")
 
     def _verify_server(self):
         log.info("Verifying server ...")
         if self._server_name not in self.VALID_SERVERS:
             log.critical(f"Server name is invalid: '{self._server_name}'! Exiting ... ")
             os._exit(1)
-        log.info(f"Successfully verified server!")
+        log.info("Successfully verified server!")
 
     def _prepare_game_window(self):
         log.info("Preparing Dofus window ...")
@@ -108,7 +108,7 @@ class Initializer:
             log.info(f"Successfully read character's level: {level}!")
             Interfaces.CHARACTERISTICS.close()
             return int(level)
-        log.critical(f"Failed to read character's level! Exiting ...")
+        log.critical("Failed to read character's level! Exiting ...")
         os._exit(1)
 
     def _start_disturbance_checker(self):
