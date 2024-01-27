@@ -25,6 +25,7 @@ class ExceptionReason(Enum):
     UNSPECIFIED = 1 # Default.
     FAILED_TO_GET_MAP_COORDS = 2
     FAILED_TO_CHANGE_MAP = 3
+    FAILED_TO_LOAD_SPELL_ICONS = 4
 
 
 class RecoverableException(Exception):

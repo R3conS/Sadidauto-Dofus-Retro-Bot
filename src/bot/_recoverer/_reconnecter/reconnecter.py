@@ -6,7 +6,7 @@ from time import perf_counter, sleep
 import numpy as np
 from pyautogui import pixelMatchesColor
 
-from src.bot._exceptions import RecoverableException, UnrecoverableException
+from src.bot._exceptions import RecoverableException, UnrecoverableException, ExceptionReason
 from src.bot._recoverer._reconnecter._character_selector import CharacterSelector
 from src.bot._recoverer._reconnecter._game_window import get_game_window, resize_game_window
 from src.bot._recoverer._reconnecter._login_clicker import LoginClicker
@@ -42,34 +42,41 @@ class Reconnecter:
         while total_attempts < max_attempts:
             try:
                 log.info(f"({total_attempts + 1}/{max_attempts}) Attempting to reconnect ...")
-                if self._login_clicker.is_on_login_screen():
-                    self._login_clicker.login()
-                if self._server_selector.is_on_server_selection_screen():
-                    self._server_selector.select_server()
-                if self._character_selector.is_on_character_selection_screen():
-                    self._character_selector.select_character()
+                self._connect()
                 if self._is_account_connected():
-                    if self._game_window.size != self._game_window_default_size:
-                        resize_game_window(self._game_window, self._game_window_default_size)
-                    self._wait_for_map_and_minimap_to_load()
-                    if disconnect_occured_in_sub_state == InCombat_SubState.PREPARING:
-                        self._wait_chat_message_online_and_in_the_fight_to_load()
-                    elif disconnect_occured_in_sub_state == InCombat_SubState.FIGHTING:
-                        # ToDo: If the fight ends during disconnection
-                        # the spell icons will never load and RecoverableException
-                        # will keep getting raised. This will inevitably cause
-                        # an UnrecoverableException to be raised. Need to find
-                        # a way to fix this. Can just reset 'disconnect_occured_in_sub_state'
-                        # to None before waiting, but this seems like a hacky solution.
-                        self._wait_for_spell_icons_to_load()
+                    self._wait_game_elements_loaded(disconnect_occured_in_sub_state)
                     log.info("Successfully reconnected!")
                     break
                 total_attempts += 1
-            except RecoverableException:
+            except RecoverableException as e:
+                if e.reason == ExceptionReason.FAILED_TO_LOAD_SPELL_ICONS:
+                    # If the fight ends during disconnection, the spell icons 
+                    # will never load. This will inevitably cause an UnrecoverableException 
+                    # to be raised because the bot still thinks the disconnect
+                    # occured in the FIGHTING sub-state. To prevent this the
+                    # disconnect_occured_in_sub_state is set to None.
+                    disconnect_occured_in_sub_state = None
                 total_attempts += 1
                 log.error("Failed to reconnect!")
         else:
             raise UnrecoverableException(f"Failed to reconnect in '{max_attempts}' attempts.")
+
+    def _connect(self):
+        if self._login_clicker.is_on_login_screen():
+            self._login_clicker.login()
+        if self._server_selector.is_on_server_selection_screen():
+            self._server_selector.select_server()
+        if self._character_selector.is_on_character_selection_screen():
+            self._character_selector.select_character()
+
+    def _wait_game_elements_loaded(self, disconnect_occured_in_sub_state: InCombat_SubState = None):
+        if self._game_window.size != self._game_window_default_size:
+            resize_game_window(self._game_window, self._game_window_default_size)
+        self._wait_for_map_and_minimap_to_load()
+        if disconnect_occured_in_sub_state == InCombat_SubState.PREPARING:
+            self._wait_chat_message_online_and_in_the_fight_to_load()
+        elif disconnect_occured_in_sub_state == InCombat_SubState.FIGHTING:
+            self._wait_for_spell_icons_to_load()
 
     @staticmethod
     def _is_account_connected():
@@ -165,8 +172,8 @@ class Reconnecter:
                 return
             sleep(0.25)
         raise RecoverableException(
-            "Failed to detect if spell icons have loaded. "
-            f"Timed out: {timeout} seconds."
+            message=f"Failed to detect if spell icons have loaded. Timed out: {timeout} seconds.",
+            reason=ExceptionReason.FAILED_TO_LOAD_SPELL_ICONS
         )
 
 
