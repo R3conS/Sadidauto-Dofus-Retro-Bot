@@ -38,16 +38,26 @@ class BaseOption:
         if icon_pos is None:
             raise RecoverableException(f"Failed to get '{self._name}' toggle icon position.")
 
-        pyag.moveTo(*icon_pos)
-        pyag.click()
+        timeout = 10
+        outer_start_time = perf_counter()
+        while perf_counter() - outer_start_time < timeout:
+            # When character gets disconnected during 'preparing' sub-state,
+            # the tactical mode icon will have a green check mark (on) but 
+            # the mode won't actually be turned on (Dofus bug). This is why 
+            # there are several click attempts so that the icon is unchecked 
+            # and checked again.
+            pyag.moveTo(*icon_pos)
+            pyag.click()
+            inner_start_time = perf_counter()
+            while perf_counter() - inner_start_time < 2:
+                if is_on():
+                    log.info(f"Successfully turned on '{self._name}'.")
+                    return
 
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
-            if is_on():
-                log.info(f"Successfully turned on '{self._name}'.")
-                return
-        
-        raise RecoverableException(f"Timed out while turning on '{self._name}'.")
+        raise RecoverableException(
+            f"Timed out while turning on '{self._name}'. "
+            f"Timeout: {timeout} seconds."
+        )
 
     def _is_on(self, confidence, method):
         return len(
