@@ -5,6 +5,7 @@ from time import perf_counter
 
 import pyautogui as pyag
 
+from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
 from src.bot._exceptions import ExceptionReason, UnrecoverableException
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger
@@ -36,13 +37,17 @@ class Recoverer:
             game_window_default_size
         )
 
-    def recover(self, exception_reason: ExceptionReason):
+    def recover(
+            self, 
+            exception_reason: ExceptionReason, 
+            exception_occured_in_sub_state: InCombat_SubState = None
+        ):
         if not isinstance(exception_reason, ExceptionReason):
             raise ValueError(f"Invalid 'exception_reason' type: {type(exception_reason)}.")
         log.info(f"Attempting to recover ... ")
         self._check_exception_consecutiveness(exception_reason)
-        self._manage_exception(exception_reason)
-        log.info(f"Successfully recovered.")
+        self._manage_exception(exception_reason, exception_occured_in_sub_state)
+        log.info(f"Successfully recovered!")
 
     def _check_exception_consecutiveness(self, reason: ExceptionReason):
         """
@@ -70,31 +75,22 @@ class Recoverer:
         else:
             self._exception_tracker[reason] = {"count": 1, "timestamp": current_time}
 
-    def _manage_exception(self, reason: ExceptionReason):
+    def _manage_exception(
+            self, 
+            reason: ExceptionReason, 
+            occured_in_sub_state: InCombat_SubState = None
+        ):
         if reason == ExceptionReason.UNSPECIFIED:
-            if self._is_disconnected():
-                self._reconnecter.reconnect()
-                return
-            Interfaces.close_all()
-        elif reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
-            if self._is_disconnected():
-                self._reconnecter.reconnect()
-                return
-            raise UnrecoverableException("Failed to get map coords because the map image is missing.")
-        elif reason == ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE:
-            if self._is_disconnected():
-                self._reconnecter.reconnect()
-            Interfaces.close_all()
-            self._emergency_recall()
-
-    @staticmethod
-    def _is_disconnected():
-        """If chat, minimap, spell/item bar, interface icons etc. are not visible."""
-        return not (
-            pyag.pixelMatchesColor(673, 747, (213, 207, 170))
-            # Color is different when an offer (exchange, group invite, etc.) is on screen.
-            or pyag.pixelMatchesColor(673, 747, (192, 186, 153))
-        )
+            if not self._reconnecter._is_account_connected():
+                self._reconnecter.reconnect(occured_in_sub_state)
+            else:
+                Interfaces.close_all()
+        elif reason == ExceptionReason.FAILED_TO_CHANGE_MAP:
+            if not self._reconnecter._is_account_connected():
+                self._reconnecter.reconnect(occured_in_sub_state)
+            else:
+                Interfaces.close_all()
+                self._emergency_recall()
 
     @classmethod
     def _emergency_recall(cls):

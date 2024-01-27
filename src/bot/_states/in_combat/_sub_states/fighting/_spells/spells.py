@@ -10,3 +10,12 @@ class Spells:
     POISONED_WIND = PoisonedWind()
     SYLVAN_POWER = SylvanPower()
     BRAMBLE = Bramble()
+
+    @classmethod
+    def get_all(cls):
+        return [
+            cls.EARTHQUAKE,
+            cls.POISONED_WIND,
+            cls.SYLVAN_POWER,
+            cls.BRAMBLE
+        ]

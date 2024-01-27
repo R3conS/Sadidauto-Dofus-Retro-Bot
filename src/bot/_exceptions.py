@@ -7,6 +7,7 @@ from enum import Enum
 
 from cv2 import imwrite as save_image
 
+from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
 from src.utilities.screen_capture import ScreenCapture
 
 
@@ -23,14 +24,20 @@ class ExceptionReason(Enum):
 
     UNSPECIFIED = 1 # Default.
     FAILED_TO_GET_MAP_COORDS = 2
-    FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE = 3
+    FAILED_TO_CHANGE_MAP = 3
 
 
 class RecoverableException(Exception):
 
-    def __init__(self, message, reason=ExceptionReason.UNSPECIFIED):
+    def __init__(
+            self, 
+            message, 
+            reason=ExceptionReason.UNSPECIFIED,
+            occured_in_sub_state: InCombat_SubState = None
+        ):
         self.message = message
         self.reason = reason
+        self.occured_in_sub_state = occured_in_sub_state
         log.error(f"RecoverableException: {message}")
         _take_a_screenshot(self.reason)
         super().__init__(message)

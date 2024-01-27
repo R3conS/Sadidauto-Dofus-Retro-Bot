@@ -34,7 +34,7 @@ class Logger:
         Make sure to call this method at the top of the module before 
         any other imports:
 
-        from src.logger import Logger
+        from src.logger import Logger\n
         log = Logger.get_logger(Logger.DEBUG, True, True)
         """
         if cls.LOGGER_NAME in logging.Logger.manager.loggerDict:

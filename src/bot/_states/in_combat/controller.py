@@ -1,10 +1,9 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-from enum import Enum
-
 from src.bot._states.in_combat._sub_states.fighting.fighter import Fighter
 from src.bot._states.in_combat._sub_states.preparing.preparer import Preparer
+from src.bot._states.in_combat._sub_states.sub_states_enum import State as SubState
 from src.bot._states.states_enum import State as MainBotState
 from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
@@ -24,11 +23,11 @@ class Controller:
     def run(self):
         sub_state = self._determine_sub_state()
         while True:
-            if sub_state == _SubState.PREPARING:
+            if sub_state == SubState.PREPARING:
                 self._preparer.prepare()
-                sub_state = _SubState.FIGHTING
+                sub_state = SubState.FIGHTING
 
-            elif sub_state == _SubState.FIGHTING:
+            elif sub_state == SubState.FIGHTING:
                 self._fighter.fight()
                 self._fight_counter += 1
                 log.info(f"Successfully finished fighting. Fight counter: {self._fight_counter}.")
@@ -44,11 +43,5 @@ class Controller:
                 mask=ImageDetection.create_mask(self._ap_icon_image)
             )
         ) > 0:
-            return _SubState.FIGHTING
-        return _SubState.PREPARING
-
-
-class _SubState(Enum):
-
-    PREPARING = "PREPARING"
-    FIGHTING = "FIGHTING"
+            return SubState.FIGHTING
+        return SubState.PREPARING

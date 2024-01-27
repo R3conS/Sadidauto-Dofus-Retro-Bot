@@ -68,8 +68,7 @@ class Bot(threading.Thread):
                     elif self._state == State.IN_COMBAT:
                         self._ic_controller.run()
                 except RecoverableException as e:
-                    self._recoverer.recover(e.reason)
-                    log.info(f"Recovered successfully.")
+                    self._recoverer.recover(e.reason, e.occured_in_sub_state)
                     self._state = self._determine_state()
                     continue
 

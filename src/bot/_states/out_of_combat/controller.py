@@ -1,11 +1,10 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
-from enum import Enum
-
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._states.out_of_combat._sub_states.banking.banker import Banker
 from src.bot._states.out_of_combat._sub_states.hunting.hunter import Hunter
+from src.bot._states.out_of_combat._sub_states.sub_states_enum import State as SubState
 from src.bot._states.states_enum import State as MainBotState
 
 
@@ -17,22 +16,16 @@ class Controller:
         self._banker = Banker(script, game_window_title)
 
     def run(self):
-        sub_state = _SubState.HUNTING
+        sub_state = SubState.HUNTING
         while True:
-            if sub_state == _SubState.HUNTING:
+            if sub_state == SubState.HUNTING:
                 result = self._hunter.hunt()
                 if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
                     self._set_main_bot_state_callback(MainBotState.IN_COMBAT)
                     return
                 elif result == Status.REACHED_PODS_LIMIT:
-                    sub_state = _SubState.BANKING
+                    sub_state = SubState.BANKING
                     continue
-            elif sub_state == _SubState.BANKING:
+            elif sub_state == SubState.BANKING:
                 self._banker.bank()
-                sub_state = _SubState.HUNTING
-
-
-class _SubState(Enum):
-
-    HUNTING = "HUNTING"
-    BANKING = "BANKING"
+                sub_state = SubState.HUNTING

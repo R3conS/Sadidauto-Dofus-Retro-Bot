@@ -40,10 +40,14 @@ class MapChanger:
                 match = re.search(r'-?\d{1,2},-?\d{1,2}', map_coords)
                 if match:
                     return match.group()
-        raise RecoverableException(
-            message=f"Failed to get current map coords.",
-            reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
-        )
+        
+        if not cls._is_minimap_visible():
+            raise RecoverableException(
+                message=f"Failed to get current map coords because the minimap is not visible.",
+                reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
+            )
+
+        raise UnrecoverableException("Failed to get current map coords because the map image is missing.")
 
     @classmethod
     def change_map(cls, from_map: str, to_map: str):
@@ -73,7 +77,7 @@ class MapChanger:
         else:
             raise RecoverableException(
                 message="Failed to detect map change loading screen.",
-                reason=ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE
+                reason=ExceptionReason.FAILED_TO_CHANGE_MAP
             )
         
         start_time = perf_counter()
@@ -84,7 +88,7 @@ class MapChanger:
         else:
             raise RecoverableException(
                 message="Failed to detect end of map change loading screen.",
-                reason=ExceptionReason.FAILED_TO_WAIT_FOR_LOADING_SCREEN_DURING_MAP_CHANGE
+                reason=ExceptionReason.FAILED_TO_CHANGE_MAP
             )
 
     @classmethod
@@ -122,3 +126,16 @@ class MapChanger:
     @classmethod
     def _screenshot_map_area(cls):
         return ScreenCapture.custom_area(cls.MAP_IMAGE_AREA)
+
+    @staticmethod
+    def _is_minimap_visible():
+        """Might not be if account is disconnected."""
+        return (
+            pyag.pixelMatchesColor(673, 747, (213, 207, 170))
+            # Color is different when an offer (exchange, group invite, etc.) is on screen.
+            or pyag.pixelMatchesColor(673, 747, (192, 186, 153))
+        )
+
+
+if __name__ == "__main__":
+    print(MapChanger.get_current_map_coords())

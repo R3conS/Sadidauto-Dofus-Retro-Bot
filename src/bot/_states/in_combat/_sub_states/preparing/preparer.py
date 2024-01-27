@@ -14,6 +14,7 @@ from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
 from src.bot._states.in_combat._sub_states.preparing._map_data.getter import Getter as MapDataGetter
+from src.bot._states.in_combat._sub_states.sub_states_enum import State as SubState
 from src.utilities.general import load_image, load_image_full_path, move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
@@ -38,21 +39,25 @@ class Preparer:
         self._dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
 
     def prepare(self):
-        CombatOptions.FIGHT_LOCK.turn_on()
-        CombatOptions.TACTICAL_MODE.turn_on()
-        map_coords = MapChanger.get_current_map_coords()
-        if self._are_there_any_dummy_cells_on_map(map_coords):
-            final_dummy_cell_color = self._select_dummy_cell(map_coords)
-            # Mouse cursor will stay hovered over the character's model
-            # which in turn will display the black character's info
-            # tooltip (Name (lvl)) that blocks the view of the starting 
-            # cell locations on some maps. The cursor needs to be moved 
-            # off to make sure it doesn't happen.
-            move_mouse_off_game_area()
-            self._select_starting_cell(map_coords, final_dummy_cell_color)
-        else:
-            self._select_starting_cell(map_coords)
-        self._start_combat()
+        try:
+            CombatOptions.FIGHT_LOCK.turn_on()
+            CombatOptions.TACTICAL_MODE.turn_on()
+            map_coords = MapChanger.get_current_map_coords()
+            if self._are_there_any_dummy_cells_on_map(map_coords):
+                final_dummy_cell_color = self._select_dummy_cell(map_coords)
+                # Mouse cursor will stay hovered over the character's model
+                # which in turn will display the black character's info
+                # tooltip (Name (lvl)) that blocks the view of the starting 
+                # cell locations on some maps. The cursor needs to be moved 
+                # off to make sure it doesn't happen.
+                move_mouse_off_game_area()
+                self._select_starting_cell(map_coords, final_dummy_cell_color)
+            else:
+                self._select_starting_cell(map_coords)
+            self._start_combat()
+        except RecoverableException as e:
+            e.occured_in_sub_state = SubState.PREPARING
+            raise e
 
     def _are_there_any_dummy_cells_on_map(self, map_coords: str):
         for map, cell_data in self._dummy_cell_data.items():
