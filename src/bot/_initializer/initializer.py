@@ -33,6 +33,7 @@ class Initializer:
         self._character_name = character_name
         self._server_name = server_name
         self._disturbance_checker = DisturbanceChecker()
+        self._interfaces = None
         self.character_level = None
         self.window_title = None
         self.window_hwnd = None
@@ -42,6 +43,7 @@ class Initializer:
         self._verify_script()
         self._verify_server()
         self._prepare_game_window()
+        self._interfaces = Interfaces(self._script, self.window_title)
         self._verify_character_name()
         self.character_level = self._read_character_level()
         self._start_disturbance_checker()

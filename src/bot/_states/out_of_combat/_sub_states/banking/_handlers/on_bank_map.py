@@ -14,7 +14,6 @@ class Handler:
     def __init__(self, script: str, game_window_title: str):
         self._script = script
         self._game_window_title = game_window_title
-        self._vault = Vault(self._script, self._game_window_title)
         bank_data = BankDataGetter.get_data(self._script)
         self._enter_coords = bank_data["enter_coords"]
         self._exit_coords = bank_data["exit_coords"]
@@ -23,9 +22,9 @@ class Handler:
     def handle(self):
         if not self._is_char_inside_bank():
             self._enter_bank()
-        self._vault.open_vault()
-        self._vault.deposit_all_tabs()
-        self._vault.close_vault()
+        Vault.open()
+        Vault.deposit_all_tabs()
+        Vault.close()
         self._leave_bank()
 
     def _enter_bank(self):
