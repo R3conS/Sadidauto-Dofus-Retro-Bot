@@ -26,6 +26,8 @@ class ExceptionReason(Enum):
     FAILED_TO_GET_MAP_COORDS = 2
     FAILED_TO_CHANGE_MAP = 3
     FAILED_TO_LOAD_SPELL_ICONS = 4
+    FAILED_TO_GET_STARTING_SIDE_COLOR = 5
+    FAILED_TO_GET_STARTING_CELL_COORDS = 6
 
 
 class RecoverableException(Exception):

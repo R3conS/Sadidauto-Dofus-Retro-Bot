@@ -65,6 +65,7 @@ class MapChanger:
         pyag.click()
         pyag.keyUp("e")
         cls.wait_loading_screen_pass()
+        log.info("Successfully changed map!")
 
     @staticmethod
     def wait_loading_screen_pass():

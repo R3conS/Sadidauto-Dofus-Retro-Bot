@@ -5,7 +5,8 @@ import pyautogui
 
 class ScreenCapture:
 
-    GAME_WINDOW_AREA = (0, 0, 933, 755) # With Windows title bar
+    GAME_WINDOW_AREA = (0, 0, 933, 755) # With Dofus title bar.
+    MAP_AREA = (0, 0, 933, 600) # With Dofus title bar.
 
     @staticmethod
     def custom_area(region: tuple[int, int, int, int]) -> np.ndarray:

@@ -19,8 +19,11 @@ from src.utilities.screen_capture import ScreenCapture
 class Finder:
 
     IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_images"
-    RED_CIRCLE_IMAGE = load_image(IMAGE_FOLDER_PATH, "red_circle.png")
-    RED_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(RED_CIRCLE_IMAGE)
+    RED_CIRCLE_IMAGES = [
+        load_image(IMAGE_FOLDER_PATH, "red_circle_lighter.png"),
+        load_image(IMAGE_FOLDER_PATH, "red_circle_darker.png")
+    ]
+    RED_CIRCLE_IMAGE_MASKS = ImageDetection.create_masks(RED_CIRCLE_IMAGES)
     BLUE_CIRCLE_IMAGE = load_image(IMAGE_FOLDER_PATH, "blue_circle.png")
     BLUE_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(BLUE_CIRCLE_IMAGE)
     INFO_CARD_NAME_AREA = (593, 598, 225, 28)
@@ -91,14 +94,20 @@ class Finder:
     @classmethod
     def get_red_circle_locations(cls) -> list[tuple[int, int]]:
         """Get red model circle locations."""
-        rectangles = ImageDetection.find_image(
-            haystack=cls._screenshot_circle_detection_area(),
-            needle=cls.RED_CIRCLE_IMAGE,
-            method=cv2.TM_CCORR_NORMED,
-            confidence=0.86,
-            mask=cls.RED_CIRCLE_IMAGE_MASK,
-            get_best_match_only=False
-        )
+        haystack = cls._screenshot_circle_detection_area()
+        rectangles = []
+        for image, mask in zip(cls.RED_CIRCLE_IMAGES, cls.RED_CIRCLE_IMAGE_MASKS):
+            rectangles.append(
+                ImageDetection.find_image(
+                    haystack=haystack,
+                    needle=image,
+                    method=cv2.TM_CCORR_NORMED,
+                    confidence=0.96,
+                    mask=mask,
+                    get_best_match_only=False
+                )
+            )
+        rectangles = [rect for sublist in rectangles for rect in sublist]
         rectangles = cv2.groupRectangles(rectangles, 1, 0.5)[0]
         center_points = []
         if len(rectangles) > 0:
@@ -198,3 +207,7 @@ class TimedOutWhileWaitingForInfoCard(Exception):
         self.message = message
         log.error(f"{message}")
         super().__init__(message)
+
+
+if __name__ == "__main__":
+    print(Finder.get_red_circle_locations())

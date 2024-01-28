@@ -23,7 +23,6 @@ class TurnDetector:
         load_image(IMAGE_FOLDER_PATH, "close_button.png"),
         load_image(IMAGE_FOLDER_PATH, "close_button_2.png"),
     ]
-    DOFUS_LOGO_IMAGE = load_image(IMAGE_FOLDER_PATH, "dofus_logo.png")
     AP_COUNTER_IMAGE = load_image(IMAGE_FOLDER_PATH, "ap_counter_image.png")
     AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(AP_COUNTER_IMAGE)
 

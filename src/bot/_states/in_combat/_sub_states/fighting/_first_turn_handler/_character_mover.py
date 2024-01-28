@@ -7,6 +7,7 @@ from time import perf_counter
 import cv2
 import pyautogui as pyag
 
+from src.bot._exceptions import ExceptionReason, RecoverableException, UnrecoverableException
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._sub_states.fighting._map_data.getter import Getter as FightingDataGetter
 from src.utilities.general import move_mouse_off_game_area
@@ -109,7 +110,7 @@ class Mover:
 
     def _get_destination_cell_coords(self):
         if not self._are_map_coords_in_data(self._current_map_coords, self._movement_data):
-            raise Exception(
+            raise UnrecoverableException(
                 f"Failed to determine destination coords because map '{self._current_map_coords}' "
                 "is not in movement data."
             )
@@ -128,7 +129,7 @@ class Mover:
 
     def _get_starting_side_color(self):
         if not self._are_map_coords_in_data(self._current_map_coords, self._starting_cells_data):
-            raise Exception(
+            raise UnrecoverableException(
                 f"Failed to determine starting side color because map '{self._current_map_coords}' "
                 "is not in starting cells data."
             )
@@ -141,16 +142,17 @@ class Mover:
                             coords
                         ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
                             return side_color
-        raise Exception(
-            f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
+        raise RecoverableException(
+            message=f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
             f"of the given character position '{self._character_pos}' on map "
             f"'{self._current_map_coords}' to determine the starting side color. This most "
-            "likely means that the character is not positioned on a valid starting cell."
+            "likely means that the character is not positioned on a valid starting cell.",
+            reason=ExceptionReason.FAILED_TO_GET_STARTING_SIDE_COLOR
         )
 
     def _get_starting_cell_coords(self):
         if not self._are_map_coords_in_data(self._current_map_coords, self._starting_cells_data):
-            raise Exception(
+            raise UnrecoverableException(
                 f"Failed to determine starting cell coords because map '{self._current_map_coords}' "
                 "is not in starting cells data."
             )
@@ -164,11 +166,12 @@ class Mover:
                                 coords
                             ) <= self.MAX_DISTANCE_BETWEEN_CELLS:
                                 return coords
-        raise Exception(
-            f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
+        raise RecoverableException(
+            message=f"No suitable starting cells were found within {self.MAX_DISTANCE_BETWEEN_CELLS} pixels "
             f"of the given character position '{self._character_pos}' on map "
             f"'{self._current_map_coords}' to determine the starting cell coords. This most "
-            "likely means that the character is not positioned on a valid starting cell."
+            "likely means that the character is not positioned on a valid starting cell.",
+            reason=ExceptionReason.FAILED_TO_GET_STARTING_CELL_COORDS
         )
 
     @staticmethod
@@ -213,3 +216,7 @@ class _FailedToDetectIfCellIsHighlighted(Exception):
         self.message = message
         log.error(f"{message}")
         super().__init__(message)
+
+
+if __name__ == "__main__":
+    mover = Mover("af_anticlock", "Juni", (0, 0))

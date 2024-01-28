@@ -182,7 +182,7 @@ class Hunter:
     @classmethod
     def _is_attack_successful(cls):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 6:
+        while perf_counter() - start_time <= 7.5:
             if len(
                 ImageDetection.find_images(
                     haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),

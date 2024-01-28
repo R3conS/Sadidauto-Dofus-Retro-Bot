@@ -100,7 +100,6 @@ class BaseSpell:
         return False
 
     def is_castable_on_pos(self, x, y):
-        pyag.moveTo(x, y)
         return len(
             ImageDetection.find_images(
                 haystack=ScreenCapture.around_pos((x, y), 75),
@@ -145,12 +144,18 @@ class BaseSpell:
         try:
             self.select()
         
-            if not self.is_castable_on_pos(x, y):
+            pyag.moveTo(x, y)
+            start_time = perf_counter()
+            # Checking within a timer to give the game some time to draw the icon.
+            while perf_counter() - start_time <= 1.5:
+                if self.is_castable_on_pos(x, y):
+                    break
+            else:
                 raise SpellIsNotCastableOnProvidedPosition(f"Spell is not castable on position: {x, y}.")
 
             log.info("Casting ... ")
             ap_area_before_casting = ScreenCapture.custom_area(self.AP_AREA)
-            pyag.click() # No need to move before clicking because is_castable_on_pos() already does that.
+            pyag.click()
             
             timeout = 5
             start_time = perf_counter()

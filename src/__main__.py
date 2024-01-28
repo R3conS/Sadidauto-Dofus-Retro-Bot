@@ -23,8 +23,8 @@ def main():
     # bot.start()
     bot = Bot(
         script="af_anticlock", 
-        character_name="Juni", 
-        server_name="Semi-like"
+        character_name="Chick-[AYU]", 
+        server_name="Allisteria"
     )
     bot.start()
     exit_with_hotkey()

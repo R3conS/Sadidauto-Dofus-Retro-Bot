@@ -164,8 +164,11 @@ class Preparer:
 
     def _did_char_move(self, cell_x, cell_y, px_color_before_moving: tuple):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 0.25:
-            if not pyag.pixelMatchesColor(cell_x, cell_y, px_color_before_moving):
+        while perf_counter() - start_time <= 0.35:
+            if (
+                not pyag.pixelMatchesColor(cell_x, cell_y, px_color_before_moving)
+                and not self._is_cell_free(cell_x, cell_y, pyag.screenshot(region=ScreenCapture.MAP_AREA))
+            ):
                 return True
         return False
     
@@ -215,3 +218,7 @@ class Preparer:
     def _click_cell(cell_x, cell_y):
         pyag.moveTo(cell_x, cell_y)
         pyag.click()
+
+
+if __name__ == "__main__":
+    preparer = Preparer("af_anticlock")
