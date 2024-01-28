@@ -12,6 +12,7 @@ from src.bot._exceptions import RecoverableException
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.utilities.general import load_image_full_path
 from src.utilities.image_detection import ImageDetection
+from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
 
@@ -30,6 +31,7 @@ class BaseTab(ABC):
        "row_7" : [(712, 516), (752, 516), (792, 516), (832, 516), (872, 516)],
     }
     EMPTY_SLOT_IMAGE = load_image_full_path(os.path.join(IMAGE_FOLDER_PATH, "empty_slot.png"))
+    MAGNIFYING_GLASS_IMAGE = load_image_full_path(os.path.join(IMAGE_FOLDER_PATH, "magnifying_glass.png"))
 
     def __init__(
             self, 
@@ -113,6 +115,10 @@ class BaseTab(ABC):
                 self._deposit_slot(*slot_coords)
                 if self._was_slot_deposited(*slot_coords):
                     deposited_items_count += 1
+                    continue
+                elif self._is_item_in_slot_linked_to_the_character(*slot_coords):
+                    log.info(f"Item '{self._read_item_name_area()}' is linked to the character. Skipping ...")
+                    slot_coords = self._get_next_slot_coords(*slot_coords)
                     continue
                 raise RecoverableException("Failed to deposit slot.")
             else:
@@ -307,6 +313,49 @@ class BaseTab(ABC):
     def _screenshot_inventory_tab_icon_area(self):
         return ScreenCapture.custom_area(self.INVENTORY_TAB_ICON_AREA)
 
+    @classmethod
+    def _is_item_in_slot_linked_to_the_character(cls, slot_x, slot_y):
+        if not cls._is_item_information_interface_open():
+            cls._open_item_information_interface(slot_x, slot_y)
+        return cls._is_item_linked_to_the_character_text_visible()
+    
+    @classmethod
+    def _is_item_information_interface_open(cls):
+        return (
+            len(
+                ImageDetection.find_image(
+                    haystack=ScreenCapture.custom_area((262, 150, 413, 320)),
+                    needle=cls.MAGNIFYING_GLASS_IMAGE,
+                    confidence=0.95,
+                    method=cv2.TM_CCOEFF_NORMED,
+                )
+            ) > 0
+            and len(cls._read_item_name_area()) > 0
+        )
+
+    @classmethod
+    def _open_item_information_interface(cls, item_slot_x, item_slot_y):
+        pyag.moveTo(item_slot_x, item_slot_y)
+        pyag.click()
+        start_time = perf_counter()
+        while perf_counter() - start_time <= 5:
+            if cls._is_item_information_interface_open():
+                log.info("Successfully opened item information interface.")
+                return
+        raise RecoverableException("Failed to open item information interface.")
+
+    @staticmethod
+    def _is_item_linked_to_the_character_text_visible():
+        sc = ScreenCapture.custom_area((377, 186, 293, 210))
+        sc = OCR.convert_to_grayscale(sc)
+        sc = OCR.resize_image(sc, sc.shape[1] * 2, sc.shape[0] * 2)
+        sc = OCR.binarize_image(sc, 150)
+        return "Linked to the character" in OCR.get_text_from_image(sc)
+
+    @staticmethod
+    def _read_item_name_area():
+        return OCR.get_text_from_image(ScreenCapture.custom_area((272, 162, 329, 23))).strip()
+
     @staticmethod
     def _load_tab_icon_images(image_paths: list):
         if not isinstance(image_paths, list):
@@ -336,3 +385,7 @@ class BaseTab(ABC):
             loaded_forbidden_items[confidence] = loaded_images
 
         return loaded_forbidden_items
+
+
+if __name__ == "__main__":
+    BaseTab._open_item_information_interface(714, 276)
