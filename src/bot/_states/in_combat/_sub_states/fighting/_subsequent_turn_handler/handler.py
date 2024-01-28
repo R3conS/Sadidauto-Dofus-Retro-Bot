@@ -14,10 +14,10 @@ class Handler:
             log. info("No spells available.")
             return
 
+        if not CombatOptions.TACTICAL_MODE.is_on():
+            CombatOptions.TACTICAL_MODE.turn_on()
+
         if CombatOptions.TURN_BAR.is_shrunk():
             CombatOptions.TURN_BAR.unshrink()
 
-        if not CombatOptions.TACTICAL_MODE.is_on():
-            CombatOptions.TACTICAL_MODE.turn_on()
-            
         SpellCaster.cast_spells(character_name)

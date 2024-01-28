@@ -62,13 +62,14 @@ class Vault:
 
     def _detect_banker_npc(self):
         log.info("Detecting banker NPC ... ")
-        rectangles = ImageDetection.find_images(
-            haystack=ScreenCapture.game_window(),
-            needles=self._banker_npc_images_loaded,
-            confidence=0.99,
-            method=cv2.TM_CCORR_NORMED
-        )
-        if len(rectangles) > 0:
+        if len(
+            ImageDetection.find_images(
+                haystack=ScreenCapture.game_window(),
+                needles=self._banker_npc_images_loaded,
+                confidence=0.99,
+                method=cv2.TM_CCORR_NORMED
+            )
+        ) > 0:
             log.info("Successfully detected banker NPC.")
             return
         raise RecoverableException("Failed to detect banker NPC.")
@@ -145,7 +146,8 @@ class Vault:
         When it's displayed it means the sprites have loaded.
         """
         start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
+        timeout = 5
+        while perf_counter() - start_time <= timeout:
             bar = ScreenCapture.custom_area((684, 159, 210, 27))
             bar = OCR.convert_to_grayscale(bar)
             bar = OCR.resize_image(bar, bar.shape[1] * 2, bar.shape[0] * 3)
@@ -154,8 +156,10 @@ class Vault:
             if len(OCR.get_text_from_image(bar)) > 0:
                 log.info("Successfully detected if item sprites have loaded.")
                 return
-        log.error("Timed out while detecting if item sprites have loaded.")
-        raise RecoverableException("Failed to detect if item sprites have loaded.")
+        raise RecoverableException(
+            "Failed to detect if item sprites have loaded."
+            f"Timeout: '{timeout}' seconds."
+        )
 
     @staticmethod
     def _load_npc_images(image_folder_path: str):

@@ -5,19 +5,11 @@ import os
 from datetime import datetime
 from enum import Enum
 
+import numpy as np
 from cv2 import imwrite as save_image
 
 from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
 from src.utilities.screen_capture import ScreenCapture
-
-
-def _take_a_screenshot(exception_reason):
-    log.info("Screenshotting the game window ... ")
-    sc = ScreenCapture.game_window()
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
-    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {exception_reason}.png")
-    save_image(path, sc)
-    log.info("Screenshot saved.")
 
 
 class ExceptionReason(Enum):
@@ -28,6 +20,26 @@ class ExceptionReason(Enum):
     FAILED_TO_LOAD_SPELL_ICONS = 4
     FAILED_TO_GET_STARTING_SIDE_COLOR = 5
     FAILED_TO_GET_STARTING_CELL_COORDS = 6
+    FAILED_TO_GET_INVENTORY_PODS_TOOLTIP_RECTANGLE = 7
+    FAILED_TO_GET_BANK_PODS_TOOLTIP_RECTANGLE = 8
+    FAILED_TO_READ_DEFINED_TOOLTIP_PATTERN = 9
+
+
+def take_a_screenshot(exception_reason: ExceptionReason):
+    log.info("Screenshotting the game window ... ")
+    sc = ScreenCapture.game_window()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {exception_reason}.png")
+    save_image(path, sc)
+    log.info("Screenshot saved.")
+
+
+def save_image_to_debug_folder(image: np.ndarray, image_name: str):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {image_name}.png")
+    log.info(f"Saving image to debug folder: {path} ... ")
+    save_image(path, image)
+    log.info("Image saved.")
 
 
 class RecoverableException(Exception):
@@ -42,7 +54,7 @@ class RecoverableException(Exception):
         self.reason = reason
         self.occured_in_sub_state = occured_in_sub_state
         log.error(f"RecoverableException: {message}")
-        _take_a_screenshot(self.reason)
+        take_a_screenshot(self.reason)
         super().__init__(message)
 
 
@@ -52,9 +64,9 @@ class UnrecoverableException(Exception):
         self.message = message
         self.reason = reason
         log.critical(f"UnrecoverableExpection: {message}")
-        _take_a_screenshot(self.reason)
+        take_a_screenshot(self.reason)
         super().__init__(message)
 
 
 if __name__ == "__main__":
-    _take_a_screenshot(ExceptionReason.UNSPECIFIED)
+    take_a_screenshot(ExceptionReason.UNSPECIFIED)

@@ -102,7 +102,7 @@ class Finder:
                     haystack=haystack,
                     needle=image,
                     method=cv2.TM_CCORR_NORMED,
-                    confidence=0.96,
+                    confidence=0.97,
                     mask=mask,
                     get_best_match_only=False
                 )

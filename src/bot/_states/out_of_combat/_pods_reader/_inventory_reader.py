@@ -1,10 +1,13 @@
 from src.logger import Logger
 log = Logger.get_logger(Logger.DEBUG, True, True)
 
+from time import sleep
+
 import cv2
 import numpy as np
 import pyautogui as pyag
 
+from src.bot._exceptions import ExceptionReason, take_a_screenshot
 from src.bot._states.out_of_combat._pods_reader._base_reader import BaseReader
 from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
@@ -24,8 +27,8 @@ class InventoryReader(BaseReader):
     def _hide_tooltip():
         pyag.moveTo(594, 352)
 
-    @staticmethod
-    def _get_tooltip_rectangle(tooltip_area: np.ndarray):
+    @classmethod
+    def _get_tooltip_rectangle(cls, tooltip_area: np.ndarray):
         tooltip_area = OCR.convert_to_grayscale(tooltip_area)
         tooltip_area = OCR.invert_image(tooltip_area)
         threshold = 190
@@ -41,4 +44,10 @@ class InventoryReader(BaseReader):
                 if w > 60 and h > 18:
                     return x, y, w, h
             threshold +=1
+
+        log.error("Failed to get inventory pods tooltip rectangle.")
+        cls._trigger_tooltip()
+        sleep(1) # Giving the tooltip some time to appear.
+        take_a_screenshot(ExceptionReason.FAILED_TO_GET_INVENTORY_PODS_TOOLTIP_RECTANGLE)
+        
         return None

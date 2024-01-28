@@ -8,7 +8,7 @@ from time import perf_counter
 import cv2
 import numpy as np
 
-from src.bot._exceptions import RecoverableException
+from src.bot._exceptions import ExceptionReason, RecoverableException, save_image_to_debug_folder
 from src.utilities.ocr.ocr import OCR
 
 
@@ -72,9 +72,6 @@ class BaseReader(ABC):
                     tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
                     text = cls._read_tooltip_text(tooltip)
                     return cls._parse_tooltip_text(text)
-        # ToDo: Raise an unrecoverable exception if None when getting
-        # bank numbers because the view of the tooltip shouldn't ever be 
-        # obstructed by anything.
         return None
 
     @classmethod
@@ -98,7 +95,6 @@ class BaseReader(ABC):
         tooltip = OCR.invert_image(tooltip)
         tooltip = OCR.resize_image(tooltip, tooltip.shape[1] * 5, tooltip.shape[0] * 5)
         tooltip = OCR.dilate_image(tooltip, 2)
-
         binarization_value = 145
         while True:
             tooltip = OCR.binarize_image(tooltip, binarization_value)
@@ -109,6 +105,7 @@ class BaseReader(ABC):
                 return text
             binarization_value += 5
             if binarization_value > 255:
+                save_image_to_debug_folder(tooltip, ExceptionReason.FAILED_TO_READ_DEFINED_TOOLTIP_PATTERN)
                 raise RecoverableException(
                     "Failed to read defined tooltip pattern. "
                     f"Received: '{text}'. "
