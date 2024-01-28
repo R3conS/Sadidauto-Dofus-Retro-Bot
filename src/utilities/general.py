@@ -1,9 +1,17 @@
+from src.logger import Logger
+log = Logger.get_logger(Logger.DEBUG, True, True)
+
 import os
+from datetime import datetime
 from functools import wraps
 from time import perf_counter
 
 import cv2
+import numpy as np
 import pyautogui as pyag
+from cv2 import imwrite as save_image
+
+from src.utilities.screen_capture import ScreenCapture
 
 
 def load_image(image_folder_path: str, image_name: str):
@@ -36,3 +44,25 @@ def measure_execution_time(func):
         print(f"'{func.__name__}' took '{end_time - start_time}' seconds to execute.")
         return result
     return wrapper
+
+
+def screenshot_game_and_save_to_debug_folder(screenshot_name: str):
+    log.info("Screenshotting the game window ... ")
+    sc = ScreenCapture.game_window()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {screenshot_name}.png")
+    log.info("Saving the screenshot for debug ... ")
+    save_image(path, sc)
+    log.info("Screenshot saved!")
+
+
+def save_image_to_debug_folder(image: np.ndarray, image_name: str):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {image_name}.png")
+    log.info(f"Saving image for debug: '{path}' ... ")
+    save_image(path, image)
+    log.info("Image saved!")
+
+
+if __name__ == "__main__":
+    save_image_to_debug_folder(ScreenCapture.game_window(), "test")

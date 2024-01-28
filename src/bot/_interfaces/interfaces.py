@@ -51,7 +51,10 @@ class Interfaces:
         while any(interface.is_open() for interface in cls._get_all_interfaces()):
             for interface in cls._get_all_interfaces():
                 if interface.is_open():
-                    interface.close()
+                    try:
+                        interface.close()
+                    except AttributeError:
+                        interface.click_no()
         log.info("Finished closing all interfaces.")
 
     @classmethod
@@ -72,4 +75,7 @@ class Interfaces:
 
 if __name__ == "__main__":
     interfaces = Interfaces("af_anticlock", "Dofus Retro")
-    Interfaces.close_all()
+    # Interfaces.close_all()
+    Interfaces.MAIN_MENU.open()
+    Interfaces.MAIN_MENU.click_logout()
+    Interfaces.CAUTION.click_no()

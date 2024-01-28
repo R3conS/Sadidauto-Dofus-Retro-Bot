@@ -71,17 +71,14 @@ class Bot(threading.Thread):
                     self._recoverer.recover(e.reason, e.occured_in_sub_state)
                     self._state = self._determine_state()
                     continue
-
         except UnrecoverableException:
-            # ToDo: Implement UnrecoverableException class logic.
-            # Take screenshots, logout etc.
             log.critical(traceback.format_exc())
-            log.critical("Unrecoverable exception occurred! Exiting ...")
-            os._exit(1)
         except Exception:
-            log.exception("An unhandled exception occured!")
-            log.critical("Exiting ... ")
-            os._exit(1)
+            log.critical("An unhandled exception occured!")
+            log.critical(traceback.format_exc())
+        finally:
+            # ToDo: logout.
+            os._exit(0)
 
     def stop(self):
         self._stopped = True

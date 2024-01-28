@@ -8,7 +8,8 @@ from time import perf_counter
 import cv2
 import numpy as np
 
-from src.bot._exceptions import ExceptionReason, RecoverableException, save_image_to_debug_folder
+from src.bot._exceptions import ExceptionReason, RecoverableException
+from src.utilities.general import save_image_to_debug_folder
 from src.utilities.ocr.ocr import OCR
 
 
@@ -105,6 +106,7 @@ class BaseReader(ABC):
                 return text
             binarization_value += 5
             if binarization_value > 255:
+                log.error("Failed to read defined tooltip pattern.")
                 save_image_to_debug_folder(tooltip, ExceptionReason.FAILED_TO_READ_DEFINED_TOOLTIP_PATTERN)
                 raise RecoverableException(
                     "Failed to read defined tooltip pattern. "
