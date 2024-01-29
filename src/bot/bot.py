@@ -7,14 +7,16 @@ import threading
 import traceback
 
 import cv2
+import pyautogui as pyag
 
 from src.bot._exceptions import RecoverableException, UnrecoverableException
 from src.bot._initializer.initializer import Initializer
+from src.bot._interfaces.interfaces import Interfaces
 from src.bot._recoverer.recoverer import Recoverer
 from src.bot._states.in_combat.controller import Controller as IC_Controller
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.states_enum import State
-from src.utilities.general import load_image_full_path
+from src.utilities.general import load_image_full_path, screenshot_game_and_save_to_debug_folder
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
@@ -77,7 +79,7 @@ class Bot(threading.Thread):
             log.critical("An unhandled exception occured!")
             log.critical(traceback.format_exc())
         finally:
-            # ToDo: logout.
+            self._logout()
             os._exit(0)
 
     def stop(self):
@@ -116,3 +118,27 @@ class Bot(threading.Thread):
             return State.IN_COMBAT
         log.info(f"Determined bot state: {State.OUT_OF_COMBAT}.")
         return State.OUT_OF_COMBAT
+
+    @staticmethod
+    def _logout():
+        log.info("Attempting to logout ... ")
+        try:
+            if not Interfaces.LOGIN_SCREEN.is_open():
+                Interfaces.MAIN_MENU.open()
+                Interfaces.MAIN_MENU.click_logout()
+                if Interfaces.CAUTION.is_open():
+                    Interfaces.CAUTION.click_yes()
+                if Interfaces.LOGIN_SCREEN.is_open():
+                    log.info("Successfully logged out!")
+                    return
+            else:
+                log.info("Already logged out!")
+        except Exception:
+            log.critical("An exception occured while attempting to logout!")
+            log.critical(traceback.format_exc())
+            screenshot_game_and_save_to_debug_folder("failed_to_logout")
+            log.critical("Closing Dofus window ... ")
+            cross_button_pos = Interfaces.MAIN_MENU.get_cross_button_pos()
+            if cross_button_pos is not None:
+                pyag.moveTo(cross_button_pos[0], cross_button_pos[1] - 40)
+                pyag.click()

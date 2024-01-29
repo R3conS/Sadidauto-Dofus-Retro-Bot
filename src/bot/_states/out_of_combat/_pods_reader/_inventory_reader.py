@@ -7,8 +7,8 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.bot._exceptions import ExceptionReason, take_a_screenshot
 from src.bot._states.out_of_combat._pods_reader._base_reader import BaseReader
+from src.utilities.general import screenshot_game_and_save_to_debug_folder
 from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
@@ -48,6 +48,6 @@ class InventoryReader(BaseReader):
         log.error("Failed to get inventory pods tooltip rectangle.")
         cls._trigger_tooltip()
         sleep(1) # Giving the tooltip some time to appear.
-        take_a_screenshot(ExceptionReason.FAILED_TO_GET_INVENTORY_PODS_TOOLTIP_RECTANGLE)
+        screenshot_game_and_save_to_debug_folder(ExceptionReason.FAILED_TO_GET_INVENTORY_PODS_TOOLTIP_RECTANGLE)
         
         return None
