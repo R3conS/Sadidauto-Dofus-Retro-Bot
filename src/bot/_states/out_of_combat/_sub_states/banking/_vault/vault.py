@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.get_logger(Logger.DEBUG, True, True)
+log = Logger.get_logger()
 
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.equipment_tab import EquipmentTab

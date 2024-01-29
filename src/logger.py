@@ -22,12 +22,7 @@ class Logger:
     CRITICAL = logging.CRITICAL
 
     @classmethod
-    def get_logger(
-        cls,
-        log_level: int,
-        log_to_console: bool,
-        log_to_file: bool
-    ):
+    def get_logger(cls):
         """
         Get logger object. 
         
@@ -35,16 +30,16 @@ class Logger:
         any other imports:
 
         from src.logger import Logger\n
-        log = Logger.get_logger(Logger.DEBUG, True, True)
+        log = Logger.get_logger()
         """
         if cls.LOGGER_NAME in logging.Logger.manager.loggerDict:
             return logging.getLogger(cls.LOGGER_NAME)
         else:
             return cls._create_logger(
-                cls.LOGGER_NAME,
-                log_level,
-                log_to_console,
-                log_to_file
+                logger_name=cls.LOGGER_NAME,
+                log_level=cls.DEBUG,
+                log_to_console=True,
+                log_to_file=True
             )
 
     @classmethod
@@ -93,5 +88,5 @@ class Logger:
 
 
 if __name__ == "__main__":
-    log = Logger.get_logger(Logger.DEBUG, True, True)
+    log = Logger.get_logger()
     log.info("Hello World!")

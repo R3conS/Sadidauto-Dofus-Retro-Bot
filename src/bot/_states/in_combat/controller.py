@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.get_logger(Logger.DEBUG, True, True)
+log = Logger.get_logger()
 
 from src.bot._states.in_combat._sub_states.fighting.fighter import Fighter
 from src.bot._states.in_combat._sub_states.preparing.preparer import Preparer

@@ -1,5 +1,5 @@
 from src.logger import Logger
-log = Logger.get_logger(Logger.DEBUG, True, True)
+log = Logger.get_logger()
 
 import os
 from abc import ABC
