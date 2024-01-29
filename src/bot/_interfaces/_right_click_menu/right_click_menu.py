@@ -29,6 +29,6 @@ class RightClickMenu:
                 haystack=ScreenCapture.game_window(),
                 needle=cls.FLASH_QUALITY_IMAGE,
                 method=cv2.TM_SQDIFF_NORMED,
-                confidence=0.995
+                confidence=0.98
             )
         ) > 0
