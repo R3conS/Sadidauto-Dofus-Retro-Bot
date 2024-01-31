@@ -8,10 +8,11 @@ from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
 
-def expand_right_from_point(image: np.ndarray, start_x, start_y, processed_points=None):
+def expand_right_from_point(image: np.ndarray, start_point: tuple[int, int], processed_points=None):
     if processed_points is None:
         processed_points = set()
 
+    start_x, start_y = start_point
     for x in range(start_x, image.shape[1]):
         if image[start_y, x] == 255 and (start_y, x) in processed_points:
             if x == image.shape[1] - 1:
@@ -26,10 +27,11 @@ def expand_right_from_point(image: np.ndarray, start_x, start_y, processed_point
 
     return None
 
-def expand_down_from_point(image: np.ndarray, start_x, start_y, processed_points=None):
+def expand_down_from_point(image: np.ndarray, start_point: tuple[int, int], processed_points=None):
     if processed_points is None:
         processed_points = set()
 
+    start_x, start_y = start_point
     for y in range(start_y, image.shape[0]):
         if (y, start_x) in processed_points and image[y, start_x] == 255:
             if y == image.shape[0] - 1:
@@ -59,12 +61,6 @@ def find_starting_point(image: np.ndarray, processed_points: list[tuple[int, int
                 return x, y
     return None, None
 
-def contains_point_with_x(points, x):
-    for point in points:
-        if point[0] == x:
-            return True
-    return False
-
 def calculate_rectangle_area(rectangle: tuple[int, int, int, int]):
     return rectangle[2] * rectangle[3]
 
@@ -85,29 +81,61 @@ def generate_line_points(start_x, start_y, end_x, end_y):
             points.append((x, start_y))
     return points
 
-def expand_down_across_line(image: np.ndarray, line_points, min_line_length, processed_points=None):
-    for start_point in line_points[::-1]:
-        end_point = expand_down_from_point(image, start_point[0], start_point[1], processed_points)
-        if end_point is not None and calculate_line_length(start_point, end_point) > min_line_length:
-            return start_point, end_point, generate_line_points(start_point[0], start_point[1], end_point[0], end_point[1])
-    return None
-
-def distance_between_points(point_1, point_2):
-    return int(((point_1[0] - point_2[0]) ** 2 + (point_1[1] - point_2[1]) ** 2) ** 0.5)
-
 def calculate_line_length(start_point, end_point):
-    return distance_between_points(start_point, end_point) + 1
+    return int(((start_point[0] - end_point[0]) ** 2 + (start_point[1] - end_point[1]) ** 2) ** 0.5) + 1
+
+def find_top_line(image: np.ndarray, start_point: tuple[int, int], min_length=65):
+    for x in range(start_point[0], image.shape[1]):
+        for y in range(start_point[1], image.shape[0]):
+            end_x, end_y = expand_right_from_point(image, (x, y), None)
+            length = calculate_line_length(start_point, (end_x, end_y))
+            if length >= min_length:
+                return ((x, y), (end_x, end_y))
+
+def find_left_line(image: np.ndarray, start_point: tuple[int, int], min_length=65):
+    for y in range(start_point[1], image.shape[0]):
+        for x in range(start_point[0], image.shape[1]):
+            end_x, end_y = expand_down_from_point(image, (x, y), None)
+            length = calculate_line_length(start_point, (end_x, end_y))
+            if length >= min_length:
+                return ((x, y), (end_x, end_y))
+            
+def find_bottom_line(image: np.ndarray, left_line_start, left_line_end, min_length=65):
+    for current_y in range(left_line_end[1], left_line_start[1], -1):
+        end_x, end_y = expand_right_from_point(image, (left_line_end[0], current_y), None)
+        length = calculate_line_length((left_line_start[1], current_y), (end_x, end_y))
+        if length >= min_length:
+            return ((left_line_end[0], current_y), (end_x, end_y))
+
+def find_right_line(top_line_start, top_line_end, bottom_line_start, bottom_line_end):
+    top_line_length = calculate_line_length(top_line_start, top_line_end)
+    bottom_line_length = calculate_line_length(bottom_line_start, bottom_line_end)
+    if top_line_length == bottom_line_length:
+        return ((top_line_end[0], top_line_end[1]), (bottom_line_end[0], bottom_line_end[1]))
+
+def equalize_lines(top_line_start, top_line_end, bottom_line_start, bottom_line_end):
+    top_line_length = calculate_line_length(top_line_start, top_line_end)
+    bottom_line_length = calculate_line_length(bottom_line_start, bottom_line_end)
+    if top_line_length > bottom_line_length:
+        top_line_end = (bottom_line_end[0], top_line_end[1])
+    elif bottom_line_length > top_line_length:
+        bottom_line_end = (top_line_end[0], bottom_line_end[1])
+    return (
+        (top_line_start, top_line_end),
+        (bottom_line_start, bottom_line_end)
+    )
 
 
 def main():
 
     # image_name = "rect_test.png"
     # image_name = "rect_test_10x10.png"
-    image_name = "rect_test_100x100.png"
+    # image_name = "rect_test_100x100.png"
     # image_name = "rect_test_500x500.png"
     # image_name = "rect_test_500x500_2.png"
     # image_name = "rect_uneven.png"
     # image_name = "rect_uneven_2.png"
+    image_name = "rect_uneven_3.png"
     image = cv2.imread(image_name)
     image_color = image.copy()
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -116,6 +144,7 @@ def main():
     # ToDo:
     # - Don't expand the left line downwards. Crop it out to same length as right line and check if all pixels are white.
     # - If left and right lines match, don't expand the bottom line. Just make it equal to top line length.
+    # - When screenshoting tooltip do it around "Level" text.
 
     processed_points = set()
     starting_point = find_starting_point(image, processed_points)
@@ -123,119 +152,27 @@ def main():
     while starting_point not in processed_points and starting_point != (None, None):
         print(f"\nStarting point: {starting_point[0]}, {starting_point[1]}")
 
-        top_line_start_x, top_line_start_y = starting_point
-        top_line_end_x, top_line_end_y = expand_right_from_point(image, top_line_start_x, top_line_start_y, processed_points)
-        top_line_points = generate_line_points(top_line_start_x, top_line_start_y, top_line_end_x, top_line_end_y)
+        min_line_length = 65
+        top_line_start, top_line_end = find_top_line(image, starting_point, min_length=min_line_length)
+        left_line_start, left_line_end = find_left_line(image, top_line_start, min_length=min_line_length)
+        top_line_start = left_line_start # Crop off any excess from the top line
+        bottom_line_start, bottom_line_end = find_bottom_line(image, left_line_start, left_line_end, min_length=min_line_length)
+        left_line_end = bottom_line_start # Crop off any excess from the left line
+        
+        top_line_points, bottom_line_points = equalize_lines(top_line_start, top_line_end, bottom_line_start, bottom_line_end)
+        top_line_start, top_line_end = top_line_points
+        bottom_line_start, bottom_line_end = bottom_line_points
+        
+        right_line_start, right_line_end = find_right_line(top_line_start, top_line_end, bottom_line_start, bottom_line_end)
 
-
-        right_line_info = expand_down_across_line(image, top_line_points, min_line_length=5)
-        if right_line_info is not None:
-            right_line_start_x, right_line_start_y = right_line_info[0]
-            right_line_end_x, right_line_end_y = right_line_info[1]
-            top_line_end_x, top_line_end_y = right_line_start_x, right_line_start_y
-            processed_points.update(right_line_info[2])
-            processed_points.update(top_line_points)
-        else:
-            processed_points.update(top_line_points)
-            # processed_points.update(right_line_info)
-            continue
-    
-        left_line_start_x, left_line_start_y = top_line_start_x, top_line_start_y
-        left_line_end_x, left_line_end_y = expand_down_from_point(
-            image, 
-            left_line_start_x, 
-            left_line_start_y, 
-            processed_points, # try to add points not including the top line start point
-            # could add right line points here and check within the loop if
-        )
-
-        left_line_length = calculate_line_length(
-            (left_line_start_x, left_line_start_y),
-            (left_line_end_x, left_line_end_y)
-        )
-        right_line_length = calculate_line_length(
-            (right_line_start_x, right_line_end_x),
-            (right_line_start_y, right_line_end_y)
-        )
-        if left_line_length < right_line_length:
-            processed_points.update(top_line_points)
-            processed_points.update(generate_line_points(left_line_start_x, left_line_start_y, left_line_end_x, left_line_end_y))
-            processed_points.add(starting_point)
-            starting_point = find_starting_point(image, processed_points)
-            continue
-
-        bottom_line_start_x, bottom_line_start_y = left_line_end_x, left_line_end_y
-        bottom_line_end_x, bottom_line_end_y = expand_right_from_point(image, bottom_line_start_x, bottom_line_start_y, processed_points)
-
-        rectangle = (
-            top_line_start_x, 
-            top_line_start_y, 
-            calculate_line_length((top_line_start_x, top_line_start_y), (top_line_end_x, top_line_end_y)),
-            calculate_line_length((top_line_start_x, top_line_start_y), (left_line_end_x, left_line_end_y))
-        )
-        print(f"Found rectangle: {rectangle}")
-        rectangle_contour_points = generate_contour_points(*rectangle)
-        processed_points.update(rectangle_contour_points)
-        processed_points.add(starting_point)
-        starting_point = find_starting_point(image, processed_points)
-
-
-        # image_color = cv2.line(image_color, (top_line_start_x, top_line_start_y), (top_line_end_x, top_line_end_y), (0, 255, 0), 1)
-        # image_color = cv2.line(image_color, (right_line_start_x, right_line_start_y), (right_line_end_x, right_line_end_y), (0, 255, 0), 1)
-        # image_color = cv2.line(image_color, (left_line_start_x, left_line_start_y), (left_line_end_x, left_line_end_y), (0, 255, 0), 1)
-        # image_color = cv2.line(image_color, (bottom_line_start_x, bottom_line_start_y), (bottom_line_end_x, bottom_line_end_y), (0, 255, 0), 1)
-        image_color = ImageDetection.draw_rectangle(image_color, rectangle, thickness=1)
+        image_color = cv2.line(image_color, (top_line_start[0], top_line_start[1]), (top_line_end[0], top_line_end[1]), (0, 255, 0), 1)
+        image_color = cv2.line(image_color, (left_line_start[0], left_line_start[1]), (left_line_end[0], left_line_end[1]), (0, 255, 0), 1)
+        image_color = cv2.line(image_color, (bottom_line_start[0], bottom_line_start[1]), (bottom_line_end[0], bottom_line_end[1]), (0, 255, 0), 1)
+        image_color = cv2.line(image_color, (right_line_start[0], right_line_start[1]), (right_line_end[0], right_line_end[1]), (0, 255, 0), 1)
         img = cv2.resize(image_color, (500, 500))
         cv2.imshow("image", img)
         cv2.waitKey(0)
-
-
-
-
-        # left_line_x, left_line_y = expand_down_from_point(image, start_white_x, start_white_y, processed_points)
-        # bottom_line_x, bottom_line_y = expand_right_from_point(image, left_line_x, left_line_y, processed_points)
-        # print(f"\nTop line: {start_white_x}, {start_white_y} -> {top_line_end_x}, {top_line_end_y}")
-        # print(f"Left line: {start_white_x}, {start_white_y} -> {left_line_x}, {left_line_y}")
-        # print(f"Bottom line: {left_line_x}, {left_line_y} -> {bottom_line_x}, {bottom_line_y}")
-
-        # top_line_length = calculate_line_length(start_white_x, top_line_end_x)
-        # left_line_length = calculate_line_length(start_white_y, left_line_y)
-
-        # if top_line_length > 20 or left_line_length > 20:
-
-        #     bottom_line_length = calculate_line_length(left_line_x, bottom_line_x)
-        #     print(f"Top line length: {top_line_length}")
-        #     print(f"Left line length: {left_line_length}")
-        #     print(f"Bottom line length: {bottom_line_length}")
-
-        #     if top_line_length == bottom_line_length:
-        #         right_line_x, right_line_y = expand_down_from_point(image, top_line_end_x, top_line_end_y, processed_points)
-        #         print(f"Right line: {top_line_end_x}, {top_line_end_y} -> {right_line_x}, {right_line_y}")
-        #         right_line_length = calculate_line_length(top_line_end_y, right_line_y)
-        #         print(f"Right line length: {right_line_length}")
-
-        #         if left_line_length == right_line_length:
-        #             rectangle = (start_white_x, start_white_y, top_line_length, left_line_length)
-        #             print(f"\nFound rectangle: {rectangle}")
-        #             drawing_image = image_color.copy()
-        #             drawing_image = ImageDetection.draw_rectangle(drawing_image, rectangle, thickness=1)
-        #             drawing_image = cv2.resize(drawing_image, (500, 500))
-        #             cv2.imshow("image", drawing_image)
-        #             cv2.waitKey(0)
-        #             processed_points.update(generate_contour_points(*rectangle))
-
-        #         else:
-        #             processed_points.add(starting_point)
-
-        #     else:
-        #         processed_points.add(starting_point)
-
-        # else:
-        #     processed_points.add(starting_point)
-
-        # processed_points.add(starting_point)
-        # starting_point = find_starting_point(image, processed_points)
-
+        return
 
 
 if __name__ == "__main__":
