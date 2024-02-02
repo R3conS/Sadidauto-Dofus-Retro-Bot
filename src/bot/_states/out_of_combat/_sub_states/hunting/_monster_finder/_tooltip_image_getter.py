@@ -16,12 +16,16 @@ class TooltipImageGetter:
     LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_finder\\_images\\level_text_on_monster_tooltip.png")
 
     @classmethod
-    def get_images(cls):
+    def get_images(cls) -> tuple[list[np.ndarray], list[tuple[int, int, int, int]], np.ndarray]:
+        """
+        Returns a list of tooltip images, a list of areas that were 
+        used to crop them and the image where they were cropped from.
+        """
         haystack = cls._get_image_to_search_on()
         text_locations = cls._get_level_text_locations(haystack)
         crop_areas = cls._calculate_tooltip_crop_areas(text_locations)
         crop_outs = cls._crop_out_rough_tooltip_areas(haystack, crop_areas)
-        return crop_outs, crop_areas
+        return crop_outs, crop_areas, haystack
 
     @staticmethod
     def _get_image_to_search_on():
@@ -82,7 +86,7 @@ class TooltipImageGetter:
 if __name__ == "__main__":
     from time import sleep
     sleep(0.5)
-    crop_outs, crop_areas = TooltipImageGetter.get_images()
+    crop_outs, crop_areas, haystack = TooltipImageGetter.get_images()
     for crop_out in crop_outs:
         cv2.imshow("crop", crop_out)
         cv2.waitKey(0)
