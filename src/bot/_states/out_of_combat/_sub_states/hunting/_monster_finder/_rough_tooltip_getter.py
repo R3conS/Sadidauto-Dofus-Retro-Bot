@@ -1,6 +1,3 @@
-from src.logger import Logger
-log = Logger.get_logger()
-
 import cv2
 import numpy as np
 import pyautogui as pyag
@@ -10,13 +7,12 @@ from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
 
-class TooltipImageGetter:
+class RoughTooltipGetter:
 
-    TOOLTIP_IMAGE_WHITE_BORDER_WIDTH = 15
     LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_finder\\_images\\level_text_on_monster_tooltip.png")
 
     @classmethod
-    def get_images(cls) -> tuple[list[np.ndarray], list[tuple[int, int, int, int]], np.ndarray]:
+    def get_rough_tooltip_images(cls) -> tuple[list[np.ndarray], list[tuple[int, int, int, int]], np.ndarray]:
         """
         Returns a list of tooltip images, a list of areas that were 
         used to crop them and the image where they were cropped from.
@@ -52,13 +48,13 @@ class TooltipImageGetter:
     @staticmethod
     def _calculate_tooltip_crop_area(level_text_center_point: tuple[int, int]) -> tuple[int, int, int, int]:
         """Calculate the rough area (x, y, w, h) of the tooltip based on the location of the 'Level' text."""
-        top_left_x = level_text_center_point[0] - 45
+        top_left_x = level_text_center_point[0] - 35
         if top_left_x < 0:
             top_left_x = 0
         top_left_y = level_text_center_point[1] - 15
         if top_left_y < 0:
             top_left_y = 0
-        bottom_right_x = level_text_center_point[0] + 66
+        bottom_right_x = level_text_center_point[0] + 56
         bottom_right_y = level_text_center_point[1] + 182
         return (
             int(top_left_x),
@@ -86,7 +82,7 @@ class TooltipImageGetter:
 if __name__ == "__main__":
     from time import sleep
     sleep(0.5)
-    crop_outs, crop_areas, haystack = TooltipImageGetter.get_images()
-    for crop_out in crop_outs:
-        cv2.imshow("crop", crop_out)
+    crop_outs, crop_areas, haystack = RoughTooltipGetter.get_rough_tooltip_images()
+    for i, crop_out in enumerate(crop_outs):
+        cv2.imshow("cropped", crop_out)
         cv2.waitKey(0)

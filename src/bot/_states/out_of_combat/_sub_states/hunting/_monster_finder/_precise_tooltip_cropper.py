@@ -5,7 +5,7 @@ from src.utilities.general import load_image_full_path
 from src.utilities.ocr.ocr import OCR
 
 
-class ImageCroper:
+class PreciseTooltipCropper:
 
     def __init__(self, image: np.ndarray | str):
         if isinstance(image, str):
@@ -33,7 +33,7 @@ class ImageCroper:
             current_row_white_pixel_count = self._count_white_pixels_on_row(self._preprocessed_image, y)
             if current_row_white_pixel_count == first_row_white_pixel_count:
                 return y, self._top_line_coords[1]
-            elif current_row_white_pixel_count > first_row_white_pixel_count - 10:
+            elif current_row_white_pixel_count > first_row_white_pixel_count - 3:
                 self._top_line_coords = (self._top_line_coords[0], self._find_first_white_pixel_on_row(y))
                 return y, self._top_line_coords[1]
         return None
@@ -67,8 +67,8 @@ class ImageCroper:
         if isinstance(image, str):
             image = load_image_full_path(image)
         image = OCR.convert_to_grayscale(image)
-        image = OCR.binarize_image(image, 80)
-        image = OCR.erode_image(image, 4)
+        image = OCR.binarize_image(image, 65)
+        image = OCR.erode_image(image, 2)
         image = OCR.invert_image(image)
         return image
 
@@ -79,6 +79,6 @@ class ImageCroper:
 
 if __name__ == "__main__":
     from time import sleep
-    tooltip = ImageCroper("tooltip1.png").get_cropped_image()
+    tooltip = PreciseTooltipCropper("tooltip1.png").get_cropped_image()
     cv2.imshow("cropped", tooltip)
     cv2.waitKey(0)
