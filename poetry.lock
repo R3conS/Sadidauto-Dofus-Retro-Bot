@@ -3074,9 +3074,9 @@ files = [
 
 [package.source]
 type = "file"
-url = "src/ocr/tesserocr-2.6.0-cp311-cp311-win_amd64.whl"
+url = "src/utilities/ocr/tesserocr-2.6.0-cp311-cp311-win_amd64.whl"
 
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.7"
-content-hash = "f8a179477c3cb927b3fb926316fa7419f3994e28065eb329cff2164097707d15"
+content-hash = "8eea000867aa0dee0bacc907273aebea064a0e97d001bcfeb5b0c92138cd936b"

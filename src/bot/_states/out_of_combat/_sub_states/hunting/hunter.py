@@ -15,6 +15,8 @@ from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
+from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder
 from src.utilities.general import load_image_full_path, move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
@@ -40,17 +42,9 @@ class Hunter:
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
         self._pods_percentage_limit = 90
-        # Map data
         map_data = MapDataGetter.get_data_object(self._script)
         self._pathing_data = map_data.get_pathing_data()
         self._map_type_data = map_data.get_map_type_data()
-        # Monster data
-        monster_images = self._load_monster_images()
-        monster_image_masks = ImageDetection.create_masks(monster_images)
-        segment_size = 4
-        self._segmented_monster_images = self._segment_data(monster_images, segment_size)
-        self._segmented_monster_image_masks = self._segment_data(monster_image_masks, segment_size)
-        # Bank data
         bank_data = BankDataGetter.get_data(self._script)
         self._bank_map_coords = bank_data["bank_map"]
         self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
@@ -99,75 +93,69 @@ class Hunter:
     
     def _handle_fightable_map(self, map_coords):
         log.info(f"Hunting on map: '{map_coords}' ... ")
-        haystack_image = ScreenCapture.game_window()
-        for image_segment, mask_segment in zip(self._segmented_monster_images, self._segmented_monster_image_masks):
-            matches = self._search_segment(image_segment, mask_segment, haystack_image)
-            if len(matches) > 0:
-                monster_x, monster_y = matches[0][0], matches[0][1]
-                log.info(f"Found monster at {monster_x, monster_y}.")
 
-                if self._is_join_sword_on_pos(monster_x, monster_y):
-                    log.info("Monster was attacked by someone else. Skipping ... ")
-                    continue
+        monster_tooltips = MonsterTooltipFinder.find_tooltips()
+        i = 0
+        while i < len(monster_tooltips):
+            log.info(f"Found monsters: {self._format_monster_counts(monster_tooltips[i].monster_counts)}.")
 
-                self._attack(monster_x, monster_y)
-                # Allow time for 'Right Click Menu' to open in case the attack 
-                # click missed. Clicks can miss if the monster moves away.
-                sleep(0.25) # Maybe increase this to 0.5?
-                if Interfaces.RIGHT_CLICK_MENU.is_open():
-                    log.error("Failed to attack monster because it moved away. Skipping ... ")
-                    Interfaces.RIGHT_CLICK_MENU.close()
-                    continue
+            log.info(f"Getting precise monster location ... ")
+            monster_location = MonsterLocationFinder.get_monster_location(monster_tooltips[i])
+            if monster_location is None:
+                log.info(f"Failed to find monster around tooltip: '{i}'. Getting new tooltips ... ")
+                monster_tooltips = MonsterTooltipFinder.find_tooltips()
+                i = 0
+                continue
 
-                if self._is_attack_successful():
-                    self._consecutive_fights_counter += 1
-                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
-                else:
-                    # Clicking off the game area after a failed attack to
-                    # close any unwanted tooltips like 'Cut' a tree or another
-                    # character's option menu.
-                    move_mouse_off_game_area()
-                    pyag.click()
-                    if map_coords != MapChanger.get_current_map_coords():
-                        log.error("Map was accidentally changed during the attack.")
-                        self._change_map_back_to_original(map_coords)
-                        continue
-                    elif self._is_char_in_lumberjack_workshop():
-                        log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
-                        self._leave_lumberjacks_workshop()
-                        continue
+            monster_x, monster_y = monster_location
+            log.info(f"Attacking monster at: {monster_x, monster_y} ... ")
+
+            if self._is_join_sword_on_pos(monster_x, monster_y):
+                log.info("Monster was attacked by someone else. Skipping ... ")
+                i += 1
+                continue
+
+            self._attack(monster_x, monster_y)
+            # Allow time for 'Right Click Menu' to open in case the attack 
+            # click missed. Clicks can miss if the monster moves away.
+            sleep(0.25) # Maybe increase this to 0.5?
+            if Interfaces.RIGHT_CLICK_MENU.is_open():
+                log.error("Failed to attack monster because it moved away. Skipping ... ")
+                Interfaces.RIGHT_CLICK_MENU.close()
+                i += 1
+                continue
+
+            if self._is_attack_successful():
+                self._consecutive_fights_counter += 1
+                return Status.SUCCESSFULLY_ATTACKED_MONSTER
+            else:
+                # Clicking off the game area after a failed attack to
+                # close any unwanted tooltips like 'Cut' a tree or another
+                # character's option menu.
+                move_mouse_off_game_area()
+                pyag.click()
+                if map_coords != MapChanger.get_current_map_coords():
+                    log.error("Map was accidentally changed during the attack.")
+                    self._change_map_back_to_original(map_coords)
+                elif self._is_char_in_lumberjack_workshop():
+                    log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
+                    self._leave_lumberjacks_workshop()
+                i += 1
+
+                print(f"End i: {i} / {len(monster_tooltips)}")
 
         log.info(f"Map '{map_coords}' fully searched.")
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         return Status.MAP_FULLY_SEARCHED
 
-    def _load_monster_images(self):
-        if "af_" in self._script:
-            folder_path =  os.path.join(self.IMAGE_FOLDER_PATH, "monster\\astrub_forest")
-        return [load_image_full_path(path) for path in glob.glob(os.path.join(folder_path, "*.png"))]
-
-    @staticmethod
-    def _segment_data(data: list, segment_size) -> list[list]:
-        segments = []
-        for i in range(0, len(data), segment_size):
-            segments.append(data[i:i + segment_size])
-        return segments
-
-    @staticmethod
-    def _search_segment(image_segment, mask_segment, haystack_image) -> list[tuple[int, int]]:
-        matches = ImageDetection.find_images(
-            haystack=haystack_image,
-            needles=image_segment,
-            confidence=0.9837,
-            method=cv2.TM_CCORR_NORMED,
-            masks=mask_segment,
-            remove_alpha_channels=True
-        )
-        click_coords = []
-        for match in matches:
-            if len(match) > 0:
-                click_coords.append(ImageDetection.get_rectangle_center_point(match))
-        return click_coords
+    def _format_monster_counts(self, tooltip_monster_counts: dict) -> str:
+        formatted_strings = [f"{count} {animal}" for animal, count in tooltip_monster_counts.items()]
+        if len(formatted_strings) > 1:
+            output_string = ', '.join(formatted_strings[:-1])
+            output_string += f" and {formatted_strings[-1]}"
+        else:
+            output_string = formatted_strings[0]
+        return output_string
 
     def _attack(self, monster_x, monster_y):
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
@@ -248,3 +236,8 @@ class Hunter:
     def _change_map_back_to_original(original_map_coords):
         log.info("Attempting to change map back to original ...")
         MapChanger.change_map(MapChanger.get_current_map_coords(), original_map_coords)
+
+
+if __name__ == "__main__":
+    hunter = Hunter("af_anticlock", "Dofus Retro")
+    hunter.hunt()

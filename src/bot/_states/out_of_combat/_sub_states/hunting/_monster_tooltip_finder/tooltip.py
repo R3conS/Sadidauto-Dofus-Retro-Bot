@@ -1,8 +1,8 @@
 import numpy as np
 
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._precise_cropper import PreciseCropper
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._reader import Reader
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._rough_cropper import RoughCropper
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder._precise_cropper import PreciseCropper
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder._reader import Reader
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder._rough_cropper import RoughCropper
 
 
 class Tooltip:

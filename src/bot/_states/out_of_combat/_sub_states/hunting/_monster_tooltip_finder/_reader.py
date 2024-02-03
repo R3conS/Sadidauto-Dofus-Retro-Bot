@@ -12,6 +12,7 @@ class Reader:
         self.monster_counts = self._count_monsters(words)
 
     def _get_tooltip_text(self):
+        # ToDo: preprocess image before passing it to OCR.
         return OCR.get_text_from_image(self._precise_tooltip_image)
 
     @classmethod

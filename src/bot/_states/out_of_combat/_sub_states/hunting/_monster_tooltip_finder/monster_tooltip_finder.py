@@ -2,23 +2,23 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._sorter import Sorter
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._tooltip import Tooltip
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder._sorter import Sorter
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.tooltip import Tooltip
 from src.utilities.general import load_image_full_path
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
 
-class TooltipFinder:
+class MonsterTooltipFinder:
 
-    LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_finder\\_monster_tooltip\\_images\\level.png")
+    LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_tooltip_finder\\_images\\level.png")
 
     @classmethod
-    def get_tooltips(cls) -> list[Tooltip]:
+    def find_tooltips(cls) -> list[Tooltip]:
         haystack = cls._get_image_to_search_on()
         text_locations = cls._get_level_text_center_points(haystack)
         tooltips = [Tooltip(haystack, location) for location in text_locations]
-        sorted_tooltips = Sorter.sort(tooltips, Sorter.SORT_BY_TOOLTIP_RECTANGLE_AREA)
+        sorted_tooltips = Sorter.sort(tooltips, Sorter.SORT_BY_MONSTER_PRIORITY)
         return sorted_tooltips
 
     @staticmethod
@@ -34,7 +34,7 @@ class TooltipFinder:
         rectangles = ImageDetection.find_image(
             haystack=image_to_search_on,
             needle=cls.LEVEL_IMAGE,
-            confidence=0.75,
+            confidence=0.7,
             method=cv2.TM_CCOEFF_NORMED,
             get_best_match_only=False
         )
@@ -69,10 +69,13 @@ class TooltipFinder:
 
 if __name__ == "__main__":
     from time import sleep
-
-    # TooltipFinder._TooltipFinder__get_and_display_all_tooltips()
+    # Finder._Finder__get_and_display_all_tooltips()
+    from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
     sleep(0.5)
-    tooltips = TooltipFinder.get_tooltips()
+    tooltips = MonsterTooltipFinder.find_tooltips()
     sorted_tooltips = Sorter.sort(tooltips, Sorter.SORT_BY_MONSTER_PRIORITY)
+    print(len(sorted_tooltips))
     for tooltip in sorted_tooltips:
         print(tooltip.monster_counts)
+        print(MonsterLocationFinder.get_monster_location(tooltip))
+        break

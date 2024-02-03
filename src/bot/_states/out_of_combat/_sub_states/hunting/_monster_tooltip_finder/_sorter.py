@@ -1,6 +1,6 @@
 from random import choice as random_choice
 
-from src.bot._states.out_of_combat._sub_states.hunting._monster_finder._monster_tooltip._tooltip import Tooltip
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.tooltip import Tooltip
 
 
 class Sorter:
