@@ -167,7 +167,7 @@ class Preparer:
         while perf_counter() - start_time <= 0.35:
             if (
                 not pyag.pixelMatchesColor(cell_x, cell_y, px_color_before_moving)
-                and not self._is_cell_free(cell_x, cell_y, pyag.screenshot(region=ScreenCapture.MAP_AREA))
+                and not self._is_cell_free(cell_x, cell_y, pyag.screenshot(region=(0, 0, 933, 600)))
             ):
                 return True
         return False

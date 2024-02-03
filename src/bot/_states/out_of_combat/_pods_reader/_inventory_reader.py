@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import pyautogui as pyag
 
+from src.bot._exceptions import ExceptionReason
 from src.bot._states.out_of_combat._pods_reader._base_reader import BaseReader
 from src.utilities.general import screenshot_game_and_save_to_debug_folder
 from src.utilities.ocr.ocr import OCR

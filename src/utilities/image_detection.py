@@ -156,7 +156,7 @@ class ImageDetection:
         return cv2.rectangle(
             image_to_draw_on,
             (x_y_w_h[0], x_y_w_h[1]),
-            (x_y_w_h[0] + x_y_w_h[2], x_y_w_h[1] + x_y_w_h[3]),
+            (x_y_w_h[0] + x_y_w_h[2] - 1, x_y_w_h[1] + x_y_w_h[3] - 1),
             color,
             thickness,
             line_type
