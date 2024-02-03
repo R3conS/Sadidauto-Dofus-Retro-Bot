@@ -2,7 +2,7 @@ import cv2
 import pyautogui as pyag
 
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.tooltip import Tooltip
-from src.utilities.general import load_image_full_path, measure_execution_time
+from src.utilities.general import load_image_full_path
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
@@ -12,7 +12,6 @@ class MonsterLocationFinder:
     LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\level.png")
 
     @classmethod
-    @measure_execution_time
     def get_monster_location(cls, monster_tooltip: Tooltip):
         monster_locations = cls._get_possible_monster_locations(monster_tooltip.rectangle)
         for location in monster_locations.values():
@@ -68,4 +67,4 @@ class MonsterLocationFinder:
 
 
 if __name__ == "__main__":
-    print(Finder._is_level_text_visible_around_point((871, 366)))
+    print(MonsterLocationFinder._is_level_text_visible_around_point((871, 366)))

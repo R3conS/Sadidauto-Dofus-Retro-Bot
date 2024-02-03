@@ -78,6 +78,7 @@ class Bot(threading.Thread):
         except Exception:
             log.critical("An unhandled exception occured!")
             log.critical(traceback.format_exc())
+            screenshot_game_and_save_to_debug_folder("Unhandled_Exception")
         finally:
             self._logout()
             os._exit(0)

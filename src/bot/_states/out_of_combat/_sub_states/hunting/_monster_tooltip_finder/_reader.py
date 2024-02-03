@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.utilities.ocr.ocr import OCR
 
 
@@ -5,15 +7,17 @@ class Reader:
 
     MONSTER_NAMES = ["Boar", "Mush Mush", "Prespic", "Moskito", "Miliboowolf"]
 
-    def __init__(self, precise_tooltip_image):
+    def __init__(self, precise_tooltip_image: np.ndarray):
         self._precise_tooltip_image = precise_tooltip_image
         text = self._get_tooltip_text()
         words = self._combine_text_into_words(text)
         self.monster_counts = self._count_monsters(words)
 
     def _get_tooltip_text(self):
-        # ToDo: preprocess image before passing it to OCR.
-        return OCR.get_text_from_image(self._precise_tooltip_image)
+        image = OCR.convert_to_grayscale(self._precise_tooltip_image)
+        image = OCR.binarize_image(image, 150)
+        image = OCR.invert_image(image)
+        return OCR.get_text_from_image(image)
 
     @classmethod
     def _remove_forbidden_characters(cls, text: str):

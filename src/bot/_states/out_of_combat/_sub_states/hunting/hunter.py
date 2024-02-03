@@ -17,7 +17,7 @@ from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter a
 from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
 from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder
-from src.utilities.general import load_image_full_path, move_mouse_off_game_area
+from src.utilities.general import load_image_full_path, move_mouse_off_game_area, save_image_to_debug_folder
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
@@ -97,7 +97,15 @@ class Hunter:
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         i = 0
         while i < len(monster_tooltips):
-            log.info(f"Found monsters: {self._format_monster_counts(monster_tooltips[i].monster_counts)}.")
+            try:
+                log.info(f"Monsters found: {self._format_monster_counts(monster_tooltips[i].monster_counts)}.")
+            except IndexError:
+                log.info(
+                    f"Monsters found, but the contents of the tooltip are unknown. "
+                    "Most likely because the tooltip is obstructed by another tooltip "
+                    "and cannot be read."
+                )
+                save_image_to_debug_folder(monster_tooltips[i]._precise_tooltip_image, "could_not_read_tooltip")
 
             log.info(f"Getting precise monster location ... ")
             monster_location = MonsterLocationFinder.get_monster_location(monster_tooltips[i])
