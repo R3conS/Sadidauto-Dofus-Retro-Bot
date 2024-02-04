@@ -17,16 +17,6 @@ class Initializer:
     WINDOW_SUFFIXES = ["Dofus Retro", "Abrak"]
     WINDOW_SIZE = (950, 785)
     WINDOW_POS = (-8, 0)
-    VALID_SCRIPTS = [
-        "af_anticlock", 
-        "af_clockwise"
-    ]
-    VALID_SERVERS = [
-        "Boune",
-        "Allisteria",
-        "Fallanster",
-        "Semi-like" # Abrak.
-    ]
 
     def __init__(self, script: str, character_name: str, server_name: str):
         self._script = script
@@ -40,28 +30,12 @@ class Initializer:
 
     def initialize(self):
         log.info("Initializing bot ...")
-        self._verify_script()
-        self._verify_server()
         self._prepare_game_window()
         self._interfaces = Interfaces(self._script, self.window_title)
         self._verify_character_name()
         self.character_level = self._read_character_level()
         self._start_disturbance_checker()
         log.info("Successfully initialized bot!")
-
-    def _verify_script(self):
-        log.info("Verifying script ...")
-        if self._script not in self.VALID_SCRIPTS:
-            log.critical(f"Script name is invalid: '{self._script}'! Exiting ... ")
-            os._exit(1)
-        log.info("Successfully verified script!")
-
-    def _verify_server(self):
-        log.info("Verifying server ...")
-        if self._server_name not in self.VALID_SERVERS:
-            log.critical(f"Server name is invalid: '{self._server_name}'! Exiting ... ")
-            os._exit(1)
-        log.info("Successfully verified server!")
 
     def _prepare_game_window(self):
         log.info("Preparing Dofus window ...")

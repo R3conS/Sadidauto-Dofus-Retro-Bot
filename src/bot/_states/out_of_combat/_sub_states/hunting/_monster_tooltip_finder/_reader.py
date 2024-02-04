@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.utilities.general import load_image_full_path
 from src.utilities.ocr.ocr import OCR
 
 
@@ -7,15 +8,18 @@ class Reader:
 
     MONSTER_NAMES = ["Boar", "Mush Mush", "Prespic", "Moskito", "Miliboowolf"]
 
-    def __init__(self, precise_tooltip_image: np.ndarray):
-        self._precise_tooltip_image = precise_tooltip_image
+    def __init__(self, precise_tooltip_image: np.ndarray | str):
+        if isinstance(precise_tooltip_image, str):
+            self._precise_tooltip_image = load_image_full_path(precise_tooltip_image)
+        else:
+            self._precise_tooltip_image = precise_tooltip_image
         text = self._get_tooltip_text()
         words = self._combine_text_into_words(text)
         self.monster_counts = self._count_monsters(words)
 
     def _get_tooltip_text(self):
         image = OCR.convert_to_grayscale(self._precise_tooltip_image)
-        image = OCR.binarize_image(image, 150)
+        image = OCR.binarize_image(image, 155)
         image = OCR.invert_image(image)
         return OCR.get_text_from_image(image)
 
@@ -84,4 +88,4 @@ class Reader:
 
 
 if __name__ == "__main__":
-    reader = Reader("tooltip_2.png")
+    reader = Reader("test.png")

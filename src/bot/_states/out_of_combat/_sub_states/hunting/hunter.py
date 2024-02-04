@@ -95,6 +95,7 @@ class Hunter:
         log.info(f"Hunting on map: '{map_coords}' ... ")
 
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
+        last_failed_tooltip_monster_counts = None
         i = 0
         while i < len(monster_tooltips):
             try:
@@ -105,18 +106,22 @@ class Hunter:
                     "Most likely because the tooltip is obstructed by another tooltip "
                     "and cannot be read."
                 )
-                save_image_to_debug_folder(monster_tooltips[i]._precise_tooltip_image, "could_not_read_tooltip")
+                save_image_to_debug_folder(monster_tooltips[i]._precise_tooltip, "could_not_read_tooltip")
 
             log.info(f"Getting precise monster location ... ")
             monster_location = MonsterLocationFinder.get_monster_location(monster_tooltips[i])
             if monster_location is None:
-                log.info(f"Failed to find monster around tooltip: '{i}'. Getting new tooltips ... ")
-                monster_tooltips = MonsterTooltipFinder.find_tooltips()
-                i = 0
-                continue
-
+                if last_failed_tooltip_monster_counts == monster_tooltips[i].monster_counts:
+                    log.info(f"Failed to find a monster around the same tooltip twice. Skipping ... ")
+                    i += 1
+                    continue
+                else:
+                    log.info(f"Failed to find a monster around the tooltip. Getting new tooltips ... ")
+                    monster_tooltips = MonsterTooltipFinder.find_tooltips()
+                    i = 0
+                    continue
+            last_failed_tooltip_monster_counts = None
             monster_x, monster_y = monster_location
-            log.info(f"Attacking monster at: {monster_x, monster_y} ... ")
 
             if self._is_join_sword_on_pos(monster_x, monster_y):
                 log.info("Monster was attacked by someone else. Skipping ... ")
@@ -150,8 +155,6 @@ class Hunter:
                     self._leave_lumberjacks_workshop()
                 i += 1
 
-                print(f"End i: {i} / {len(monster_tooltips)}")
-
         log.info(f"Map '{map_coords}' fully searched.")
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         return Status.MAP_FULLY_SEARCHED
@@ -178,12 +181,12 @@ class Hunter:
     @classmethod
     def _is_attack_successful(cls):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 7.5:
+        while perf_counter() - start_time <= 8:
             if len(
                 ImageDetection.find_images(
                     haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
                     needles=cls.READY_BUTTON_IMAGES,
-                    confidence=0.98,
+                    confidence=0.85,
                     method=cv2.TM_SQDIFF_NORMED
                 )
             ) > 0:

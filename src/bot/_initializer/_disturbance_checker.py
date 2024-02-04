@@ -12,7 +12,7 @@ class DisturbanceChecker(threading.Thread):
     def __init__(self):
         super().__init__()
         self.daemon = True
-        self._check_interval = 0.5
+        self._check_interval = 1
 
     def run(self):
         log.info("Disturbance checker started!")

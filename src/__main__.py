@@ -18,14 +18,8 @@ def exit_with_hotkey():
 
 
 def main():
-    # args = Parser.parse_command_line()
-    # bot = Bot(script=args.script, character_name=args.character_name)
-    # bot.start()
-    bot = Bot(
-        script="af_anticlock", 
-        character_name="Chick-[AYU]", 
-        server_name="Allisteria"
-    )
+    args = Parser.parse_command_line()
+    bot = Bot(script=args.script, character_name=args.character_name, server_name=args.server_name)
     bot.start()
     exit_with_hotkey()
 

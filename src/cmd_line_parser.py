@@ -3,25 +3,33 @@ import argparse
 
 class Parser:
 
+    AVAILABLE_SCRIPTS = {
+        "af_anticlock": "Astrub Forest - Anticlockwise pathing.",
+        "af_clockwise": "Astrub Forest - Clockwise pathing.",
+    }
+    AVAILABLE_SERVERS = [
+        "Boune",
+        "Allisteria",
+        "Fallanster",
+        "Semi-like" # Abrak.
+    ]
+
     @classmethod
     def parse_command_line(cls):
-        """Parse command-line arguments."""
-        parser = argparse.ArgumentParser(description="Select 'Bot' options.")
+        parser = argparse.ArgumentParser(description="Provide 'Bot' options.")
         parser.add_argument(
-            "-s", "--script",
-            help="Name of bot script. "
-            "Available: " 
-            "'af_anticlock', "
-            "'af_clockwise', "
-            "'af_north', "
-            "'af_east', "
-            "'af_south', "
-            "'af_west'.",
+            "--script", "-s", 
+            choices=cls.AVAILABLE_SCRIPTS.keys(),
+            help=f"Script name. Available: {', '.join(cls.AVAILABLE_SCRIPTS.keys())}.",
             required=True
         )
         parser.add_argument(
-            "-cn", "--character_name", 
-            help="Character's name.",
+            "--character_name", "-cn", 
+            required=True
+        )
+        parser.add_argument(
+            "--server_name", "-sn", 
+            choices=cls.AVAILABLE_SERVERS,
             required=True
         )
         return parser.parse_args()

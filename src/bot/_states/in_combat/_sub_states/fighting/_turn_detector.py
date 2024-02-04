@@ -29,7 +29,7 @@ class TurnDetector:
     @classmethod
     def detect_start_of_turn(cls, character_name: str):
         log.info("Waiting for character's turn ...")
-        timeout = 120
+        timeout = 90
         start_time = perf_counter()
         while perf_counter() - start_time <= timeout:
             if (

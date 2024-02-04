@@ -5,11 +5,13 @@ from time import perf_counter
 
 import pyautogui as pyag
 
-from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
-from src.bot._exceptions import ExceptionReason, UnrecoverableException, RecoverableException
+from src.bot._exceptions import ExceptionReason, RecoverableException, UnrecoverableException
 from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._recoverer._reconnecter.reconnecter import Reconnecter
+from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
+from src.bot._states.state_determiner.determiner import determine_state
+from src.bot._states.states_enum import State
 
 
 class Recoverer:
@@ -111,9 +113,14 @@ class Recoverer:
         elif reason == ExceptionReason.FAILED_TO_CHANGE_MAP:
             if not self._reconnecter._is_account_connected():
                 self._reconnecter.reconnect(occured_in_sub_state)
-            else:
+            elif determine_state() == State.OUT_OF_COMBAT:
                 Interfaces.close_all()
                 self._emergency_recall()
+        elif reason == ExceptionReason.FAILED_TO_GET_MAP_COORDS:
+            if not self._reconnecter._is_account_connected():
+                self._reconnecter.reconnect(occured_in_sub_state)
+            else:
+                Interfaces.close_all()
 
     @classmethod
     def _emergency_recall(cls):

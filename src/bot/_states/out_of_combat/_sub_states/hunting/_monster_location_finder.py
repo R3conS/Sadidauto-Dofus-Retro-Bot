@@ -38,10 +38,10 @@ class MonsterLocationFinder:
         return {
             "bottom_middle": bottom_middle,
             "top_middle": top_middle,
-            "bottom_left": (bottom_middle[0] - 30, bottom_middle[1]),
-            "bottom_right": (bottom_middle[0] + 30, bottom_middle[1]),
-            "top_left": (top_middle[0] - 30, top_middle[1]),
-            "top_right": (top_middle[0] + 30, top_middle[1])
+            "bottom_left": (bottom_middle[0] - 22, bottom_middle[1]),
+            "bottom_right": (bottom_middle[0] + 22, bottom_middle[1]),
+            "top_left": (top_middle[0] - 22, top_middle[1]),
+            "top_right": (top_middle[0] + 22, top_middle[1])
         }
 
     @classmethod

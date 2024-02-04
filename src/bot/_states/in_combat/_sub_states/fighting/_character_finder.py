@@ -101,7 +101,7 @@ class Finder:
                 ImageDetection.find_image(
                     haystack=haystack,
                     needle=image,
-                    method=cv2.TM_CCORR_NORMED,
+                    method=cv2.TM_SQDIFF,
                     confidence=0.97,
                     mask=mask,
                     get_best_match_only=False
