@@ -3,13 +3,13 @@ log = Logger.get_logger()
 
 import re
 from abc import ABC, abstractstaticmethod
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import numpy as np
 
 from src.bot._exceptions import ExceptionReason, RecoverableException
-from src.utilities.general import save_image_to_debug_folder
+from src.utilities.general import save_image_to_debug_folder, screenshot_game_and_save_to_debug_folder
 from src.utilities.ocr.ocr import OCR
 
 
@@ -73,6 +73,11 @@ class BaseReader(ABC):
                     tooltip = cls._crop_out_tooltip(tooltip_area, tooltip_rectangle)
                     text = cls._read_tooltip_text(tooltip)
                     return cls._parse_tooltip_text(text)
+
+        log.error("Failed to get pods numbers.")
+        cls._trigger_tooltip()
+        sleep(1) # Wait for tooltip to appear.
+        screenshot_game_and_save_to_debug_folder("failed_to_get_pods_numbers")
         return None
 
     @classmethod
