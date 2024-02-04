@@ -63,7 +63,7 @@ class Hunter:
                     return Status.REACHED_PODS_LIMIT
 
             map_coords = MapChanger.get_current_map_coords()
-            if map_coords == self._bank_map_coords:
+            if map_coords == self._bank_map_coords and self._is_char_inside_bank():
                 log.info("Character is inside the bank.")
                 self._leave_bank()
 
