@@ -41,6 +41,7 @@ class Preparer:
     def prepare(self):
         try:
             CombatOptions.FIGHT_LOCK.turn_on()
+            CombatOptions.SPECTATOR_MODE.deactivate()
             CombatOptions.TACTICAL_MODE.turn_on()
             map_coords = MapChanger.get_current_map_coords()
             if self._are_there_any_dummy_cells_on_map(map_coords):

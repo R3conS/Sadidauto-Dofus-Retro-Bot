@@ -51,11 +51,11 @@ class BaseOption:
             inner_start_time = perf_counter()
             while perf_counter() - inner_start_time < 2:
                 if is_on():
-                    log.info(f"Successfully turned on '{self._name}'.")
+                    log.info(f"Successfully turned on '{self._name}' option.")
                     return
 
         raise RecoverableException(
-            f"Timed out while turning on '{self._name}'. "
+            f"Timed out while turning on '{self._name}' option. "
             f"Timeout: {timeout} seconds."
         )
 
