@@ -31,9 +31,7 @@ class BankVault:
     def open(self):
         if self.is_open():
             return
-        self._detect_banker_npc()
-        banker_coords = self._get_banker_npc_coords()
-        self._talk_with_banker(banker_coords[0], banker_coords[1])
+        self._talk_with_banker(*self._get_banker_npc_coords())
         self._select_consult_your_personal_safe()
         self._wait_item_sprites_loaded()
         log.info("Successfully opened 'Bank Vault' interface.")
@@ -49,20 +47,6 @@ class BankVault:
             pyag.pixelMatchesColor(700, 577, (213, 207, 170)),
             pyag.pixelMatchesColor(31, 568, (213, 207, 170)),
         ))
-
-    def _detect_banker_npc(self):
-        log.info("Detecting banker NPC ... ")
-        if len(
-            ImageDetection.find_images(
-                haystack=ScreenCapture.game_window(),
-                needles=self._banker_npc_images_loaded,
-                confidence=0.99,
-                method=cv2.TM_CCORR_NORMED
-            )
-        ) > 0:
-            log.info("Successfully detected banker NPC.")
-            return
-        raise RecoverableException("Failed to detect banker NPC.")
 
     def _get_banker_npc_coords(self):
         log.info("Getting banker NPC coordinates ... ")
