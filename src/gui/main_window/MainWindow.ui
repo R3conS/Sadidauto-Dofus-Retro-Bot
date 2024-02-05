@@ -289,14 +289,14 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="StartButton" name="start_button">
           <property name="text">
            <string>Start</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="StopButton" name="stop_button">
           <property name="text">
            <string>Stop</string>
           </property>
@@ -347,6 +347,16 @@
    <class>SpectatorModeCheckBox</class>
    <extends>QCheckBox</extends>
    <header>src.gui.main_window.check_box_spectator_mode</header>
+  </customwidget>
+  <customwidget>
+   <class>StopButton</class>
+   <extends>QPushButton</extends>
+   <header>src.gui.main_window.button_stop</header>
+  </customwidget>
+  <customwidget>
+   <class>StartButton</class>
+   <extends>QPushButton</extends>
+   <header>src.gui.main_window.button_start</header>
   </customwidget>
  </customwidgets>
  <resources/>

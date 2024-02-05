@@ -29,13 +29,22 @@ class Bot(threading.Thread):
     WINDOW_SIZE = (950, 785)
     WINDOW_POS = (-8, 0)
 
-    def __init__(self, script: str, character_name: str, server_name: str):
+    def __init__(
+        self, 
+        character_name: str, 
+        server_name: str,
+        script: str,
+        go_bank_when_pods_percentage: int = 95,
+        disable_spec_mode: bool = True
+    ):
         super().__init__()
         self.daemon = True
         self._stopped = False
         self._window_title, self._window_hwnd = self._prepare_game_window(character_name)
         self._character_name = self._verify_character_name(character_name)
-        self._script = script
+        self._script = self._parse_script_name(script)
+        self._go_bank_when_pods_percentage = go_bank_when_pods_percentage
+        self._disable_spec_mode = disable_spec_mode
         self._interfaces = Interfaces(self._script, self._window_title)
         self._out_of_combat_controller = OOC_Controller(self._set_state, self._script, self._window_title)
         self._in_combat_controller = IC_Controller(self._set_state, self._script, self._character_name)
@@ -185,3 +194,15 @@ class Bot(threading.Thread):
             self._set_disturbance_checker_crashed
         )
         self._disturbance_checker.start()
+
+    @staticmethod
+    def _parse_script_name(script: str):
+        script = script.lower()
+        if "astrub forest" in script:
+            if "anticlock" in script:
+                return "af_anticlock"
+            elif "clockwise" in script:
+                return "af_clockwise"
+        else:
+            log.critical(f"Invalid script name '{script}'! Exiting ...")
+            os._exit(1)

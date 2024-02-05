@@ -16,9 +16,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-    QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
-    QVBoxLayout, QWidget)
+    QMainWindow, QSizePolicy, QSpacerItem, QVBoxLayout,
+    QWidget)
 
+from src.gui.main_window.button_start import StartButton
+from src.gui.main_window.button_stop import StopButton
 from src.gui.main_window.check_box_spectator_mode import SpectatorModeCheckBox
 from src.gui.main_window.combo_box_script import ScriptComboBox
 from src.gui.main_window.combo_box_server import ServerComboBox
@@ -206,15 +208,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
-        self.pushButton = QPushButton(self.centralwidget)
-        self.pushButton.setObjectName(u"pushButton")
+        self.start_button = StartButton(self.centralwidget)
+        self.start_button.setObjectName(u"start_button")
 
-        self.horizontalLayout_2.addWidget(self.pushButton)
+        self.horizontalLayout_2.addWidget(self.start_button)
 
-        self.pushButton_3 = QPushButton(self.centralwidget)
-        self.pushButton_3.setObjectName(u"pushButton_3")
+        self.stop_button = StopButton(self.centralwidget)
+        self.stop_button.setObjectName(u"stop_button")
 
-        self.horizontalLayout_2.addWidget(self.pushButton_3)
+        self.horizontalLayout_2.addWidget(self.stop_button)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
@@ -243,7 +245,7 @@ class Ui_MainWindow(object):
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"Return to bank at pods %", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Disable spectator mode?", None))
         self.spectator_mode_check_box.setText("")
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Start", None))
-        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
+        self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
+        self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
     # retranslateUi
 

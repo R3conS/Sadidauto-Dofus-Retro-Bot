@@ -22,7 +22,11 @@ def exit_with_hotkey():
 
 def main():
     # args = Parser.parse_command_line()
-    # bot = Bot(script=args.script, character_name=args.character_name, server_name=args.server_name)
+    # bot = Bot(
+    #     character_name=args.character_name, 
+    #     server_name=args.server_name,
+    #     script=args.script
+    # )
     # bot.start()
     # exit_with_hotkey()
 

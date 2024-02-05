@@ -12,4 +12,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("oFlexBot")
         self.app = app
         self.setFocus()
-        self.setFocusPolicy(Qt.ClickFocus)
+        self.setFocusPolicy(Qt.ClickFocus) # Make all widgets lose focus when clicking on the main window.
+        self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint) # Set non resizable.
+        self.character_name_line_edit.setText("Chick-[AYU]")
+        self._connect_signals_and_slots()
+        self.bot = None
+
+    def _connect_signals_and_slots(self):
+        self.start_button.bot_object_initialized_signal.connect(self._on_bot_object_initialized_signal)
+
+    def _on_bot_object_initialized_signal(self, bot_object):
+        self.bot = bot_object
