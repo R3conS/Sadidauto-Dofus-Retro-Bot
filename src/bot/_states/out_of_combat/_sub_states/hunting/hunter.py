@@ -95,37 +95,26 @@ class Hunter:
         log.info(f"Hunting on map: '{map_coords}' ... ")
 
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
-        last_failed_tooltip_monster_counts = None
-        i = 0
-        while i < len(monster_tooltips):
+        for tooltip in monster_tooltips:
             try:
-                log.info(f"Monsters found: {self._format_monster_counts(monster_tooltips[i].monster_counts)}.")
+                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}")
             except IndexError:
                 log.info(
                     f"Monsters found, but the contents of the tooltip are unknown. "
                     "Most likely because the tooltip is obstructed by another tooltip "
                     "and cannot be read."
                 )
-                save_image_to_debug_folder(monster_tooltips[i]._precise_tooltip, "could_not_read_tooltip")
+                save_image_to_debug_folder(tooltip._precise_tooltip, "could_not_read_tooltip")
 
             log.info(f"Getting precise monster location ... ")
-            monster_location = MonsterLocationFinder.get_monster_location(monster_tooltips[i])
+            monster_location = MonsterLocationFinder.get_monster_location(tooltip)
             if monster_location is None:
-                if last_failed_tooltip_monster_counts == monster_tooltips[i].monster_counts:
-                    log.info(f"Failed to find a monster around the same tooltip twice. Skipping ... ")
-                    i += 1
-                    continue
-                else:
-                    log.info(f"Failed to find a monster around the tooltip. Getting new tooltips ... ")
-                    monster_tooltips = MonsterTooltipFinder.find_tooltips()
-                    i = 0
-                    continue
-            last_failed_tooltip_monster_counts = None
+                log.info(f"Failed to find a monster around the tooltip. Skipping ... ")
+                continue
             monster_x, monster_y = monster_location
 
             if self._is_join_sword_on_pos(monster_x, monster_y):
                 log.info("Monster was attacked by someone else. Skipping ... ")
-                i += 1
                 continue
 
             self._attack(monster_x, monster_y)
@@ -135,7 +124,6 @@ class Hunter:
             if Interfaces.RIGHT_CLICK_MENU.is_open():
                 log.error("Failed to attack monster because it moved away. Skipping ... ")
                 Interfaces.RIGHT_CLICK_MENU.close()
-                i += 1
                 continue
 
             if self._is_attack_successful():
@@ -153,7 +141,6 @@ class Hunter:
                 elif self._is_char_in_lumberjack_workshop():
                     log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                     self._leave_lumberjacks_workshop()
-                i += 1
 
         log.info(f"Map '{map_coords}' fully searched.")
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
