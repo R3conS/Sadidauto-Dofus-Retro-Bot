@@ -10,9 +10,15 @@ from src.bot._states.states_enum import State as MainBotState
 
 class Controller:
 
-    def __init__(self, set_bot_state_callback: callable, script: str, game_window_title: str):
+    def __init__(
+        self, 
+        set_bot_state_callback: callable, 
+        script: str, 
+        game_window_title: str,
+        go_bank_when_pods_percentage: int = 95,
+    ):
         self._set_main_bot_state_callback = set_bot_state_callback
-        self._hunter = Hunter(script, game_window_title)
+        self._hunter = Hunter(script, game_window_title, go_bank_when_pods_percentage)
         self._banker = Banker(script, game_window_title)
 
     def run(self):

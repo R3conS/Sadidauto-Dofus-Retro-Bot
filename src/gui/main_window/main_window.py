@@ -16,10 +16,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint) # Set non resizable.
         self.character_name_line_edit.setText("Chick-[AYU]")
         self._connect_signals_and_slots()
-        self.bot = None
 
     def _connect_signals_and_slots(self):
-        self.start_button.bot_object_initialized_signal.connect(self._on_bot_object_initialized_signal)
-
-    def _on_bot_object_initialized_signal(self, bot_object):
-        self.bot = bot_object
+        self.start_button.bot_started_signal.connect(self.stop_button._on_bot_started)
+        self.stop_button.bot_stopped_signal.connect(self.start_button._on_bot_stopped)

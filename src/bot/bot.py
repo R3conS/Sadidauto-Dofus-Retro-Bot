@@ -2,12 +2,12 @@ from src.logger import Logger
 log = Logger.get_logger()
 
 import ctypes
+import multiprocessing as mp
 import os
 import threading
 import traceback
 
 import pyautogui as pyag
-import pygetwindow as gw
 
 from src.bot._disturbance_checker import DisturbanceChecker
 from src.bot._exceptions import RecoverableException, UnrecoverableException
@@ -17,12 +17,13 @@ from src.bot._states.in_combat.controller import Controller as IC_Controller
 from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
 from src.bot._states.state_determiner.determiner import determine_state
 from src.bot._states.states_enum import State
+from src.utilities import pygetwindow_custom as gw
 from src.utilities.general import screenshot_game_and_save_to_debug_folder
 from src.utilities.ocr.ocr import OCR
 from src.utilities.screen_capture import ScreenCapture
 
 
-class Bot(threading.Thread):
+class Bot(mp.Process):
     """Main controller."""
 
     WINDOW_SUFFIXES = ["Dofus Retro", "Abrak"]
@@ -35,21 +36,34 @@ class Bot(threading.Thread):
         server_name: str,
         script: str,
         go_bank_when_pods_percentage: int = 95,
-        disable_spec_mode: bool = True
+        disable_spectator_mode: bool = True
     ):
         super().__init__()
-        self.daemon = True
-        self._stopped = False
-        self._window_title, self._window_hwnd = self._prepare_game_window(character_name)
-        self._character_name = self._verify_character_name(character_name)
-        self._script = self._parse_script_name(script)
-        self._go_bank_when_pods_percentage = go_bank_when_pods_percentage
-        self._disable_spec_mode = disable_spec_mode
-        self._interfaces = Interfaces(self._script, self._window_title)
-        self._out_of_combat_controller = OOC_Controller(self._set_state, self._script, self._window_title)
-        self._in_combat_controller = IC_Controller(self._set_state, self._script, self._character_name)
-        self._character_level = self._read_character_level()
+        self._character_name = character_name
         self._server_name = server_name
+        self._script = script
+        self._go_bank_when_pods_percentage = go_bank_when_pods_percentage
+        self._disable_spectator_mode = disable_spectator_mode
+
+    def run(self):
+        # Initializing everything here to avoid issues with pickling when using multiprocessing.
+        self._window_title, self._window_hwnd = self._prepare_game_window(self._character_name)
+        self._character_name = self._verify_character_name(self._character_name)
+        self._script = self._parse_script_name(self._script)
+        self._interfaces = Interfaces(self._script, self._window_title)
+        self._out_of_combat_controller = OOC_Controller(
+            self._set_state, 
+            self._script, 
+            self._window_title,
+            self._go_bank_when_pods_percentage
+        )
+        self._in_combat_controller = IC_Controller(
+            self._set_state, 
+            self._script, 
+            self._character_name,
+            self._disable_spectator_mode
+        )
+        self._character_level = self._read_character_level()
         self._recoverer = Recoverer(
             self._character_name, 
             self._server_name, 
@@ -68,11 +82,10 @@ class Bot(threading.Thread):
             self._set_disturbance_checker_crashed
         )
         self._disturbance_checker.start()
-        self._state = determine_state()
 
-    def run(self):
+        self._state = determine_state()
         try:
-            while not self._stopped:
+            while True:
                 try:
                     if self._has_disturbance_checker_crashed:
                         self._has_disturbance_checker_crashed = False
@@ -102,7 +115,7 @@ class Bot(threading.Thread):
             os._exit(1)
 
     def stop(self):
-        self._stopped = True
+        self.terminate()
 
     def _set_state(self, state):
         self._state = state

@@ -34,14 +34,16 @@ class Preparer:
     RED = "red"
     BLUE = "blue"
 
-    def __init__(self, script: str):
+    def __init__(self, script: str, disable_spectator_mode: bool = True):
         self._starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
         self._dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
+        self._disable_spectator_mode = disable_spectator_mode
 
     def prepare(self):
         try:
             CombatOptions.FIGHT_LOCK.turn_on()
-            CombatOptions.SPECTATOR_MODE.deactivate()
+            if self._disable_spectator_mode:
+                CombatOptions.SPECTATOR_MODE.deactivate()
             CombatOptions.TACTICAL_MODE.turn_on()
             map_coords = MapChanger.get_current_map_coords()
             if self._are_there_any_dummy_cells_on_map(map_coords):

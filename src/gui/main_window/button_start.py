@@ -6,7 +6,7 @@ from src.bot.bot import Bot
 
 class StartButton(QPushButton):
 
-    bot_object_initialized_signal = Signal(Bot)
+    bot_started_signal = Signal(Bot)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -20,8 +20,11 @@ class StartButton(QPushButton):
             character_name=main_window.character_name_line_edit.text(),
             server_name=main_window.server_combo_box.currentText(),
             go_bank_when_pods_percentage=main_window.bank_percentage_spin_box.value(),
-            disable_spec_mode=main_window.spectator_mode_check_box.isChecked()
+            disable_spectator_mode=main_window.spectator_mode_check_box.isChecked()
         )
-        self.bot_object_initialized_signal.emit(bot)
         bot.start()
+        self.bot_started_signal.emit(bot)
         self.setEnabled(False)
+
+    def _on_bot_stopped(self):
+        self.setEnabled(True)
