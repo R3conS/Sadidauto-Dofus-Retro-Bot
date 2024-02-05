@@ -26,3 +26,6 @@ class StopButton(QPushButton):
     def _on_bot_started(self, bot_object):
         self.bot = bot_object
         self.setEnabled(True)
+
+    def _on_bot_exited_due_to_exception(self):
+        self.setEnabled(False)

@@ -47,14 +47,14 @@ class Ui_MainWindow(object):
         self.horizontalLayout_9 = QHBoxLayout()
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.horizontalLayout_9.setContentsMargins(-1, 10, -1, -1)
-        self.capture_duration_label = QLabel(self.centralwidget)
-        self.capture_duration_label.setObjectName(u"capture_duration_label")
+        self.run_time_duration_label = QLabel(self.centralwidget)
+        self.run_time_duration_label.setObjectName(u"run_time_duration_label")
         font = QFont()
         font.setPointSize(32)
         font.setBold(True)
-        self.capture_duration_label.setFont(font)
+        self.run_time_duration_label.setFont(font)
 
-        self.horizontalLayout_9.addWidget(self.capture_duration_label, 0, Qt.AlignHCenter|Qt.AlignVCenter)
+        self.horizontalLayout_9.addWidget(self.run_time_duration_label, 0, Qt.AlignHCenter|Qt.AlignVCenter)
 
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_9)
@@ -237,7 +237,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.capture_duration_label.setText(QCoreApplication.translate("MainWindow", u"00:00", None))
+        self.run_time_duration_label.setText(QCoreApplication.translate("MainWindow", u"00:00:00", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Character Name", None))
         self.character_name_line_edit.setText("")
         self.label_14.setText(QCoreApplication.translate("MainWindow", u"Server", None))

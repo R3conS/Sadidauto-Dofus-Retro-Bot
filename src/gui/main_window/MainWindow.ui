@@ -35,7 +35,7 @@
          <number>10</number>
         </property>
         <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-         <widget class="QLabel" name="capture_duration_label">
+         <widget class="QLabel" name="run_time_duration_label">
           <property name="font">
            <font>
             <pointsize>32</pointsize>
@@ -43,7 +43,7 @@
            </font>
           </property>
           <property name="text">
-           <string>00:00</string>
+           <string>00:00:00</string>
           </property>
          </widget>
         </item>

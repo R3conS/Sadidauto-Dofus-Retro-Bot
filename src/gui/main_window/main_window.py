@@ -19,4 +19,5 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _connect_signals_and_slots(self):
         self.start_button.bot_started_signal.connect(self.stop_button._on_bot_started)
+        self.start_button.bot_exited_due_to_exception_signal.connect(self.stop_button._on_bot_exited_due_to_exception)
         self.stop_button.bot_stopped_signal.connect(self.start_button._on_bot_stopped)
