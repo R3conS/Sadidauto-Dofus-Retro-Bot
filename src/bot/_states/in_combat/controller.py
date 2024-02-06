@@ -12,11 +12,17 @@ from src.utilities.screen_capture import ScreenCapture
 
 class Controller:
     
-    def __init__(self, set_bot_state_callback: callable, script: str, character_name: str):
+    def __init__(
+        self, 
+        set_bot_state_callback: callable, 
+        script: str, 
+        character_name: str,
+        disable_spectator_mode: bool = True
+    ):
         self._set_main_bot_state_callback = set_bot_state_callback
         image_folder_path = "src\\bot\\_states\\in_combat\\_images"
         self._ap_icon_image = load_image(image_folder_path, "ap_counter_icon.png")
-        self._preparer = Preparer(script)
+        self._preparer = Preparer(script, disable_spectator_mode)
         self._fighter = Fighter(script, character_name)
         self._fight_counter = 0
 

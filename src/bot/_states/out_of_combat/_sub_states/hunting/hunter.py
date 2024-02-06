@@ -36,12 +36,12 @@ class Hunter:
     ]
     JOIN_SWORD_IMAGE_MASKS = ImageDetection.create_masks(JOIN_SWORD_IMAGES)
 
-    def __init__(self, script: str, game_window_title: str):
+    def __init__(self, script: str, game_window_title: str, go_bank_when_pods_percentage: int = 95):
         self._script = script
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
-        self._pods_percentage_limit = 90
+        self._pods_percentage_limit = go_bank_when_pods_percentage
         map_data = MapDataGetter.get_data_object(self._script)
         self._pathing_data = map_data.get_pathing_data()
         self._map_type_data = map_data.get_map_type_data()

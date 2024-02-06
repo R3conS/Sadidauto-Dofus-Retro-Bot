@@ -42,3 +42,11 @@ class UnrecoverableException(Exception):
         log.critical(f"UnrecoverableExpection: {message}")
         screenshot_game_and_save_to_debug_folder(f"UnrecoverableException - {self.reason}")
         super().__init__(message)
+
+
+class InitializationException(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        log.critical(f"InitializationException: {message}")
+        super().__init__(message)
