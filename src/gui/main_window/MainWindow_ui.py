@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QMainWindow, QSizePolicy, QSpacerItem, QVBoxLayout,
     QWidget)
 
+from src.gui.main_window.button_open_log_window import OpenLogWindowButton
 from src.gui.main_window.button_start import StartButton
 from src.gui.main_window.button_stop import StopButton
 from src.gui.main_window.check_box_spectator_mode import SpectatorModeCheckBox
@@ -40,8 +41,8 @@ class Ui_MainWindow(object):
         MainWindow.setMinimumSize(QSize(429, 338))
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.horizontalLayout_10 = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.horizontalLayout_9 = QHBoxLayout()
@@ -218,6 +219,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.stop_button)
 
+        self.open_log_window_button = OpenLogWindowButton(self.centralwidget)
+        self.open_log_window_button.setObjectName(u"open_log_window_button")
+        self.open_log_window_button.setMinimumSize(QSize(120, 0))
+
+        self.horizontalLayout_2.addWidget(self.open_log_window_button)
+
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
@@ -226,7 +233,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
 
 
-        self.verticalLayout_5.addLayout(self.verticalLayout_2)
+        self.horizontalLayout_10.addLayout(self.verticalLayout_2)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -247,5 +254,6 @@ class Ui_MainWindow(object):
         self.spectator_mode_check_box.setText("")
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
+        self.open_log_window_button.setText(QCoreApplication.translate("MainWindow", u"Open Log Window", None))
     # retranslateUi
 

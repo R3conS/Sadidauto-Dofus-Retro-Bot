@@ -27,15 +27,15 @@ class StartButton(QPushButton):
         bot.start()
         self.bot_started_signal.emit(bot)
         self._label_updater = _RunTimeDurationLabelUpdater(main_window.run_time_duration_label, bot.is_alive, self)
-        self._label_updater.bot_exited_due_to_exception.connect(self._on_bot_exited_due_to_exception)
+        self._label_updater.bot_exited_due_to_exception.connect(self.on_bot_exited_due_to_exception)
         self._label_updater.start()
         self.setEnabled(False)
 
-    def _on_bot_stopped(self):
+    def on_bot_stopped(self):
         self._label_updater.stopped = True
         self.setEnabled(True)
 
-    def _on_bot_exited_due_to_exception(self):
+    def on_bot_exited_due_to_exception(self):
         self.bot_exited_due_to_exception_signal.emit()
         self.setEnabled(True)
         self.window().setFocus() # Without this the focus for some reason shifts to character name line edit

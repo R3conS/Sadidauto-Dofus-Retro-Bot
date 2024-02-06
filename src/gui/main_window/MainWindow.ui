@@ -26,7 +26,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_5">
+   <layout class="QHBoxLayout" name="horizontalLayout_10">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -303,6 +303,19 @@
          </widget>
         </item>
         <item>
+         <widget class="OpenLogWindowButton" name="open_log_window_button">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Open Log Window</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -357,6 +370,11 @@
    <class>StartButton</class>
    <extends>QPushButton</extends>
    <header>src.gui.main_window.button_start</header>
+  </customwidget>
+  <customwidget>
+   <class>OpenLogWindowButton</class>
+   <extends>QPushButton</extends>
+   <header>src.gui.main_window.button_open_log_window</header>
   </customwidget>
  </customwidgets>
  <resources/>
