@@ -20,7 +20,17 @@ def exit_with_hotkey():
         h.join()
 
 
+def create_session_file():
+    with open(
+        os.path.join(os.getcwd(), datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3] + ".session"),
+        "w"
+    ) as f:
+        print("Session file created!")
+        f.write(f"Created in: {__name__}")
+
+
 def main():
+    create_session_file()
     # args = Parser.parse_command_line()
     # bot = Bot(
     #     character_name=args.character_name, 
