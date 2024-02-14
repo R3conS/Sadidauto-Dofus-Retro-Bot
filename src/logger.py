@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+import glob
 
 
 class Logger:
@@ -20,6 +21,30 @@ class Logger:
     WARNING = logging.WARNING
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
+
+    @staticmethod
+    def get_session_file_name():
+        cwd = os.getcwd()
+        session_files = glob.glob(os.path.join(cwd, '*.session'))
+        if not session_files:
+            raise FileNotFoundError(f"No session file in: {cwd}")
+
+        session_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        latest_session_file_name = os.path.basename(session_files[0])
+        for session_file in session_files[1:]:
+            os.remove(session_file)
+
+        return latest_session_file_name
+
+    @classmethod
+    def get_session_log_folder_path(cls):
+        return os.path.join(cls.LOGS_DIR_PATH, cls.get_session_file_name())
+
+    @classmethod
+    def create_session_log_folder(cls):
+        folder_path = cls.get_session_log_folder_path()
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
 
     @classmethod
     def get_logger(cls):
