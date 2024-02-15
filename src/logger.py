@@ -1,11 +1,7 @@
 import glob
 import logging
-import multiprocessing as mp
 import os
 from datetime import datetime
-import logging
-import logging.handlers
-import multiprocessing
 
 
 class Logger:
@@ -14,45 +10,54 @@ class Logger:
     if not os.path.exists(MASTER_LOGS_DIR_PATH):
         os.mkdir(MASTER_LOGS_DIR_PATH)
 
-    # LOGGER_NAME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
-    # LOGGER_DIR_PATH = os.path.join(MASTER_LOGS_DIR_PATH, LOGGER_NAME)
-    # if not os.path.exists(LOGGER_DIR_PATH):
-    #     os.mkdir(LOGGER_DIR_PATH)
+    @staticmethod
+    def create_session_file():
+        with open(os.path.join(os.getcwd(), datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3] + ".session"), "w") as f:
+            print("Session file created!")
+            pass
 
     @classmethod
-    def configure_main_process_logger(cls, log_listener_queue: mp.Queue):
-        logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
-        queue_handler = logging.handlers.QueueHandler(log_listener_queue)
-        logger.addHandler(queue_handler)
-        log_dir = cls.get_session_log_folder_path()
-        log_file_path = os.path.join(log_dir, "log_main_process.txt")
-        file_handler = logging.FileHandler(log_file_path)
-        formatter = logging.Formatter(
-            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    def create_session_log_folder(cls):
+        folder_path = cls.get_session_log_folder_path()
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
 
     @classmethod
-    def configure_bot_process_logger(cls, log_listener_queue: mp.Queue):
+    def configure_process_logger(cls, log_file_name: str, logging_level: int = logging.DEBUG):
         logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
-        queue_handler = logging.handlers.QueueHandler(log_listener_queue)
-        logger.addHandler(queue_handler)
-        log_dir = cls.get_session_log_folder_path()
-        log_file_path = os.path.join(log_dir, "log_bot_process.txt")
-        file_handler = logging.FileHandler(log_file_path)
-        formatter = logging.Formatter(
-            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        file_handler.setFormatter(formatter)
+        logger.setLevel(logging_level)
+        if log_file_name != "debug.log":
+            file_handler = logging.FileHandler(os.path.join(cls.get_session_log_folder_path(), log_file_name))
+        else:
+            file_handler = logging.FileHandler(os.path.join(cls.MASTER_LOGS_DIR_PATH, log_file_name))
+        file_handler.setFormatter(cls._get_formatter())
         logger.addHandler(file_handler)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(cls._get_formatter())
+        logger.addHandler(stream_handler)
+
+    @classmethod
+    def get_logger(cls):
+        logger = logging.getLogger()
+        # Happens when program isn't started from __main__.py. Mostly when
+        # developing and running other modules as __main__.
+        if len(logger.handlers) == 0:
+            cls.configure_process_logger("debug.log")
+        return logging.getLogger()
+
+    @classmethod
+    def get_session_log_folder_path(cls):
+        return os.path.join(cls.MASTER_LOGS_DIR_PATH, cls._get_session_file_name())
 
     @staticmethod
-    def get_session_file_name():
+    def _get_formatter():
+        return logging.Formatter(
+            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+
+    @staticmethod
+    def _get_session_file_name():
         cwd = os.getcwd()
         session_files = glob.glob(os.path.join(cwd, '*.session'))
         if not session_files:
@@ -64,81 +69,6 @@ class Logger:
             os.remove(session_file)
 
         return latest_session_file_name
-
-    @classmethod
-    def get_session_log_folder_path(cls):
-        return os.path.join(cls.MASTER_LOGS_DIR_PATH, cls.get_session_file_name())
-
-    @classmethod
-    def create_session_log_folder(cls):
-        folder_path = cls.get_session_log_folder_path()
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-
-    @classmethod
-    def get_logger(cls):
-        """
-        Get logger object. 
-        
-        Make sure to call this method at the top of the module before 
-        any other imports:
-
-        from src.logger import Logger\n
-        log = Logger.get_logger()
-        """
-        if cls.LOGGER_NAME in logging.Logger.manager.loggerDict:
-            return logging.getLogger(cls.LOGGER_NAME)
-        else:
-            return cls._create_logger(
-                logger_name=cls.LOGGER_NAME,
-                log_level=logging.DEBUG,
-                log_to_console=True,
-                log_to_file=True
-            )
-
-    @classmethod
-    def get_logger_dir_path(cls):
-        return cls.LOGGER_DIR_PATH
-
-    @classmethod
-    def _create_logger(
-        cls,
-        logger_name: str,
-        log_level: int,
-        log_to_console: bool,
-        log_to_file: bool
-    ):
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(log_level)
-        logger.propagate = False
-        if log_to_file:
-            logger.addHandler(cls._create_file_handler())
-        if log_to_console:
-            logger.addHandler(cls._create_stream_handler())
-        return logger
-
-    @classmethod
-    def _create_file_handler(cls):
-        log_filename = cls.LOGGER_NAME + ".log"
-        file_handler = logging.FileHandler(
-            filename=os.path.join(cls.LOGGER_DIR_PATH, log_filename)
-        )
-        file_formatter = logging.Formatter(
-            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        file_handler.setFormatter(file_formatter)
-        return file_handler
-
-    @staticmethod
-    def _create_stream_handler():
-        stream_formatter = logging.Formatter(
-            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(stream_formatter)
-        return stream_handler
 
 
 if __name__ == "__main__":
