@@ -50,7 +50,7 @@ def screenshot_game_and_save_to_debug_folder(screenshot_name: str):
     log.info("Screenshotting the game window ... ")
     sc = ScreenCapture.game_window()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
-    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {screenshot_name}.png")
+    path = os.path.join(Logger.get_session_log_folder_path(), f"{timestamp} - {screenshot_name}.png")
     log.info("Saving the screenshot for debug ... ")
     save_image(path, sc)
     log.info("Screenshot saved!")
@@ -58,7 +58,7 @@ def screenshot_game_and_save_to_debug_folder(screenshot_name: str):
 
 def save_image_to_debug_folder(image: np.ndarray, image_name: str):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
-    path = os.path.join(Logger.get_logger_dir_path(), f"{timestamp} - {image_name}.png")
+    path = os.path.join(Logger.get_session_log_folder_path(), f"{timestamp} - {image_name}.png")
     log.info(f"Saving image for debug: '{path}' ... ")
     save_image(path, image)
     log.info("Image saved!")
