@@ -10,6 +10,15 @@ class Logger:
     if not os.path.exists(MASTER_LOGS_DIR_PATH):
         os.mkdir(MASTER_LOGS_DIR_PATH)
 
+    # Get the newest session file and delete the rest.
+    _session_files = glob.glob(os.path.join(os.getcwd(), '*.session'))
+    if not _session_files:
+        raise FileNotFoundError(f"No session file in: {os.getcwd()}")
+    _session_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+    for session_file in _session_files[1:]:
+        os.remove(session_file)
+    SESSION_FILE_NAME = os.path.basename(_session_files[0])
+
     @staticmethod
     def create_session_file():
         with open(os.path.join(os.getcwd(), datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3] + ".session"), "w") as f:
@@ -29,7 +38,13 @@ class Logger:
         if log_file_name != "debug.log":
             file_handler = logging.FileHandler(os.path.join(cls.get_session_log_folder_path(), log_file_name))
         else:
-            file_handler = logging.FileHandler(os.path.join(cls.MASTER_LOGS_DIR_PATH, log_file_name))
+            # Happens when program isn't started from __main__.py. Mostly when
+            # developing and running other modules as __main__.
+            cls.SESSION_FILE_NAME = "debug"
+            debug_dir_path = cls.get_session_log_folder_path()
+            if not os.path.exists(debug_dir_path):
+                os.mkdir(debug_dir_path)
+            file_handler = logging.FileHandler(os.path.join(debug_dir_path, log_file_name))
         file_handler.setFormatter(cls._get_formatter())
         logger.addHandler(file_handler)
         stream_handler = logging.StreamHandler()
@@ -47,7 +62,7 @@ class Logger:
 
     @classmethod
     def get_session_log_folder_path(cls):
-        return os.path.join(cls.MASTER_LOGS_DIR_PATH, cls._get_session_file_name())
+        return os.path.join(cls.MASTER_LOGS_DIR_PATH, cls.SESSION_FILE_NAME)
 
     @staticmethod
     def _get_formatter():
@@ -55,20 +70,6 @@ class Logger:
             fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S"
         )
-
-    @staticmethod
-    def _get_session_file_name():
-        cwd = os.getcwd()
-        session_files = glob.glob(os.path.join(cwd, '*.session'))
-        if not session_files:
-            raise FileNotFoundError(f"No session file in: {cwd}")
-
-        session_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        latest_session_file_name = os.path.basename(session_files[0])
-        for session_file in session_files[1:]:
-            os.remove(session_file)
-
-        return latest_session_file_name
 
 
 if __name__ == "__main__":
