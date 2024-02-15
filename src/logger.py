@@ -1,26 +1,55 @@
+import glob
 import logging
+import multiprocessing as mp
 import os
 from datetime import datetime
-import glob
+import logging
+import logging.handlers
+import multiprocessing
 
 
 class Logger:
 
-    LOGS_DIR_PATH = os.path.join(os.getcwd(), "logs")
-    if not os.path.exists(LOGS_DIR_PATH):
-        os.mkdir(LOGS_DIR_PATH)
+    MASTER_LOGS_DIR_PATH = os.path.join(os.getcwd(), "logs")
+    if not os.path.exists(MASTER_LOGS_DIR_PATH):
+        os.mkdir(MASTER_LOGS_DIR_PATH)
 
-    LOGGER_NAME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
-    LOGGER_DIR_PATH = os.path.join(LOGS_DIR_PATH, LOGGER_NAME)
-    if not os.path.exists(LOGGER_DIR_PATH):
-        os.mkdir(LOGGER_DIR_PATH)
+    # LOGGER_NAME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+    # LOGGER_DIR_PATH = os.path.join(MASTER_LOGS_DIR_PATH, LOGGER_NAME)
+    # if not os.path.exists(LOGGER_DIR_PATH):
+    #     os.mkdir(LOGGER_DIR_PATH)
 
-    NOTSET = logging.NOTSET
-    DEBUG = logging.DEBUG
-    INFO = logging.INFO
-    WARNING = logging.WARNING
-    ERROR = logging.ERROR
-    CRITICAL = logging.CRITICAL
+    @classmethod
+    def configure_main_process_logger(cls, log_listener_queue: mp.Queue):
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        queue_handler = logging.handlers.QueueHandler(log_listener_queue)
+        logger.addHandler(queue_handler)
+        log_dir = cls.get_session_log_folder_path()
+        log_file_path = os.path.join(log_dir, "log_main_process.txt")
+        file_handler = logging.FileHandler(log_file_path)
+        formatter = logging.Formatter(
+            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    @classmethod
+    def configure_bot_process_logger(cls, log_listener_queue: mp.Queue):
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        queue_handler = logging.handlers.QueueHandler(log_listener_queue)
+        logger.addHandler(queue_handler)
+        log_dir = cls.get_session_log_folder_path()
+        log_file_path = os.path.join(log_dir, "log_bot_process.txt")
+        file_handler = logging.FileHandler(log_file_path)
+        formatter = logging.Formatter(
+            fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     @staticmethod
     def get_session_file_name():
@@ -38,7 +67,7 @@ class Logger:
 
     @classmethod
     def get_session_log_folder_path(cls):
-        return os.path.join(cls.LOGS_DIR_PATH, cls.get_session_file_name())
+        return os.path.join(cls.MASTER_LOGS_DIR_PATH, cls.get_session_file_name())
 
     @classmethod
     def create_session_log_folder(cls):
@@ -62,7 +91,7 @@ class Logger:
         else:
             return cls._create_logger(
                 logger_name=cls.LOGGER_NAME,
-                log_level=cls.DEBUG,
+                log_level=logging.DEBUG,
                 log_to_console=True,
                 log_to_file=True
             )
