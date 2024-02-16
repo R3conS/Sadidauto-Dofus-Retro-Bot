@@ -31,8 +31,8 @@ def get_logger():
 
 def get_session_log_folder_path():
     session_file_name = _get_session_file_name()
-    split_name = session_file_name.split(".")
-    session_file_name = f"{split_name[1]}_{split_name[0]}"
+    name_parts = session_file_name.split(".")
+    session_file_name = f"{name_parts[1]}_{name_parts[0]}"
     return os.path.join(MASTER_LOGS_DIR_PATH, session_file_name) 
 
 
