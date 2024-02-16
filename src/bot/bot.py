@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 import ctypes
 import multiprocessing as mp
@@ -39,6 +40,8 @@ class Bot(mp.Process):
         disable_spectator_mode: bool = True
     ):
         super().__init__()
+        self.daemon = True
+        self.name = "BotProcess" # Used to set the FileHandler in Logger.
         self._character_name = character_name
         self._server_name = server_name
         self._script = script
@@ -47,7 +50,7 @@ class Bot(mp.Process):
 
     def run(self):
         try:
-            self._script = self._parse_script_name(self._script)
+            self._script = self._verify_script_name(self._script)
             self._verify_server_name(self._server_name)
             self._window_title, self._window_hwnd = self._prepare_game_window(self._character_name)
             self._character_name = self._verify_provided_name_matches_in_game(self._character_name)
@@ -148,7 +151,7 @@ class Bot(mp.Process):
                 pyag.click()
 
     @staticmethod
-    def _parse_script_name(script: str):
+    def _verify_script_name(script: str):
         script = script.lower()
         if "astrub forest" in script:
             if "anticlock" in script:

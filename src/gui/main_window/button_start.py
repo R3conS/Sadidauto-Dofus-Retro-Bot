@@ -1,3 +1,7 @@
+from src.logger import get_logger
+
+log = get_logger()
+
 from time import perf_counter
 
 from PySide6.QtCore import QThread, Signal
@@ -24,7 +28,9 @@ class StartButton(QPushButton):
             go_bank_when_pods_percentage=main_window.bank_percentage_spin_box.value(),
             disable_spectator_mode=main_window.spectator_mode_check_box.isChecked()
         )
+        log.info("Starting the bot process ...")
         bot.start()
+        log.info("Bot process has started!")
         self.bot_started_signal.emit(bot)
         self._label_updater = _RunTimeDurationLabelUpdater(main_window.run_time_duration_label, bot.is_alive, self)
         self._label_updater.bot_exited_due_to_exception.connect(self.on_bot_exited_due_to_exception)

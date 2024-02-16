@@ -1,4 +1,10 @@
-from PySide6.QtCore import Qt, Signal
+from src.logger import get_logger
+
+log = get_logger()
+
+import multiprocessing as mp
+
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow
 
 from src.gui.main_window.MainWindow_ui import Ui_MainWindow
@@ -22,5 +28,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.stop_button.bot_stopped_signal.connect(self.start_button.on_bot_stopped)
 
     def closeEvent(self, _):
+        log.info("Main window closed! Exiting ... ")
+        for child_process in mp.active_children():
+            child_process.terminate()
         for window in QApplication.topLevelWidgets():
             window.close()

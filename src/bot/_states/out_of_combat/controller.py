@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._states.out_of_combat._sub_states.banking.banker import Banker

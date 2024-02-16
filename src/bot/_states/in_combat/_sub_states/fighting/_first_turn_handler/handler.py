@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._sub_states.fighting._character_finder import Finder as CharacterFinder

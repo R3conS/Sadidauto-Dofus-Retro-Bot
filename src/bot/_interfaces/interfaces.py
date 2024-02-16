@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 from src.bot._interfaces._bank_vault import BankVault
 from src.bot._interfaces._banker_dialogue import BankerDialogue
