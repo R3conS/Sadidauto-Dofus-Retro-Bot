@@ -17,12 +17,12 @@ class StopButton(QPushButton):
         self.bot = None
 
     def _on_clicked(self):
-        log.info("Stopping the bot ...")
+        log.info("Stopping the bot process ...")
         self.bot.stop()
         self.bot.join()
         self.bot_stopped_signal.emit()
         self.setEnabled(False)
-        log.info("Bot has stopped!")
+        log.info("Bot process has stopped!")
 
     def on_bot_started(self, bot_object):
         self.bot = bot_object
