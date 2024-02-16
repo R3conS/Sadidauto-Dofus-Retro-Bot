@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 from src.bot._exceptions import RecoverableException
 from src.bot._states.in_combat._sub_states.fighting._spells._exceptions import FailedToCastSpell

@@ -1,8 +1,6 @@
-from src.logger import Logger
+from src.logger import get_logger
 
-Logger.create_session_file()
-Logger.create_session_log_folder()
-log = Logger.get_logger()
+log = get_logger()
 
 import os
 import sys

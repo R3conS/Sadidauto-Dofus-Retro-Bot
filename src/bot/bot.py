@@ -1,6 +1,6 @@
-from src.logger import Logger
+from src.logger import get_logger
 
-log = Logger.get_logger()
+log = get_logger()
 
 import ctypes
 import multiprocessing as mp

@@ -1,6 +1,6 @@
-from src.logger import Logger
+from src.logger import get_logger
 
-log = Logger.get_logger()
+log = get_logger()
 
 from time import perf_counter
 

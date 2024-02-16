@@ -1,5 +1,6 @@
-from src.logger import Logger
-log = Logger.get_logger()
+from src.logger import get_logger
+
+log = get_logger()
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QPushButton
