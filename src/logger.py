@@ -14,7 +14,6 @@ class Logger:
     @classmethod
     def create_session_file(cls):
         with open(os.path.join(os.getcwd(), cls._get_timestamp() + ".session"), "w") as f:
-            print("Session file created!")
             pass
 
     @classmethod

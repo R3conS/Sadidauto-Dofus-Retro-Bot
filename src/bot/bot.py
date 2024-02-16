@@ -1,26 +1,27 @@
 from src.logger import Logger
-# log = Logger.get_logger()
 
-# import ctypes
+log = Logger.get_logger()
+
+import ctypes
 import multiprocessing as mp
-# import os
-# import threading
-# import traceback
+import os
+import threading
+import traceback
 
-# import pyautogui as pyag
+import pyautogui as pyag
 
-# from src.bot._disturbance_checker import DisturbanceChecker
-# from src.bot._exceptions import InitializationException, RecoverableException, UnrecoverableException
-# from src.bot._interfaces.interfaces import Interfaces
-# from src.bot._recoverer.recoverer import Recoverer
-# from src.bot._states.in_combat.controller import Controller as IC_Controller
-# from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
-# from src.bot._states.state_determiner.determiner import determine_state
-# from src.bot._states.states_enum import State
-# from src.utilities import pygetwindow_custom as gw
-# from src.utilities.general import screenshot_game_and_save_to_debug_folder
-# from src.utilities.ocr.ocr import OCR
-# from src.utilities.screen_capture import ScreenCapture
+from src.bot._disturbance_checker import DisturbanceChecker
+from src.bot._exceptions import InitializationException, RecoverableException, UnrecoverableException
+from src.bot._interfaces.interfaces import Interfaces
+from src.bot._recoverer.recoverer import Recoverer
+from src.bot._states.in_combat.controller import Controller as IC_Controller
+from src.bot._states.out_of_combat.controller import Controller as OOC_Controller
+from src.bot._states.state_determiner.determiner import determine_state
+from src.bot._states.states_enum import State
+from src.utilities import pygetwindow_custom as gw
+from src.utilities.general import screenshot_game_and_save_to_debug_folder
+from src.utilities.ocr.ocr import OCR
+from src.utilities.screen_capture import ScreenCapture
 
 
 class Bot(mp.Process):
@@ -32,102 +33,92 @@ class Bot(mp.Process):
 
     def __init__(
         self, 
-        log_queue: mp.Queue,
-        # character_name: str, 
-        # server_name: str,
-        # script: str,
-        # go_bank_when_pods_percentage: int = 95,
-        # disable_spectator_mode: bool = True
+        character_name: str, 
+        server_name: str,
+        script: str,
+        go_bank_when_pods_percentage: int = 95,
+        disable_spectator_mode: bool = True
     ):
         super().__init__()
-        self.log_queue = log_queue
-        # self._character_name = character_name
-        # self._server_name = server_name
-        # self._script = script
-        # self._go_bank_when_pods_percentage = go_bank_when_pods_percentage
-        # self._disable_spectator_mode = disable_spectator_mode
+        self.daemon = True
+        self.name = "BotProcess" # Used to set the FileHandler in Logger.
+        self._character_name = character_name
+        self._server_name = server_name
+        self._script = script
+        self._go_bank_when_pods_percentage = go_bank_when_pods_percentage
+        self._disable_spectator_mode = disable_spectator_mode
 
     def run(self):
-        import logging
-        from time import sleep
+        try:
+            self._script = self._verify_script_name(self._script)
+            self._verify_server_name(self._server_name)
+            self._window_title, self._window_hwnd = self._prepare_game_window(self._character_name)
+            self._character_name = self._verify_provided_name_matches_in_game(self._character_name)
+            self._interfaces = Interfaces(self._script, self._window_title)
+            self._out_of_combat_controller = OOC_Controller(
+                self._set_state, 
+                self._script, 
+                self._window_title,
+                self._go_bank_when_pods_percentage
+            )
+            self._in_combat_controller = IC_Controller(
+                self._set_state, 
+                self._script, 
+                self._character_name,
+                self._disable_spectator_mode
+            )
+            self._character_level = self._read_character_level()
+            self._recoverer = Recoverer(
+                self._character_name, 
+                self._server_name, 
+                self._character_level, 
+                self._window_hwnd, 
+                self.WINDOW_SIZE
+            )
+            self._recovery_finished_event = threading.Event()
+            self._recovery_finished_event.set()
+            self._out_of_combat_state_event = threading.Event()
+            self._out_of_combat_state_event.set()
+            self._has_disturbance_checker_crashed = False
+            self._disturbance_checker = DisturbanceChecker(
+                self._recovery_finished_event,
+                self._out_of_combat_state_event,
+                self._set_disturbance_checker_crashed
+            )
+            self._disturbance_checker.start()
 
-        # Logger.configure_logger(self.log_queue)
-        Logger.configure_bot_process_logger(self.log_queue)
-        log = logging.getLogger()
+            self._state = determine_state()
+            while True:
+                try:
+                    if self._has_disturbance_checker_crashed:
+                        self._has_disturbance_checker_crashed = False
+                        self._restart_disturbance_checker()
 
-        while True:
-            log.info(f"Bot process started. Log queue object: {self.log_queue}")
-            sleep(1)
-        # try:
-        #     self._script = self._parse_script_name(self._script)
-        #     self._verify_server_name(self._server_name)
-        #     self._window_title, self._window_hwnd = self._prepare_game_window(self._character_name)
-        #     self._character_name = self._verify_provided_name_matches_in_game(self._character_name)
-        #     self._interfaces = Interfaces(self._script, self._window_title)
-        #     self._out_of_combat_controller = OOC_Controller(
-        #         self._set_state, 
-        #         self._script, 
-        #         self._window_title,
-        #         self._go_bank_when_pods_percentage
-        #     )
-        #     self._in_combat_controller = IC_Controller(
-        #         self._set_state, 
-        #         self._script, 
-        #         self._character_name,
-        #         self._disable_spectator_mode
-        #     )
-        #     self._character_level = self._read_character_level()
-        #     self._recoverer = Recoverer(
-        #         self._character_name, 
-        #         self._server_name, 
-        #         self._character_level, 
-        #         self._window_hwnd, 
-        #         self.WINDOW_SIZE
-        #     )
-        #     self._recovery_finished_event = threading.Event()
-        #     self._recovery_finished_event.set()
-        #     self._out_of_combat_state_event = threading.Event()
-        #     self._out_of_combat_state_event.set()
-        #     self._has_disturbance_checker_crashed = False
-        #     self._disturbance_checker = DisturbanceChecker(
-        #         self._recovery_finished_event,
-        #         self._out_of_combat_state_event,
-        #         self._set_disturbance_checker_crashed
-        #     )
-        #     self._disturbance_checker.start()
-
-        #     self._state = determine_state()
-        #     while True:
-        #         try:
-        #             if self._has_disturbance_checker_crashed:
-        #                 self._has_disturbance_checker_crashed = False
-        #                 self._restart_disturbance_checker()
-
-        #             if self._state == State.OUT_OF_COMBAT:
-        #                 self._out_of_combat_state_event.set()
-        #                 self._out_of_combat_controller.run()
-        #             elif self._state == State.IN_COMBAT:
-        #                 self._out_of_combat_state_event.clear()
-        #                 self._in_combat_controller.run()
-        #         except RecoverableException as e:
-        #             self._recovery_finished_event.clear()
-        #             self._recoverer.recover(e.reason, e.occured_in_sub_state)
-        #             self._state = determine_state()
-        #             self._recovery_finished_event.set()
-        #             continue
-        # except InitializationException:
-        #     log.critical("Exiting ... ")
-        #     os._exit(1)
-        # except UnrecoverableException:
-        #     log.critical(traceback.format_exc())
-        # except Exception:
-        #     log.critical("An unhandled exception occured!")
-        #     log.critical(traceback.format_exc())
-        #     screenshot_game_and_save_to_debug_folder("Bot - UnhandledException")
-        # finally:
-        #     self._logout()
-        #     log.info("Exiting ... ")
-        #     os._exit(1)
+                    if self._state == State.OUT_OF_COMBAT:
+                        self._out_of_combat_state_event.set()
+                        self._out_of_combat_controller.run()
+                    elif self._state == State.IN_COMBAT:
+                        self._out_of_combat_state_event.clear()
+                        self._in_combat_controller.run()
+                except RecoverableException as e:
+                    self._recovery_finished_event.clear()
+                    self._recoverer.recover(e.reason, e.occured_in_sub_state)
+                    self._state = determine_state()
+                    self._recovery_finished_event.set()
+                    continue
+        except InitializationException:
+            log.critical("Exiting ... ")
+            os._exit(1)
+        except UnrecoverableException:
+            log.critical(traceback.format_exc())
+        except Exception:
+            log.critical("An unhandled exception occured!")
+            log.critical(traceback.format_exc())
+            screenshot_game_and_save_to_debug_folder("Bot - UnhandledException")
+        finally:
+            self._logout()
+            log.info("Exiting ... ")
+            os._exit(1)
 
     def stop(self):
         self.terminate()
@@ -160,7 +151,7 @@ class Bot(mp.Process):
                 pyag.click()
 
     @staticmethod
-    def _parse_script_name(script: str):
+    def _verify_script_name(script: str):
         script = script.lower()
         if "astrub forest" in script:
             if "anticlock" in script:
