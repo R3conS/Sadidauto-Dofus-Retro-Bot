@@ -30,17 +30,10 @@ def get_logger():
 
 
 def get_session_log_folder_path():
-    return os.path.join(MASTER_LOGS_DIR_PATH, _get_session_file_name())
-
-
-def _create_session_file():
-    with open(os.path.join(os.getcwd(), _get_timestamp() + ".session"), "w") as f:
-        pass
-
-def _create_session_log_folder():
-    folder_path = get_session_log_folder_path()
-    if not os.path.exists(folder_path):
-        os.mkdir(folder_path)
+    session_file_name = _get_session_file_name()
+    split_name = session_file_name.split(".")
+    session_file_name = f"{split_name[1]}_{split_name[0]}"
+    return os.path.join(MASTER_LOGS_DIR_PATH, session_file_name) 
 
 
 def _get_timestamp():
@@ -56,9 +49,9 @@ def _get_formatter():
 
 def _get_session_file_name():
     """Get the name of the newest session file and delete the rest.""" 
-    session_files = glob.glob(os.path.join(os.getcwd(), '*.session'))
+    session_files = glob.glob(os.path.join(MASTER_LOGS_DIR_PATH, '*.session'))
     if not session_files:
-        raise FileNotFoundError(f"No session file in: {os.getcwd()}")
+        raise FileNotFoundError(f"No session file in: {MASTER_LOGS_DIR_PATH}")
     session_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
     for session_file in session_files[1:]:
         os.remove(session_file)
@@ -69,10 +62,17 @@ def _get_session_file_name():
 MASTER_LOGS_DIR_PATH = os.path.join(os.getcwd(), "logs")
 if not os.path.exists(MASTER_LOGS_DIR_PATH):
     os.mkdir(MASTER_LOGS_DIR_PATH)
-if mp.current_process().name == "MainProcess":
-    _create_session_file()
-    _create_session_log_folder()
 
+if mp.current_process().name == "MainProcess":
+    # Create a new session file.
+    with open(os.path.join(MASTER_LOGS_DIR_PATH, _get_timestamp() + ".session"), "w") as f:
+        pass
+    # Create a new session log folder.
+    folder_path = get_session_log_folder_path()
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+
+# ----------------------------
 
 if __name__ == "__main__":
     log = get_logger()
