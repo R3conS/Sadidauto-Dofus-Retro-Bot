@@ -1,59 +1,59 @@
 import os
+from threading import Thread
 from time import perf_counter, sleep
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, Signal
 
 from src.logger import get_logger, get_session_log_folder_path
+
 log = get_logger()
 
 
-class BotProcessLogReader(QThread):
+# Not inheriting from QThread because, even after the run() method completes
+# and the finished signal is emitted, a DummyThread object persists in the
+# threading.enumerate() list. With each invocation of this thread, a new
+# DummyThread object is added to the list, leading to an accumulation of
+# these objects. According to this Stack Overflow answer --
+# https://stackoverflow.com/a/55778564/14787568 -- DummyThread objects are
+# utilized to represent threads not managed by the threading module, and
+# they are not considered memory leaks. Nonetheless, I prefer to avoid
+# cluttering the threading.enumerate() list.
+class BotProcessLogReader(QObject, Thread):
 
-    line_read_signal = Signal(str)
+    log_file_line_read = Signal(str)
 
-    def __init__(self, bot_process, bot_process_start_time: float, parent=None):
-        super().__init__(parent)
+    def __init__(self, bot_process, bot_process_start_time: float):
+        super().__init__()
         self._bot_process = bot_process
         self._bot_process_start_time = bot_process_start_time
 
     def run(self):
         log.info("Bot process log reader started!")
-        while self._bot_process.is_alive():
-            log.info("Looking for log file ...")
+        log.info("Looking for log file ...")
+
+        timeout = 10 
+        start_time = perf_counter() 
+        while perf_counter() - start_time <= timeout:
             file = self._get_most_recently_modified_file() 
-            if not self._is_file_modified_after_time(file, self._bot_process_start_time):
-                sleep(1)
-                continue
-
-            log.info(f"Found log file: '{file}'!")
-            for line in self._read_file_lines(file):
-                print(f"Read line: {line}")
-                self.line_read_signal.emit(line)
+            if (
+                file is not None
+                and self._is_file_modified_after_bot_process_start_time(file)
+            ):
+                break
+            sleep(0.25)
+            continue
         else:
-            log.info("Bot process has exited before the log file was found. Stopping the log reader.")
+            log.info(f"Failed to find log file in '{timeout}' seconds.")
+            return
 
-    @staticmethod
-    def _get_all_bot_process_files():
-        # return [f for f in os.listdir(get_session_log_folder_path()) if f.startswith("bot_process")]
-        return [f for f in os.listdir(os.getcwd()) if f.startswith("bot_process")]
+        log.info(f"Log file found! Reading ... ")
+        for line in self._read_file_lines(file):
+            self.log_file_line_read.emit(line)
 
-    @classmethod
-    def _get_most_recently_modified_file(cls):
-        all_bot_process_files = cls._get_all_bot_process_files()
-        if not all_bot_process_files:
-            return None
-        return max(all_bot_process_files, key=os.path.getctime)
-
-    @staticmethod
-    def _get_file_modification_time(file_path: str):
-        return os.path.getmtime(file_path)
-
-    @staticmethod
-    def _is_file_modified_after_time(file_path: str, time: float):
-        return os.path.getmtime(file_path) > time
+    def _is_file_modified_after_bot_process_start_time(self, file_path: str):
+        return os.path.getmtime(file_path) >= self._bot_process_start_time 
 
     def _read_file_lines(self, file_path: str):
-        log.info(f"Reading lines from file: '{file_path}'.")
         with open(file_path, "r") as f:
             file_pointer_position = 0
             while True:
@@ -61,44 +61,23 @@ class BotProcessLogReader(QThread):
                 line = f.readline()
                 if not line:
                     if not self._bot_process.is_alive() and file_pointer_position == f.tell():
-                        print("Bot process has exited and file has not been modified.")
                         break
-                    sleep(1)
+                    sleep(0.25)
                     continue
                 file_pointer_position = f.tell()
                 yield line.strip()
 
+    @staticmethod
+    def _get_all_bot_process_files():
+        log_dir_path = get_session_log_folder_path()
+        return [
+            os.path.join(log_dir_path, f) for f 
+            in os.listdir(get_session_log_folder_path()) if "bot_process" in f
+        ]
 
-   
-def dummy_bot_process(time):
-    print("started")
-    sleep(time)
-
-if __name__ == "__main__":
-    import multiprocessing as mp
-    from time import time
-    dummy_time = 2900000000.0
-    
-    process = mp.Process(target=dummy_bot_process, args=(3,))
-    process.start()
-
-    reader = BotProcessLogReader(process, dummy_time)
-    reader.start()
-
-    reader.wait()
-
-    print(f"Is process alie: {process.is_alive()}")
-    print(f"Is reader alive: {reader.isRunning()}")
-
-
-    # reader = BotProcessLogReader()
-    # for line in reader._read_file_lines(file):
-    #     print(line)
-
-
-# Receive signal that bot is started.
-# Save the received signal time.
-# Start bot process log reader.
-# Get the latest bot process file and check if its last modificatio time
-# is greater than the received signal time. If it is then start reading
-# the file. If it's not keep checking each second.
+    @classmethod
+    def _get_most_recently_modified_file(cls):
+        all_bot_process_files = cls._get_all_bot_process_files()
+        if len(all_bot_process_files) == 0:
+            return None
+        return max(all_bot_process_files, key=os.path.getctime)
