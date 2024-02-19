@@ -1,7 +1,5 @@
 from PySide6.QtWidgets import QPushButton
 
-from src.gui.log_window.log_window import LogWindow
-
 
 class OpenLogWindowButton(QPushButton):
 
@@ -13,3 +11,5 @@ class OpenLogWindowButton(QPushButton):
     def _on_clicked(self):
         if self.main_window.log_window is not None:
             self.main_window.log_window.show()
+
+

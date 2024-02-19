@@ -72,7 +72,7 @@ class BotProcessLogReader(QObject, Thread):
         log_dir_path = get_session_log_folder_path()
         return [
             os.path.join(log_dir_path, f) for f 
-            in os.listdir(get_session_log_folder_path()) if "bot_process" in f
+            in os.listdir(get_session_log_folder_path()) if "BotProcess" in f
         ]
 
     @classmethod
