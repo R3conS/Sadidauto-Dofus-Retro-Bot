@@ -24,8 +24,8 @@ class StopButton(QPushButton):
         self.setEnabled(False)
         log.info("Bot process has stopped!")
 
-    def on_bot_started(self, bot_object):
-        self.bot = bot_object
+    def on_bot_started(self, bot_process, _):
+        self.bot = bot_process
         self.setEnabled(True)
 
     def on_bot_exited_due_to_exception(self):

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget
 
+from src.gui.log_window.bot_process_log_reader import BotProcessLogReader
 from src.gui.log_window.LogWindow_ui import Ui_LogWindow
 
 
@@ -13,6 +14,11 @@ class LogWindow(QWidget, Ui_LogWindow):
 
     def _connect_signals_and_slots(self):
         self.clear_console_button.clicked.connect(self.console_plain_text_edit.clear)
+
+    def on_bot_started(self, bot_process, start_time):
+        reader = BotProcessLogReader(bot_process, start_time)
+        reader.log_file_line_read.connect(self.console_plain_text_edit.on_log_file_line_read)
+        reader.start()
 
 
 if __name__ == "__main__":

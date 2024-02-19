@@ -8,9 +8,8 @@ class OpenLogWindowButton(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.clicked.connect(self._on_clicked)
-        self.log_window = None
+        self.main_window = self.window()
 
     def _on_clicked(self):
-        if self.log_window is None:
-            self.log_window = LogWindow()
-        self.log_window.show()
+        if self.main_window.log_window is not None:
+            self.main_window.log_window.show()

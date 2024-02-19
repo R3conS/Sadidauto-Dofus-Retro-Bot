@@ -17,9 +17,6 @@ class ConsolePlainTextEdit(QPlainTextEdit):
         # Works either through QT Designer or like this.
         return super().setReadOnly(self._read_only)
 
-    def append_text(self, text):
-        self.appendHtml(f"<b>[{self._get_time_stamp()}]</b> {text}")
+    def on_log_file_line_read(self, line: str):
+        self.appendHtml(line)
         self.verticalScrollBar().setValue(self.verticalScrollBar().maximum())
-
-    def _get_time_stamp(self):
-        return datetime.now().strftime("%H:%M:%S")
