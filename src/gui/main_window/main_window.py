@@ -34,5 +34,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         log.info("Main window closed! Exiting ... ")
         for child_process in mp.active_children():
             child_process.terminate()
+        self.log_window.fully_close_on_close_event = True
         for window in QApplication.topLevelWidgets():
             window.close()
