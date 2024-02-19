@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QPlainTextEdit
 
@@ -9,7 +7,7 @@ class ConsolePlainTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._read_only = True
-        self.setFont(QFont("Arial", 10))  # Set font globally for the widget
+        self.setFont(QFont("Segoe UI", 10))
 
     """Override"""
     def setReadOnly(self, _):

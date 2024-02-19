@@ -13,6 +13,7 @@ class LogWindow(QWidget, Ui_LogWindow):
         self.fully_close_on_close_event = False
 
     def on_bot_started(self, bot_process, start_time):
+        self.console_plain_text_edit.clear()
         reader = BotProcessLogReader(bot_process, start_time)
         reader.log_file_line_read.connect(self.console_plain_text_edit.on_log_file_line_read)
         reader.start()
