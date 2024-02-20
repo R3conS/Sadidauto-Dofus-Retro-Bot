@@ -210,7 +210,7 @@ class Ui_MainWindow(object):
         font2 = QFont()
         font2.setPointSize(12)
         font2.setBold(False)
-        font2.setItalic(True)
+        font2.setItalic(False)
         self.status_label.setFont(font2)
 
         self.verticalLayout_2.addWidget(self.status_label, 0, Qt.AlignHCenter)
@@ -282,7 +282,7 @@ class Ui_MainWindow(object):
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"Return to bank at pods %", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Disable spectator mode?", None))
         self.spectator_mode_check_box.setText("")
-        self.status_label.setText(QCoreApplication.translate("MainWindow", u"Bot is not running.", None))
+        self.status_label.setText(QCoreApplication.translate("MainWindow", u"Bot is stopped.", None))
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.open_log_window_button.setText(QCoreApplication.translate("MainWindow", u"Open Log Window", None))

@@ -2,10 +2,10 @@ from src.logger import get_logger
 
 log = get_logger()
 
-from time import perf_counter, time
+from time import perf_counter, sleep, time
 
 from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QPushButton, QMainWindow
+from PySide6.QtWidgets import QMainWindow, QPushButton
 
 from src.bot.bot import Bot
 
@@ -15,6 +15,7 @@ class StartButton(QPushButton):
     bot_started_signal = Signal(Bot, float) # Bot, start_time
     bot_exited_due_to_exception_signal = Signal()
     initialization_options_invalid_signal = Signal(str)
+    bot_stopped_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -58,11 +59,14 @@ class StartButton(QPushButton):
         log.info("Starting the bot process ...")
         bot.start()
         log.info("Bot process has started!")
+        self.setEnabled(False)
         self.bot_started_signal.emit(bot, time())
         self._label_updater = _RunTimeDurationLabelUpdater(main_window.run_time_duration_label, bot.is_alive, self)
         self._label_updater.bot_exited_due_to_exception.connect(self.on_bot_exited_due_to_exception)
         self._label_updater.start()
-        self.setEnabled(False)
+        self._bot_process_alive_checker = _BotProcessAliveChecker(bot.is_alive, self)
+        self._bot_process_alive_checker.bot_stopped_signal.connect(self.bot_stopped_signal)
+        self._bot_process_alive_checker.start()
 
 
 class _RunTimeDurationLabelUpdater(QThread):
@@ -87,3 +91,18 @@ class _RunTimeDurationLabelUpdater(QThread):
             minutes = (elapsed_time % 3600) // 60
             seconds = elapsed_time % 60
             self._time_label.setText(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+
+
+class _BotProcessAliveChecker(QThread):
+
+    bot_stopped_signal = Signal()
+
+    def __init__(self, is_bot_process_alive: callable, parent=None):
+        super().__init__(parent)
+        self._is_bot_process_alive = is_bot_process_alive
+
+    def run(self):
+        while self._is_bot_process_alive():
+            sleep(1)
+        self.bot_stopped_signal.emit()
+ 

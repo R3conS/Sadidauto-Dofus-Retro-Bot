@@ -27,12 +27,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _connect_signals_and_slots(self):
         self.start_button.bot_started_signal.connect(self.stop_button.on_bot_started)
         self.start_button.bot_started_signal.connect(self.log_window.on_bot_started)
+        self.start_button.bot_started_signal.connect(self.status_label.on_bot_started)
         self.start_button.bot_exited_due_to_exception_signal.connect(
             self.stop_button.on_bot_exited_due_to_exception
         )
         self.start_button.initialization_options_invalid_signal.connect(
             self.status_label.on_initialization_options_invalid
         ) 
+        self.start_button.bot_stopped_signal.connect(self.status_label.on_bot_stopped)
         self.stop_button.bot_stopped_signal.connect(self.start_button.on_bot_stopped)
 
     def closeEvent(self, _):
