@@ -3,6 +3,8 @@ import os
 import cv2
 import numpy as np
 
+from src.utilities.general import load_image_full_path
+
 
 class ImageDetection:
 
@@ -24,13 +26,9 @@ class ImageDetection:
         
         # Read images if they are given as paths
         if isinstance(haystack, str):
-            if not os.path.exists(haystack):
-                raise FileNotFoundError(f"Haystack image path '{haystack}' does not exist.")
-            haystack = cv2.imread(haystack, cv2.IMREAD_UNCHANGED)
+            haystack = load_image_full_path(haystack)
         if isinstance(needle, str):
-            if not os.path.exists(needle):
-                raise FileNotFoundError(f"Needle image path '{needle}' does not exist.")
-            needle = cv2.imread(needle, cv2.IMREAD_UNCHANGED)
+            needle = load_image_full_path(needle)
 
         # Remove alpha channels if needed
         if remove_alpha_channels:
