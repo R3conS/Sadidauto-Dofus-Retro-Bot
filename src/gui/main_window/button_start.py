@@ -2,7 +2,7 @@ from src.logger import get_logger
 
 log = get_logger()
 
-from time import perf_counter
+from time import perf_counter, time
 
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QPushButton
@@ -12,7 +12,7 @@ from src.bot.bot import Bot
 
 class StartButton(QPushButton):
 
-    bot_started_signal = Signal(Bot)
+    bot_started_signal = Signal(Bot, float) # Bot, start_time
     bot_exited_due_to_exception_signal = Signal()
 
     def __init__(self, parent=None):
@@ -31,7 +31,7 @@ class StartButton(QPushButton):
         log.info("Starting the bot process ...")
         bot.start()
         log.info("Bot process has started!")
-        self.bot_started_signal.emit(bot)
+        self.bot_started_signal.emit(bot, time())
         self._label_updater = _RunTimeDurationLabelUpdater(main_window.run_time_duration_label, bot.is_alive, self)
         self._label_updater.bot_exited_due_to_exception.connect(self.on_bot_exited_due_to_exception)
         self._label_updater.start()

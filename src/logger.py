@@ -15,13 +15,13 @@ def get_logger():
         stream_handler.setFormatter(_get_formatter())
         logger.addHandler(stream_handler)
 
-        if current_process_name == "MainProcess":
+        if current_process_name == "BotProcess":
             file_handler = logging.FileHandler(
-                os.path.join(get_session_log_folder_path(), "main_process.log") 
+                os.path.join(get_session_log_folder_path(), f"{current_process_name}_{_get_timestamp()}.log") 
             )
-        elif current_process_name == "BotProcess":
+        else:
             file_handler = logging.FileHandler(
-                os.path.join(get_session_log_folder_path(), f"bot_process_{_get_timestamp()}.log") 
+                os.path.join(get_session_log_folder_path(), f"{current_process_name}.log")
             )
         file_handler.setFormatter(_get_formatter())
         logger.addHandler(file_handler)
