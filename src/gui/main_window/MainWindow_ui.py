@@ -25,6 +25,7 @@ from src.gui.main_window.button_stop import StopButton
 from src.gui.main_window.check_box_spectator_mode import SpectatorModeCheckBox
 from src.gui.main_window.combo_box_script import ScriptComboBox
 from src.gui.main_window.combo_box_server import ServerComboBox
+from src.gui.main_window.label_status import StatusLabel
 from src.gui.main_window.line_edit_character_name import CharacterNameLineEdit
 from src.gui.main_window.spin_box_pods_percentage import PodsPercentageSpinBox
 
@@ -32,7 +33,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(429, 338)
+        MainWindow.resize(429, 353)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -41,10 +42,10 @@ class Ui_MainWindow(object):
         MainWindow.setMinimumSize(QSize(429, 338))
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout_10 = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_4 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.horizontalLayout_9 = QHBoxLayout()
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.horizontalLayout_9.setContentsMargins(-1, 10, -1, -1)
@@ -58,11 +59,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_9.addWidget(self.run_time_duration_label, 0, Qt.AlignHCenter|Qt.AlignVCenter)
 
 
-        self.verticalLayout_2.addLayout(self.horizontalLayout_9)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_9)
 
         self.horizontalLayout_8 = QHBoxLayout()
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.horizontalLayout_8.setContentsMargins(-1, 10, -1, 10)
+        self.horizontalLayout_8.setContentsMargins(-1, 6, -1, 6)
         self.line_2 = QFrame(self.centralwidget)
         self.line_2.setObjectName(u"line_2")
         self.line_2.setFrameShadow(QFrame.Sunken)
@@ -72,7 +73,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_8.addWidget(self.line_2)
 
 
-        self.verticalLayout_2.addLayout(self.horizontalLayout_8)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_8)
 
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -186,11 +187,11 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout_6)
 
 
-        self.verticalLayout_2.addLayout(self.verticalLayout)
+        self.verticalLayout_3.addLayout(self.verticalLayout)
 
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.horizontalLayout_7.setContentsMargins(-1, 10, -1, 10)
+        self.horizontalLayout_7.setContentsMargins(-1, 6, -1, 6)
         self.line = QFrame(self.centralwidget)
         self.line.setObjectName(u"line")
         self.line.setFrameShadow(QFrame.Sunken)
@@ -200,7 +201,36 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7.addWidget(self.line)
 
 
-        self.verticalLayout_2.addLayout(self.horizontalLayout_7)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_7)
+
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.status_label = StatusLabel(self.centralwidget)
+        self.status_label.setObjectName(u"status_label")
+        font2 = QFont()
+        font2.setPointSize(12)
+        font2.setBold(False)
+        font2.setItalic(False)
+        self.status_label.setFont(font2)
+
+        self.verticalLayout_2.addWidget(self.status_label, 0, Qt.AlignHCenter)
+
+
+        self.verticalLayout_3.addLayout(self.verticalLayout_2)
+
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.horizontalLayout_11.setContentsMargins(-1, 6, -1, 6)
+        self.line_4 = QFrame(self.centralwidget)
+        self.line_4.setObjectName(u"line_4")
+        self.line_4.setFrameShadow(QFrame.Sunken)
+        self.line_4.setLineWidth(2)
+        self.line_4.setFrameShape(QFrame.HLine)
+
+        self.horizontalLayout_11.addWidget(self.line_4)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_11)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -230,10 +260,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
 
 
-        self.verticalLayout_2.addLayout(self.horizontalLayout_2)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
 
 
-        self.horizontalLayout_10.addLayout(self.verticalLayout_2)
+        self.verticalLayout_4.addLayout(self.verticalLayout_3)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -252,6 +282,7 @@ class Ui_MainWindow(object):
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"Return to bank at pods %", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Disable spectator mode?", None))
         self.spectator_mode_check_box.setText("")
+        self.status_label.setText(QCoreApplication.translate("MainWindow", u"Bot is stopped.", None))
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.open_log_window_button.setText(QCoreApplication.translate("MainWindow", u"Open Log Window", None))
