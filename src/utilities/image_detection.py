@@ -3,6 +3,8 @@ import os
 import cv2
 import numpy as np
 
+from src.utilities.general import load_image_full_path
+
 
 class ImageDetection:
 
@@ -24,13 +26,9 @@ class ImageDetection:
         
         # Read images if they are given as paths
         if isinstance(haystack, str):
-            if not os.path.exists(haystack):
-                raise FileNotFoundError(f"Haystack image path '{haystack}' does not exist.")
-            haystack = cv2.imread(haystack, cv2.IMREAD_UNCHANGED)
+            haystack = load_image_full_path(haystack)
         if isinstance(needle, str):
-            if not os.path.exists(needle):
-                raise FileNotFoundError(f"Needle image path '{needle}' does not exist.")
-            needle = cv2.imread(needle, cv2.IMREAD_UNCHANGED)
+            needle = load_image_full_path(needle)
 
         # Remove alpha channels if needed
         if remove_alpha_channels:
@@ -87,14 +85,10 @@ class ImageDetection:
 
         # Read images if they are given as paths
         if isinstance(haystack, str):
-            if not os.path.exists(haystack):
-                raise FileNotFoundError(f"Haystack image path '{haystack}' does not exist.")
-            haystack = cv2.imread(haystack, cv2.IMREAD_UNCHANGED)
+            haystack = load_image_full_path(haystack)
         for i, needle in enumerate(needles):
             if isinstance(needle, str):
-                if not os.path.exists(needle):
-                    raise FileNotFoundError(f"Needle image path '{needle}' does not exist.")
-                needles[i] = cv2.imread(needle, cv2.IMREAD_UNCHANGED)
+                needles[i] = load_image_full_path(needle)
 
         matches = []
         for i, needle in enumerate(needles):
@@ -113,9 +107,7 @@ class ImageDetection:
     @staticmethod
     def create_mask(image: np.ndarray | str):
         if isinstance(image, str):
-            if not os.path.exists(image):
-                raise FileNotFoundError(f"Image path '{image}' does not exist.")
-            image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
+            image = load_image_full_path(image)
         if ImageDetection.get_number_of_channels(image) < 4:
             raise ValueError("Provided image doesn't have an alpha channel.")
         _, mask = cv2.threshold(image[..., 3], 0, 255, cv2.THRESH_BINARY)
@@ -126,9 +118,7 @@ class ImageDetection:
         masks = []
         for image in images:
             if isinstance(image, str):
-                if not os.path.exists(image):
-                    raise FileNotFoundError(f"Image path '{image}' does not exist.")
-                image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
+                image = load_image_full_path(image)
             masks.append(ImageDetection.create_mask(image))
         return masks
 
