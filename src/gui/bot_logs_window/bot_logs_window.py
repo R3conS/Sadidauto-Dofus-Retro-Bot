@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
 from src.gui.bot_logs_window.bot_process_log_reader import BotProcessLogReader
@@ -5,6 +6,8 @@ from src.gui.bot_logs_window.BotLogsWindow_ui import Ui_BotLogsWindow
 
 
 class BotLogsWindow(QWidget, Ui_BotLogsWindow):
+
+    log_file_line_read = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -16,6 +19,7 @@ class BotLogsWindow(QWidget, Ui_BotLogsWindow):
         self.bot_logs_plain_text_edit.clear()
         reader = BotProcessLogReader(bot_process, start_time)
         reader.log_file_line_read.connect(self.bot_logs_plain_text_edit.on_log_file_line_read)
+        reader.log_file_line_read.connect(lambda line: self.log_file_line_read.emit(line))
         reader.start()
 
     def closeEvent(self, event):

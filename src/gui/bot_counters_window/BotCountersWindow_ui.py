@@ -24,7 +24,7 @@ class Ui_BotCountersWindow(object):
     def setupUi(self, BotCountersWindow):
         if not BotCountersWindow.objectName():
             BotCountersWindow.setObjectName(u"BotCountersWindow")
-        BotCountersWindow.resize(300, 200)
+        BotCountersWindow.resize(235, 215)
         self.verticalLayout_3 = QVBoxLayout(BotCountersWindow)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.frame_1 = QFrame(BotCountersWindow)

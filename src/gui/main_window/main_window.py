@@ -31,6 +31,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.start_button.bot_started_signal.connect(self.stop_button.on_bot_started)
         self.start_button.bot_started_signal.connect(self.bot_logs_window.on_bot_started)
         self.start_button.bot_started_signal.connect(self.status_label.on_bot_started)
+        self.start_button.bot_started_signal.connect(
+            self.bot_counters_window.bot_counters_plain_text_edit.on_bot_started
+        )
         self.start_button.bot_exited_due_to_exception_signal.connect(
             self.stop_button.on_bot_exited_due_to_exception
         )
@@ -40,6 +43,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.start_button.bot_stopped_signal.connect(self.status_label.on_bot_stopped)
         # Stop button.
         self.stop_button.bot_stopped_signal.connect(self.start_button.on_bot_stopped)
+        # Bot logs window.
+        self.bot_logs_window.log_file_line_read.connect(
+            self.bot_counters_window.bot_counters_plain_text_edit.on_log_file_line_read
+        )
 
     def closeEvent(self, _):
         log.info("Main window closed! Exiting ... ")
