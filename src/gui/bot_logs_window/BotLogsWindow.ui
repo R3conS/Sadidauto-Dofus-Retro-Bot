@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LogWindow</class>
- <widget class="QWidget" name="LogWindow">
+ <class>BotLogsWindow</class>
+ <widget class="QWidget" name="BotLogsWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>615</width>
-    <height>450</height>
+    <width>619</width>
+    <height>398</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LogWindow</string>
+   <string>BotLogsWindow</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout_3" stretch="6">
    <item>
-    <widget class="QFrame" name="console_text_edit_frame">
+    <widget class="QFrame" name="frame_1">
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
@@ -24,7 +24,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="ConsolePlainTextEdit" name="console_plain_text_edit">
+       <widget class="BotLogsPlainTextEdit" name="bot_logs_plain_text_edit">
         <property name="horizontalScrollBarPolicy">
          <enum>Qt::ScrollBarAlwaysOff</enum>
         </property>
@@ -40,9 +40,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ConsolePlainTextEdit</class>
+   <class>BotLogsPlainTextEdit</class>
    <extends>QPlainTextEdit</extends>
-   <header>src.gui.log_window.plain_text_edit_console</header>
+   <header>src.gui.bot_logs_window.bot_logs_plain_text_edit</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -1,21 +1,25 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
-from src.gui.log_window.bot_process_log_reader import BotProcessLogReader
-from src.gui.log_window.LogWindow_ui import Ui_LogWindow
+from src.gui.bot_logs_window.bot_process_log_reader import BotProcessLogReader
+from src.gui.bot_logs_window.BotLogsWindow_ui import Ui_BotLogsWindow
 
 
-class LogWindow(QWidget, Ui_LogWindow):
+class BotLogsWindow(QWidget, Ui_BotLogsWindow):
+
+    log_file_line_read = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.setWindowTitle("oFlexBot - Log Window")
+        self.setWindowTitle("oFlexBot - Bot Logs")
         self.fully_close_on_close_event = False
 
     def on_bot_started(self, bot_process, start_time):
-        self.console_plain_text_edit.clear()
+        self.bot_logs_plain_text_edit.clear()
         reader = BotProcessLogReader(bot_process, start_time)
-        reader.log_file_line_read.connect(self.console_plain_text_edit.on_log_file_line_read)
+        reader.log_file_line_read.connect(self.bot_logs_plain_text_edit.on_log_file_line_read)
+        reader.log_file_line_read.connect(lambda line: self.log_file_line_read.emit(line))
         reader.start()
 
     def closeEvent(self, event):
@@ -30,6 +34,6 @@ if __name__ == "__main__":
     import sys
     from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    window = LogWindow()
+    window = BotLogsWindow()
     window.show()
     sys.exit(app.exec())

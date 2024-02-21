@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>429</width>
-    <height>353</height>
+    <height>372</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -344,15 +344,22 @@
          </widget>
         </item>
         <item>
-         <widget class="OpenLogWindowButton" name="open_log_window_button">
+         <widget class="OpenBotLogsWindowButton" name="open_bot_logs_window_button">
+          <property name="text">
+           <string>Bot Logs</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="OpenBotCountersWindowButton" name="open_bot_counters_window_button">
           <property name="minimumSize">
            <size>
-            <width>120</width>
+            <width>90</width>
             <height>0</height>
            </size>
           </property>
           <property name="text">
-           <string>Open Log Window</string>
+           <string>Bot Counters</string>
           </property>
          </widget>
         </item>
@@ -413,14 +420,19 @@
    <header>src.gui.main_window.button_start</header>
   </customwidget>
   <customwidget>
-   <class>OpenLogWindowButton</class>
+   <class>OpenBotLogsWindowButton</class>
    <extends>QPushButton</extends>
-   <header>src.gui.main_window.button_open_log_window</header>
+   <header>src.gui.main_window.button_open_bot_logs_window</header>
   </customwidget>
   <customwidget>
    <class>StatusLabel</class>
    <extends>QLabel</extends>
    <header>src.gui.main_window.label_status</header>
+  </customwidget>
+  <customwidget>
+   <class>OpenBotCountersWindowButton</class>
+   <extends>QPushButton</extends>
+   <header>src.gui.main_window.button_open_bot_counters_window</header>
   </customwidget>
  </customwidgets>
  <resources/>

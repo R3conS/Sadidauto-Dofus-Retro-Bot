@@ -42,6 +42,7 @@ class Hunter:
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
+        self._total_fights_counter = 0
         self._pods_percentage_limit = go_bank_when_pods_percentage
         map_data = MapDataGetter.get_data_object(self._script)
         self._pathing_data = map_data.get_pathing_data()
@@ -98,7 +99,7 @@ class Hunter:
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         for tooltip in monster_tooltips:
             try:
-                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}")
+                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}.")
             except IndexError:
                 log.info(
                     f"Monsters found, but the contents of the tooltip are unknown. "
@@ -129,6 +130,14 @@ class Hunter:
 
             if self._is_attack_successful():
                 self._consecutive_fights_counter += 1
+                self._total_fights_counter += 1
+                # If a need arises to change the format of any of these
+                # messages make sure to update the associated parsing
+                # function that is used to read them for logging in the
+                # bot counters log window. The functions are a part of 
+                # the BotCountersPlainTextEdit class.
+                log.info(f"Successfully attacked: {self._format_monster_counts(tooltip.monster_counts)}.")
+                log.info(f"Started fight number: '{self._total_fights_counter}'.")
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
             else:
                 # Clicking off the game area after a failed attack to
@@ -148,12 +157,9 @@ class Hunter:
         return Status.MAP_FULLY_SEARCHED
 
     def _format_monster_counts(self, tooltip_monster_counts: dict) -> str:
-        formatted_strings = [f"{count} {animal}" for animal, count in tooltip_monster_counts.items()]
-        if len(formatted_strings) > 1:
-            output_string = ', '.join(formatted_strings[:-1])
-            output_string += f" and {formatted_strings[-1]}"
-        else:
-            output_string = formatted_strings[0]
+        """Output example: 2 Prespic, 4 Boar, 3 Mush Mush"""
+        formatted_strings = [f"{count} {monster}" for monster, count in tooltip_monster_counts.items()]
+        output_string = ", ".join(formatted_strings) if formatted_strings else ""
         return output_string
 
     def _attack(self, monster_x, monster_y):
