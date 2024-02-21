@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QMainWindow, QSizePolicy, QSpacerItem, QVBoxLayout,
     QWidget)
 
-from src.gui.main_window.button_open_log_window import OpenLogWindowButton
+from src.gui.main_window.button_open_bot_logs_window import OpenBotLogsWindowButton
 from src.gui.main_window.button_start import StartButton
 from src.gui.main_window.button_stop import StopButton
 from src.gui.main_window.check_box_spectator_mode import SpectatorModeCheckBox
@@ -249,11 +249,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.stop_button)
 
-        self.open_log_window_button = OpenLogWindowButton(self.centralwidget)
-        self.open_log_window_button.setObjectName(u"open_log_window_button")
-        self.open_log_window_button.setMinimumSize(QSize(120, 0))
+        self.open_bot_logs_window_button = OpenBotLogsWindowButton(self.centralwidget)
+        self.open_bot_logs_window_button.setObjectName(u"open_bot_logs_window_button")
 
-        self.horizontalLayout_2.addWidget(self.open_log_window_button)
+        self.horizontalLayout_2.addWidget(self.open_bot_logs_window_button)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
@@ -285,6 +284,6 @@ class Ui_MainWindow(object):
         self.status_label.setText(QCoreApplication.translate("MainWindow", u"Bot is stopped.", None))
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
-        self.open_log_window_button.setText(QCoreApplication.translate("MainWindow", u"Open Log Window", None))
+        self.open_bot_logs_window_button.setText(QCoreApplication.translate("MainWindow", u"Bot Logs", None))
     # retranslateUi
 

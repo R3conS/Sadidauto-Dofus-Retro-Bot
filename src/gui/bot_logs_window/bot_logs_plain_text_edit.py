@@ -2,7 +2,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QPlainTextEdit
 
 
-class ConsolePlainTextEdit(QPlainTextEdit):
+class BotLogsPlainTextEdit(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
