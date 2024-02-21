@@ -42,6 +42,7 @@ class Hunter:
         self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
+        self._total_fights_counter = 0
         self._pods_percentage_limit = go_bank_when_pods_percentage
         map_data = MapDataGetter.get_data_object(self._script)
         self._pathing_data = map_data.get_pathing_data()
@@ -129,6 +130,11 @@ class Hunter:
 
             if self._is_attack_successful():
                 self._consecutive_fights_counter += 1
+                self._total_fights_counter += 1
+                # If a need arises to change the format of this log message,
+                # make sure to update the parsing function that reads it 
+                # for logging in the bot counters window.
+                log.info(f"Started fight number: '{self._total_fights_counter}'.")
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
             else:
                 # Clicking off the game area after a failed attack to
