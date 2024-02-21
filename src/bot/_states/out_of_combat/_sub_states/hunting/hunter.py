@@ -98,7 +98,7 @@ class Hunter:
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         for tooltip in monster_tooltips:
             try:
-                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}")
+                log.info(f"{self._format_monster_counts(tooltip.monster_counts)}")
             except IndexError:
                 log.info(
                     f"Monsters found, but the contents of the tooltip are unknown. "
@@ -148,13 +148,15 @@ class Hunter:
         return Status.MAP_FULLY_SEARCHED
 
     def _format_monster_counts(self, tooltip_monster_counts: dict) -> str:
-        formatted_strings = [f"{count} {animal}" for animal, count in tooltip_monster_counts.items()]
-        if len(formatted_strings) > 1:
-            output_string = ', '.join(formatted_strings[:-1])
-            output_string += f" and {formatted_strings[-1]}"
-        else:
-            output_string = formatted_strings[0]
-        return output_string
+        """
+        Output example: Monsters found: 2 Prespic, 4 Boar, 3 Mush Mush.
+
+        Note: This format is being parsed and displayed in a log window.
+        When changing it make sure to update the parsing function as well.
+        """
+        formatted_strings = [f"{count} {monster}" for monster, count in tooltip_monster_counts.items()]
+        output_string = "Monsters found: " + ", ".join(formatted_strings) if formatted_strings else ""
+        return output_string + "."
 
     def _attack(self, monster_x, monster_y):
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
