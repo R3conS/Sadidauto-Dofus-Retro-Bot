@@ -2,7 +2,7 @@ from src.logger import get_logger
 
 log = get_logger()
 
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import numpy as np
@@ -47,6 +47,8 @@ class TurnDetector:
                 # If code reaches this point it most likely means that the
                 # account got disconnected.
                 raise RecoverableException("Failed to detect AP counter while trying to detect character's turn.")
+
+            sleep(0.5)
             
         raise RecoverableException(f"Failed to detect character's turn. Timed out: {timeout} seconds.")
 
