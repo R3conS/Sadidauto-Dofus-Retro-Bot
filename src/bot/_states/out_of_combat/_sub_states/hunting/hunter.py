@@ -99,7 +99,7 @@ class Hunter:
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         for tooltip in monster_tooltips:
             try:
-                log.info(f"{self._format_monster_counts(tooltip.monster_counts)}")
+                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}.")
             except IndexError:
                 log.info(
                     f"Monsters found, but the contents of the tooltip are unknown. "
@@ -131,9 +131,12 @@ class Hunter:
             if self._is_attack_successful():
                 self._consecutive_fights_counter += 1
                 self._total_fights_counter += 1
-                # If a need arises to change the format of this log message,
-                # make sure to update the parsing function that reads it 
-                # for logging in the bot counters window.
+                # If a need arises to change the format of any of these
+                # messages make sure to update the associated parsing
+                # function that is used to read them for logging in the
+                # bot counters log window. The functions are a part of 
+                # the BotCountersPlainTextEdit class.
+                log.info(f"Successfully attacked: {self._format_monster_counts(tooltip.monster_counts)}.")
                 log.info(f"Started fight number: '{self._total_fights_counter}'.")
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
             else:
@@ -154,15 +157,10 @@ class Hunter:
         return Status.MAP_FULLY_SEARCHED
 
     def _format_monster_counts(self, tooltip_monster_counts: dict) -> str:
-        """
-        Output example: Monsters found: 2 Prespic, 4 Boar, 3 Mush Mush.
-
-        Note: This format is being parsed and displayed in a log window.
-        When changing it make sure to update the parsing function as well.
-        """
+        """Output example: 2 Prespic, 4 Boar, 3 Mush Mush"""
         formatted_strings = [f"{count} {monster}" for monster, count in tooltip_monster_counts.items()]
-        output_string = "Monsters found: " + ", ".join(formatted_strings) if formatted_strings else ""
-        return output_string + "."
+        output_string = ", ".join(formatted_strings) if formatted_strings else ""
+        return output_string
 
     def _attack(self, monster_x, monster_y):
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
