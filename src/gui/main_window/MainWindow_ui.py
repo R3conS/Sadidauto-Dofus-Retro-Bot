@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QMainWindow, QSizePolicy, QSpacerItem, QVBoxLayout,
     QWidget)
 
+from src.gui.main_window.button_open_bot_counters_window import OpenBotCountersWindowButton
 from src.gui.main_window.button_open_bot_logs_window import OpenBotLogsWindowButton
 from src.gui.main_window.button_start import StartButton
 from src.gui.main_window.button_stop import StopButton
@@ -33,7 +34,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(429, 353)
+        MainWindow.resize(429, 372)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -254,6 +255,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.open_bot_logs_window_button)
 
+        self.open_bot_counters_window_button = OpenBotCountersWindowButton(self.centralwidget)
+        self.open_bot_counters_window_button.setObjectName(u"open_bot_counters_window_button")
+        self.open_bot_counters_window_button.setMinimumSize(QSize(90, 0))
+
+        self.horizontalLayout_2.addWidget(self.open_bot_counters_window_button)
+
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
@@ -285,5 +292,6 @@ class Ui_MainWindow(object):
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.open_bot_logs_window_button.setText(QCoreApplication.translate("MainWindow", u"Bot Logs", None))
+        self.open_bot_counters_window_button.setText(QCoreApplication.translate("MainWindow", u"Bot Counters", None))
     # retranslateUi
 
