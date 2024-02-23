@@ -26,16 +26,17 @@ from src.utilities.screen_capture import ScreenCapture
 class Hunter:
 
     IMAGE_FOLDER_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images"
+
     READY_BUTTON_AREA = (678, 507, 258, 91)
     READY_BUTTON_IMAGES = [
         load_image_full_path(path) 
         for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "ready_button\\*.png"))
     ]
-    JOIN_SWORD_IMAGES = [
-        load_image_full_path(path) 
-        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "join_sword\\*.png"))
+
+    MONSTER_ALREADY_IN_COMBAT_IMAGES = [
+        load_image_full_path(path)
+        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "attack\\*.png"))
     ]
-    JOIN_SWORD_IMAGE_MASKS = ImageDetection.create_masks(JOIN_SWORD_IMAGES)
 
     def __init__(self, script: str, game_window_title: str, go_bank_when_pods_percentage: int = 95):
         self._script = script
@@ -115,17 +116,15 @@ class Hunter:
                 continue
             monster_x, monster_y = monster_location
 
-            if self._is_join_sword_on_pos(monster_x, monster_y):
-                log.info("Monster was attacked by someone else. Skipping ... ")
-                continue
-
             self._attack(monster_x, monster_y)
-            # Allow time for 'Right Click Menu' to open in case the attack 
-            # click missed. Clicks can miss if the monster moves away.
-            sleep(0.25) # Maybe increase this to 0.5?
-            if Interfaces.RIGHT_CLICK_MENU.is_open():
-                log.error("Failed to attack monster because it moved away. Skipping ... ")
-                Interfaces.RIGHT_CLICK_MENU.close()
+            if self._clicked_on_join_sword():
+                log.info(
+                    "Clicked on a 'Join' sword while attacking. The monster is "
+                    "already in combat. Skipping ... "
+                )
+                # Clicking off the game area to close the tooltip.
+                move_mouse_off_game_area()
+                pyag.click()
                 continue
 
             if self._is_attack_successful():
@@ -166,14 +165,30 @@ class Hunter:
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
         pyag.moveTo(monster_x, monster_y)
         if "Dofus Retro" in self._game_window_title:
-            pyag.click(button="right")
+            pyag.click()
         else: # For Abrak private server
             pyag.keyDown("shift")
             pyag.click()
             pyag.keyUp("shift")
 
     @classmethod
+    def _clicked_on_join_sword(cls):
+        if len(
+            ImageDetection.find_images(
+                haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
+                needles=cls.MONSTER_ALREADY_IN_COMBAT_IMAGES,
+                confidence=0.98,
+                method=cv2.TM_SQDIFF_NORMED
+            )
+        ) > 0:
+            return True
+        return False  
+
+    @classmethod
     def _is_attack_successful(cls):
+        # ToDo: Also check if 'level.png' images are still visible. If not
+        # just return False and continue to next monster coords in main
+        # loop.
         start_time = perf_counter()
         while perf_counter() - start_time <= 8:
             if len(
@@ -188,20 +203,6 @@ class Hunter:
                 return True
         log.error("Attack failed.")
         return False  
-
-    @classmethod
-    def _is_join_sword_on_pos(cls, x, y):
-        if len(
-            ImageDetection.find_images(
-                haystack=ScreenCapture.around_pos((x, y), 65),
-                needles=cls.JOIN_SWORD_IMAGES,
-                confidence=0.98,
-                method=cv2.TM_CCORR_NORMED,
-                masks=cls.JOIN_SWORD_IMAGE_MASKS
-            )
-        ) > 0:
-            return True
-        return False
 
     @staticmethod
     def _is_char_in_lumberjack_workshop():
@@ -245,4 +246,9 @@ class Hunter:
 
 if __name__ == "__main__":
     hunter = Hunter("af_anticlock", "Dofus Retro")
-    hunter.hunt()
+    # hunter.hunt()
+    # image = ScreenCapture.custom_area((0, 50, 937, 550))
+    # cv2.imshow("test", image)
+    # cv2.waitKey()
+    print(hunter._clicked_on_join_sword())
+    
