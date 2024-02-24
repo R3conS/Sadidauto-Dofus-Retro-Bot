@@ -6,7 +6,7 @@ from src.utilities.ocr.ocr import OCR
 
 class Reader:
 
-    MONSTER_NAMES = ["Boar", "Mush Mush", "Prespic", "Moskito", "Miliboowolf"]
+    MONSTER_NAMES = ["Boar", "Mush Mush", "Prespic", "Moskito", "Miliboowolf", "Frakacia Leukocytine"]
 
     def __init__(self, precise_tooltip_image: np.ndarray | str):
         if isinstance(precise_tooltip_image, str):

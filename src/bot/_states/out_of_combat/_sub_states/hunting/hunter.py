@@ -4,7 +4,7 @@ log = get_logger()
 
 import glob
 import os
-from time import perf_counter, sleep
+from time import perf_counter
 
 import cv2
 import pyautogui as pyag
@@ -37,6 +37,8 @@ class Hunter:
         load_image_full_path(path)
         for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "attack\\*.png"))
     ]
+    
+    FORBIDDEN_MONSTERS = ["Frakacia Leukocytine"]
 
     def __init__(self, script: str, game_window_title: str, go_bank_when_pods_percentage: int = 95):
         self._script = script
@@ -100,7 +102,8 @@ class Hunter:
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         for tooltip in monster_tooltips:
             try:
-                log.info(f"Monsters found: {self._format_monster_counts(tooltip.monster_counts)}.")
+                formatted_monster_counts = self._format_monster_counts(tooltip.monster_counts)
+                log.info(f"Monsters found: {formatted_monster_counts}.")
             except IndexError:
                 log.info(
                     f"Monsters found, but the contents of the tooltip are unknown. "
@@ -108,6 +111,10 @@ class Hunter:
                     "and cannot be read."
                 )
                 save_image_to_debug_folder(tooltip._precise_tooltip, "could_not_read_tooltip")
+
+            if self._contains_forbidden_monsters(formatted_monster_counts):
+                log.info("Skipping monster group because it contains forbidden monsters.")
+                continue
 
             log.info(f"Getting precise monster location ... ")
             monster_location = MonsterLocationFinder.get_monster_location(tooltip)
@@ -135,7 +142,7 @@ class Hunter:
                 # function that is used to read them for logging in the
                 # bot counters log window. The functions are a part of 
                 # the BotCountersPlainTextEdit class.
-                log.info(f"Successfully attacked: {self._format_monster_counts(tooltip.monster_counts)}.")
+                log.info(f"Successfully attacked: {formatted_monster_counts}.")
                 log.info(f"Started fight number: '{self._total_fights_counter}'.")
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
             else:
@@ -155,11 +162,20 @@ class Hunter:
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
         return Status.MAP_FULLY_SEARCHED
 
-    def _format_monster_counts(self, tooltip_monster_counts: dict) -> str:
+    @staticmethod
+    def _format_monster_counts(tooltip_monster_counts: dict) -> str:
         """Output example: 2 Prespic, 4 Boar, 3 Mush Mush"""
         formatted_strings = [f"{count} {monster}" for monster, count in tooltip_monster_counts.items()]
         output_string = ", ".join(formatted_strings) if formatted_strings else ""
         return output_string
+
+    @classmethod
+    def _contains_forbidden_monsters(cls, formatted_monster_counts: str):
+        for monster in cls.FORBIDDEN_MONSTERS:
+            if monster in formatted_monster_counts:
+                log.info(f"Monster group contains a forbidden monster: {monster}.")
+                return True
+        return False
 
     def _attack(self, monster_x, monster_y):
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
@@ -250,5 +266,7 @@ if __name__ == "__main__":
     # image = ScreenCapture.custom_area((0, 50, 937, 550))
     # cv2.imshow("test", image)
     # cv2.waitKey()
-    print(hunter._clicked_on_join_sword())
-    
+    # print(hunter._clicked_on_join_sword())
+    counts = "2 Prespic, 4 Boar, 3 Mush Mush"
+    # Hunter.FORBIDDEN_MONSTERS = ["Prespic"]
+    print(hunter._contains_forbidden_monsters(counts))
