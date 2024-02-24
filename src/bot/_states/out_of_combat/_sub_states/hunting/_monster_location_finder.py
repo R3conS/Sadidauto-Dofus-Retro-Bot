@@ -52,7 +52,7 @@ class MonsterLocationFinder:
             width = ScreenCapture.GAME_WINDOW_AREA[2] - top_left_x
         return len(
             ImageDetection.find_image(
-                haystack=ScreenCapture.custom_area((top_left_x, 0, 140, ScreenCapture.GAME_WINDOW_AREA[3])),
+                haystack=ScreenCapture.custom_area((top_left_x, 0, width, ScreenCapture.GAME_WINDOW_AREA[3])),
                 needle=cls.LEVEL_IMAGE,
                 confidence=0.7,
                 method=cv2.TM_CCOEFF_NORMED,
