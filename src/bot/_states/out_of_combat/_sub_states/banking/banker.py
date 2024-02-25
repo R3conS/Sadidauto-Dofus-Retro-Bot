@@ -10,11 +10,10 @@ from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter a
 
 class Banker:
 
-    def __init__(self, script: str, game_window_title: str):
+    def __init__(self, script: str):
         self._script = script
-        self._game_window_title = game_window_title
         self._handler_not_on_bank_map = Handler_NotOnBankMap(self._script)
-        self._handler_on_bank_map = Handler_OnBankMap(self._script, self._game_window_title)
+        self._handler_on_bank_map = Handler_OnBankMap(self._script)
         self._bank_map = BankDataGetter.get_data(self._script)["bank_map"]
 
     def bank(self):

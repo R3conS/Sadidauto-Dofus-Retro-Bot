@@ -33,16 +33,20 @@ class Hunter:
         for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "ready_button\\*.png"))
     ]
 
-    MONSTER_ALREADY_IN_COMBAT_IMAGES = [
+    CLICKED_ON_JOIN_SWORD_IMAGES = [
+        load_image_full_path(path)
+        for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "clicked_on_join_sword\\*.png"))
+    ]
+
+    ATTACK_TOOLTIP_IMAGES = [
         load_image_full_path(path)
         for path in glob.glob(os.path.join(IMAGE_FOLDER_PATH, "attack\\*.png"))
     ]
     
     FORBIDDEN_MONSTERS = ["Frakacia Leukocytine"]
 
-    def __init__(self, script: str, game_window_title: str, go_bank_when_pods_percentage: int = 95):
+    def __init__(self, script: str, go_bank_when_pods_percentage: int = 90):
         self._script = script
-        self._game_window_title = game_window_title
         self._check_pods_every_x_fights = 5
         self._consecutive_fights_counter = self._check_pods_every_x_fights
         self._total_fights_counter = 0
@@ -180,19 +184,17 @@ class Hunter:
     def _attack(self, monster_x, monster_y):
         log.info(f"Attacking monster at {monster_x, monster_y} ... ")
         pyag.moveTo(monster_x, monster_y)
-        if "Dofus Retro" in self._game_window_title:
+        pyag.click()
+        if self._is_attack_tooltip_visible():
+            pyag.moveTo(*self._get_attack_tooltip_pos())
             pyag.click()
-        else: # For Abrak private server
-            pyag.keyDown("shift")
-            pyag.click()
-            pyag.keyUp("shift")
 
     @classmethod
     def _clicked_on_join_sword(cls):
         if len(
             ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
-                needles=cls.MONSTER_ALREADY_IN_COMBAT_IMAGES,
+                needles=cls.CLICKED_ON_JOIN_SWORD_IMAGES,
                 confidence=0.98,
                 method=cv2.TM_SQDIFF_NORMED
             )
@@ -201,10 +203,32 @@ class Hunter:
         return False  
 
     @classmethod
+    def _is_attack_tooltip_visible(cls):
+        if len(
+            ImageDetection.find_images(
+                haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
+                needles=cls.ATTACK_TOOLTIP_IMAGES,
+                confidence=0.98,
+                method=cv2.TM_SQDIFF_NORMED
+            )
+        ) > 0:
+            return True
+        return False 
+    
+    @classmethod
+    def _get_attack_tooltip_pos(cls):
+        rectangle = ImageDetection.find_images(
+            haystack=ScreenCapture.custom_area((0, 0, 937, 600)),
+            needles=cls.ATTACK_TOOLTIP_IMAGES,
+            confidence=0.98,
+            method=cv2.TM_SQDIFF_NORMED
+        )
+        if len(rectangle) > 0:
+            return ImageDetection.get_rectangle_center_point(rectangle[0])
+        raise RecoverableException("Failed to get 'Attack' tooltip position.")
+
+    @classmethod
     def _is_attack_successful(cls):
-        # ToDo: Also check if 'level.png' images are still visible. If not
-        # just return False and continue to next monster coords in main
-        # loop.
         start_time = perf_counter()
         while perf_counter() - start_time <= 8:
             if len(
@@ -262,11 +286,5 @@ class Hunter:
 
 if __name__ == "__main__":
     hunter = Hunter("af_anticlock", "Dofus Retro")
-    # hunter.hunt()
-    # image = ScreenCapture.custom_area((0, 50, 937, 550))
-    # cv2.imshow("test", image)
-    # cv2.waitKey()
-    # print(hunter._clicked_on_join_sword())
-    counts = "2 Prespic, 4 Boar, 3 Mush Mush"
-    # Hunter.FORBIDDEN_MONSTERS = ["Prespic"]
-    print(hunter._contains_forbidden_monsters(counts))
+    print(hunter._is_attack_tooltip_visible())
+    print(hunter._get_attack_tooltip_pos())

@@ -12,9 +12,8 @@ from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter a
 
 class Handler:
 
-    def __init__(self, script: str, game_window_title: str):
+    def __init__(self, script: str):
         self._script = script
-        self._game_window_title = game_window_title
         bank_data = BankDataGetter.get_data(self._script)
         self._enter_coords = bank_data["enter_coords"]
         self._exit_coords = bank_data["exit_coords"]

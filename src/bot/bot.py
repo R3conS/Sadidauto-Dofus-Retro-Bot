@@ -36,7 +36,7 @@ class Bot(mp.Process):
         character_name: str, 
         server_name: str,
         script: str,
-        go_bank_when_pods_percentage: int = 95,
+        go_bank_when_pods_percentage: int = 90,
         disable_spectator_mode: bool = True
     ):
         super().__init__()
@@ -58,7 +58,6 @@ class Bot(mp.Process):
             self._out_of_combat_controller = OOC_Controller(
                 self._set_state, 
                 self._script, 
-                self._window_title,
                 self._go_bank_when_pods_percentage
             )
             self._in_combat_controller = IC_Controller(
