@@ -7,6 +7,7 @@ from src.bot._interfaces._banker_dialogue import BankerDialogue
 from src.bot._interfaces._caution.caution import Caution
 from src.bot._interfaces._characteristics import Characteristics
 from src.bot._interfaces._connection.connection import Connection
+from src.bot._interfaces._fight_results.fight_results import FightResults
 from src.bot._interfaces._information import Information
 from src.bot._interfaces._inventory import Inventory
 from src.bot._interfaces._login_screen.login_screen import LoginScreen
@@ -23,6 +24,7 @@ class Interfaces:
     CAUTION = Caution()
     CHARACTERISTICS = Characteristics()
     CONNECTION = Connection()
+    FIGHT_RESULTS = FightResults()
     INFORMATION = Information()
     INVENTORY = Inventory()
     LOGIN_SCREEN = LoginScreen()
@@ -64,7 +66,8 @@ class Interfaces:
             cls.MAIN_MENU,
             cls.CAUTION,
             cls.INFORMATION,
-            cls.CONNECTION
+            cls.CONNECTION,
+            cls.FIGHT_RESULTS
         ]
 
 
