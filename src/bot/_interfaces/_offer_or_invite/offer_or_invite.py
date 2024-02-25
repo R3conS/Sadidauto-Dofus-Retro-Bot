@@ -15,9 +15,18 @@ class OfferOrInvite:
     """Exchange, challenge offers & guild, group invites."""
 
     IMAGE_FOLDER_PATH = "src\\bot\\_interfaces\\_offer_or_invite\\_images"
+
     IGNORE_BUTTON_IMAGES = [
         load_image(IMAGE_FOLDER_PATH, "ignore_official.png"),
         load_image(IMAGE_FOLDER_PATH, "ignore_abrak.png")
+    ]
+
+    YES_BUTTON_IMAGES = [
+        load_image(IMAGE_FOLDER_PATH, "yes_button.png"),
+    ]
+
+    NO_BUTTON_IMAGES = [
+        load_image(IMAGE_FOLDER_PATH, "no_button.png"),
     ]
 
     def __init__(self):
@@ -30,6 +39,24 @@ class OfferOrInvite:
             log.info(f"'{self._name}' interface is already closed!")
             return
         return self._interface.close(pos[0], pos[1], self.is_open)
+
+    def click_yes(self):
+        return self._interface.click_button(
+            button_name="Yes",
+            button_area=ScreenCapture.GAME_WINDOW_AREA,
+            button_images=self.YES_BUTTON_IMAGES,
+            is_open_func=self.is_open,
+            is_opening=False
+        )
+
+    def click_no(self):
+        return self._interface.click_button(
+            button_name="No",
+            button_area=ScreenCapture.GAME_WINDOW_AREA,
+            button_images=self.NO_BUTTON_IMAGES,
+            is_open_func=self.is_open,
+            is_opening=False
+        )
 
     @staticmethod
     def is_open():
@@ -64,7 +91,5 @@ class OfferOrInvite:
 
 if __name__ == "__main__":
     print(OfferOrInvite.is_open())
-    pos = OfferOrInvite._get_ignore_button_pos()
-    if pos is not None:
-        import pyautogui
-        pyautogui.moveTo(pos[0], pos[1])
+    oor = OfferOrInvite()
+    oor.click_no()
