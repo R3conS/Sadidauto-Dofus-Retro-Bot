@@ -46,7 +46,6 @@ class DisturbanceChecker(threading.Thread):
                     if Interfaces.INFORMATION.is_open():
                         log.info("'Information' interface detected!")
                         Interfaces.INFORMATION.close()
-                    sleep(0.5)
                 except RecoverableException:
                     log.error("Recoverable exception occured in 'DisturbanceChecker' thread.")
                     log.error(traceback.format_exc())
