@@ -71,6 +71,7 @@ class Bot(mp.Process):
             self._recoverer = Recoverer(
                 self._character_name, 
                 self._server_name, 
+                self._script,
                 self._character_level, 
                 self._window_hwnd, 
                 self.WINDOW_SIZE
