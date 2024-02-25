@@ -12,7 +12,7 @@ from src.bot._interfaces._information import Information
 from src.bot._interfaces._inventory import Inventory
 from src.bot._interfaces._login_screen.login_screen import LoginScreen
 from src.bot._interfaces._main_menu.main_menu import MainMenu
-from src.bot._interfaces._offer_or_invite._offer_or_invite import OfferOrInvite
+from src.bot._interfaces._offer_or_invite.offer_or_invite import OfferOrInvite
 from src.bot._interfaces._right_click_menu.right_click_menu import RightClickMenu
 
 
