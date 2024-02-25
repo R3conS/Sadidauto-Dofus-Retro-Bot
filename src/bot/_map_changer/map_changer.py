@@ -33,7 +33,7 @@ class MapChanger:
             result = ImageDetection.find_image(
                 haystack=map_image,
                 needle=current_map_image,
-                confidence=0.99,
+                confidence=0.98,
                 method=cv2.TM_SQDIFF_NORMED,
                 remove_alpha_channels=True,
             )
