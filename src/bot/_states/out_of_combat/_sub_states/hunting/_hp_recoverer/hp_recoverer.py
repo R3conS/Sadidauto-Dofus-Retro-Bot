@@ -17,7 +17,7 @@ from src.utilities.screen_capture import ScreenCapture
 
 class HpRecoverer:
 
-    IMAGE_DIR_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_hp_recoverer.py\\_images"
+    IMAGE_DIR_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_hp_recoverer\\_images"
 
     SIT_ICON_IMAGES = [
         load_image(IMAGE_DIR_PATH, "sit_official.png"),
@@ -37,6 +37,7 @@ class HpRecoverer:
             log.info(f"Recovering... Health points: ({current_health}/{max_health}).")
             if current_health == max_health:
                 log.info("Successfully recovered all health!")
+                Interfaces.CHARACTERISTICS.close()
                 return
             sleep(5)
         else:
