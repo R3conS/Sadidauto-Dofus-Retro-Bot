@@ -4,7 +4,7 @@ log = get_logger()
 
 import os
 from abc import ABC
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import pyautogui as pyag
@@ -64,17 +64,26 @@ class BaseTab(ABC):
         if self.is_tab_open():
             log.info(f"'{self._name}' tab is already open.")
             return
+
         pyag.moveTo(*self._get_icon_position())
         pyag.click()
+
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if self.is_tab_open():
                 log.info(f"Successfully opened '{self._name}' tab.")
                 return
+
         raise RecoverableException(f"Timed out while trying to open '{self._name}' tab.")
 
     def deposit_tab(self):
         self.open_tab()
+
+        # Giving time for item sprites to load.
+        # ToDo: find a way to determine whether sprites have loaded
+        # dynamically and replace this fixed sleep time. 
+        sleep(1)
+
         if self._are_any_forbidden_items_loaded():
             log.info(f"'{self._name}' tab has forbidden items loaded. Depositing slot by slot ...")
             self._deposit_slot_by_slot()
