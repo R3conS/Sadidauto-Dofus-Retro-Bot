@@ -12,13 +12,13 @@ class Tooltip:
         image_to_crop_from: np.ndarray,
         level_text_center_point: tuple[int, int],
     ):
-        self._level_text_center_point = level_text_center_point
+        self.level_text_center_point = level_text_center_point
         self._image_to_crop_from = image_to_crop_from
-        rough_cropper = RoughCropper(self._image_to_crop_from, self._level_text_center_point)
+        rough_cropper = RoughCropper(self._image_to_crop_from, self.level_text_center_point)
         self._rough_tooltip = rough_cropper.tooltip
         self._rough_tooltip_crop_area = rough_cropper.crop_area
         precise_cropper = PreciseCropper(rough_cropper.tooltip)
-        self._precise_tooltip = precise_cropper.tooltip
+        self.precise_tooltip = precise_cropper.tooltip
         self._precise_tooltip_crop_area = precise_cropper.crop_area
         reader = Reader(precise_cropper.tooltip)
         self.monster_counts = reader.monster_counts
@@ -31,12 +31,12 @@ class Tooltip:
         return (
             self._rough_tooltip_crop_area[0] + self._precise_tooltip_crop_area[0],
             self._rough_tooltip_crop_area[1] + self._precise_tooltip_crop_area[1],
-            self._precise_tooltip.shape[1],
-            self._precise_tooltip.shape[0]
+            self.precise_tooltip.shape[1],
+            self.precise_tooltip.shape[0]
         )
 
     def _calculate_rectangle_area(self):
-        return self._precise_tooltip.shape[0] * self._precise_tooltip.shape[1]
+        return self.precise_tooltip.shape[0] * self.precise_tooltip.shape[1]
 
     def _calculate_bottom_middle_point(self):
         return (int(self.rectangle[0] + self.rectangle[2] // 2), self.rectangle[1] + self.rectangle[3])

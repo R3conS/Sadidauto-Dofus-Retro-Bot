@@ -59,6 +59,7 @@ class Hunter:
         self._bank_map_coords = bank_data["bank_map"]
         self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
         self._bank_exit_coords = bank_data["exit_coords"]
+        self._forbidden_tooltip_locations = []
 
     def hunt(self):
         while True:
@@ -91,6 +92,8 @@ class Hunter:
                     return Status.SUCCESSFULLY_ATTACKED_MONSTER
                 elif result == Status.MAP_FULLY_SEARCHED:
                     continue
+                elif result == Status.FAILED_TO_ATTACK_MONSTER:
+                    result = self._handle_fightable_map(map_coords)
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
@@ -118,10 +121,14 @@ class Hunter:
                     "Most likely because the tooltip is obstructed by another tooltip "
                     "and cannot be read."
                 )
-                save_image_to_debug_folder(tooltip._precise_tooltip, "could_not_read_tooltip")
+                save_image_to_debug_folder(tooltip.precise_tooltip, "could_not_read_tooltip")
 
             if self._contains_forbidden_monsters(formatted_monster_counts):
                 log.info("Skipping monster group because it contains forbidden monsters.")
+                continue
+
+            if self._is_tooltip_location_forbidden(tooltip.level_text_center_point):
+                self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
                 continue
 
             log.info(f"Getting precise monster location ... ")
@@ -152,6 +159,7 @@ class Hunter:
                 # the BotCountersPlainTextEdit class.
                 log.info(f"Successfully attacked: {formatted_monster_counts}.")
                 log.info(f"Started fight number: '{self._total_fights_counter}'.")
+                self._forbidden_tooltip_locations.clear()
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
             else:
                 # Clicking off the game area after a failed attack to
@@ -159,6 +167,7 @@ class Hunter:
                 # character's option menu.
                 move_mouse_off_game_area()
                 pyag.click()
+
                 if map_coords != MapChanger.get_current_map_coords():
                     log.error("Map was accidentally changed during the attack.")
                     self._change_map_back_to_original(map_coords)
@@ -166,9 +175,18 @@ class Hunter:
                     log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                     self._leave_lumberjacks_workshop()
 
+                self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
+
+                return Status.FAILED_TO_ATTACK_MONSTER
+
         log.info(f"Map '{map_coords}' fully searched.")
+        self._forbidden_tooltip_locations.clear()
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
+
         return Status.MAP_FULLY_SEARCHED
+
+    def _is_tooltip_location_forbidden(self, location: tuple[int, int]):
+        return location in self._forbidden_tooltip_locations
 
     @staticmethod
     def _format_monster_counts(tooltip_monster_counts: dict) -> str:
