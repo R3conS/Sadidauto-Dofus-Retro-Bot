@@ -2,14 +2,21 @@ import cv2
 import pyautogui as pyag
 
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.tooltip import Tooltip
-from src.utilities.general import load_image_full_path
+from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
 
 class MonsterLocationFinder:
 
-    LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_images\\level.png")
+    IMAGE_DIR_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_tooltip_finder\\_images"
+
+    LEVEL_IMAGES = [
+        load_image(IMAGE_DIR_PATH, "level_1.png"),
+        load_image(IMAGE_DIR_PATH, "level_2.png"),
+        load_image(IMAGE_DIR_PATH, "level_3.png"),
+        load_image(IMAGE_DIR_PATH, "level_4.png")
+    ]
 
     @classmethod
     def get_monster_location(cls, monster_tooltip: Tooltip):
@@ -50,15 +57,23 @@ class MonsterLocationFinder:
         width = 140
         if top_left_x + width > ScreenCapture.GAME_WINDOW_AREA[2]:
             width = ScreenCapture.GAME_WINDOW_AREA[2] - top_left_x
-        return len(
-            ImageDetection.find_image(
+
+        all_rectangles = []
+        for level_image in cls.LEVEL_IMAGES:
+            rectangles = ImageDetection.find_image(
                 haystack=ScreenCapture.custom_area((top_left_x, 0, width, ScreenCapture.GAME_WINDOW_AREA[3])),
-                needle=cls.LEVEL_IMAGE,
+                needle=level_image,
                 confidence=0.7,
                 method=cv2.TM_CCOEFF_NORMED,
                 get_best_match_only=False
             )
-        ) > 0
+            # Duplicating so that close rectangles can be grouped properly.
+            rectangles = [rect for rect in rectangles for _ in range(2)]
+            all_rectangles.extend(rectangles)
+
+        all_rectangles = cv2.groupRectangles(all_rectangles, 1, 0.5)[0]
+        center_points = [ImageDetection.get_rectangle_center_point(rect) for rect in all_rectangles]  
+        return len(center_points) > 0
 
     @classmethod
     def _is_monster_at_location(cls, location):
@@ -67,4 +82,6 @@ class MonsterLocationFinder:
 
 
 if __name__ == "__main__":
-    print(MonsterLocationFinder._is_level_text_visible_around_point((871, 366)))
+    from time import sleep
+    sleep(1)
+    print(MonsterLocationFinder._is_level_text_visible_around_point((pyag.position())))
