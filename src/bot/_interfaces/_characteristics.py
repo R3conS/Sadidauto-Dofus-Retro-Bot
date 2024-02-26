@@ -15,13 +15,18 @@ class Characteristics:
 
     def open(self):
         return self._interface.open(613, 622, self.is_open)
-        
+
     def close(self):
         return self._interface.close(613, 622, self.is_open)
 
     @staticmethod
     def is_open():
-        return all((
+        if all((
             pixelMatchesColor(902, 117, (81, 74, 60)),
             pixelMatchesColor(870, 331, (81, 74, 60))
-        ))
+        )) or all((
+            pixelMatchesColor(902, 117, (73, 66, 54)),
+            pixelMatchesColor(870, 331, (73, 66, 54))
+        )):
+            return True
+        return False
