@@ -34,7 +34,7 @@ class HpRecoverer:
         while Interfaces.CHARACTERISTICS.is_open():
             health_row_text = cls._read_health_points_row()
             current_health, max_health = cls._parse_health_points_row_text(health_row_text)
-            log.info(f"Recovering... Health points: ({current_health}/{max_health}).")
+            log.info(f"Recovering health points ({current_health}/{max_health}) ... ")
             if current_health == max_health:
                 log.info("Successfully recovered all health!")
                 Interfaces.CHARACTERISTICS.close()
@@ -43,8 +43,14 @@ class HpRecoverer:
         else:
             raise RecoverableException("Characteristics interface is not open.")
 
+    @classmethod
+    def is_health_bar_full(cls):
+        if cls._is_health_bar_visible():
+            return cls._is_health_bar_full()
+        raise RecoverableException("Health bar is not visible.")
+
     @staticmethod
-    def is_health_bar_visible():
+    def _is_health_bar_visible():
         if all((
             pyag.pixelMatchesColor(525, 597, (255, 255, 255)),
             pyag.pixelMatchesColor(498, 607, (255, 255, 255)),
@@ -60,7 +66,7 @@ class HpRecoverer:
         return False
 
     @staticmethod
-    def is_health_bar_full():
+    def _is_health_bar_full():
         if (
             pyag.pixelMatchesColor(512, 595, (235, 128, 128))
             or pyag.pixelMatchesColor(512, 595, (212, 115, 115))

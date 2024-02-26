@@ -15,6 +15,7 @@ from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.out_of_combat._pods_reader.reader import PodsReader
 from src.bot._states.out_of_combat._status_enum import Status
 from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
+from src.bot._states.out_of_combat._sub_states.hunting._hp_recoverer.hp_recoverer import HpRecoverer
 from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
 from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder
@@ -70,6 +71,9 @@ class Hunter:
                     # the first call to 'hunt()' after banking.
                     self._consecutive_fights_counter = self._check_pods_every_x_fights
                     return Status.REACHED_PODS_LIMIT
+
+            if not HpRecoverer.is_health_bar_full():
+                HpRecoverer.recover_all_health_by_sitting()
 
             map_coords = MapChanger.get_current_map_coords()
             if map_coords == self._bank_map_coords and self._is_char_inside_bank():
