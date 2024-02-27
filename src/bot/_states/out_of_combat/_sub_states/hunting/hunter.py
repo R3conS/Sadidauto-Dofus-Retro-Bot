@@ -18,7 +18,7 @@ from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter a
 from src.bot._states.out_of_combat._sub_states.hunting._hp_recoverer.hp_recoverer import HpRecoverer
 from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
 from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
-from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder
+from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder, Tooltip
 from src.utilities.general import load_image_full_path, move_mouse_off_game_area, save_image_to_debug_folder
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
@@ -112,44 +112,29 @@ class Hunter:
 
         monster_tooltips = MonsterTooltipFinder.find_tooltips()
         for tooltip in monster_tooltips:
-            try:
-                formatted_monster_counts = self._format_monster_counts(tooltip.monster_counts)
-                log.info(f"Monsters found: {formatted_monster_counts}.")
-            except IndexError:
-                log.info(
-                    f"Monsters found, but the contents of the tooltip are unknown. "
-                    "Most likely because the tooltip is obstructed by another tooltip "
-                    "and cannot be read."
-                )
-                save_image_to_debug_folder(tooltip.precise_tooltip, "could_not_read_tooltip")
+            log.info(f"Found monster group: {tooltip.monster_counts_as_str}.")
 
-            if self._contains_forbidden_monsters(formatted_monster_counts):
-                log.info("Skipping monster group because it contains forbidden monsters.")
+            if self._is_tooltip_location_forbidden(tooltip):
+                log.info("Skipping monster group because its tooltip location is forbidden ... ")
                 continue
 
-            if self._is_tooltip_location_forbidden(tooltip.level_text_center_point):
-                self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
+            if self._does_tooltip_contain_forbidden_monsters(tooltip):
+                log.info("Skipping monster group because it contains forbidden monsters ... ")
                 continue
 
-            log.info(f"Getting precise monster location ... ")
             monster_location = MonsterLocationFinder.get_monster_location(tooltip)
             if monster_location is None:
-                log.info(f"Failed to find a monster around the tooltip. Skipping ... ")
-                continue
-            monster_x, monster_y = monster_location
-
-            self._attack(monster_x, monster_y)
-            if self._clicked_on_join_sword():
-                log.info(
-                    "Clicked on a 'Join' sword while attacking. The monster is "
-                    "already in combat. Skipping ... "
+                log.error(
+                    "Skipping monster group because finding the location of an "
+                    "attackable monster around the tooltip failed."
                 )
-                # Clicking off the game area to close the tooltip.
-                move_mouse_off_game_area()
-                pyag.click()
                 continue
 
-            if self._is_attack_successful():
+            result = self._attack(monster_location)
+            if result == Status.MONSTER_IS_ALREADY_IN_COMBAT:
+                log.info("Skipping monster group because it was attacked by someone else ... ")
+                continue
+            elif result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
                 self._consecutive_fights_counter += 1
                 self._total_fights_counter += 1
                 # If a need arises to change the format of any of these
@@ -157,26 +142,18 @@ class Hunter:
                 # function that is used to read them for logging in the
                 # bot counters log window. The functions are a part of 
                 # the BotCountersPlainTextEdit class.
-                log.info(f"Successfully attacked: {formatted_monster_counts}.")
+                log.info(f"Successfully attacked: {tooltip.monster_counts_as_str}.")
                 log.info(f"Started fight number: '{self._total_fights_counter}'.")
                 self._forbidden_tooltip_locations.clear()
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
-            else:
-                # Clicking off the game area after a failed attack to
-                # close any unwanted tooltips like 'Cut' a tree or another
-                # character's option menu.
-                move_mouse_off_game_area()
-                pyag.click()
-
+            elif result == Status.FAILED_TO_ATTACK_MONSTER:
                 if map_coords != MapChanger.get_current_map_coords():
                     log.error("Map was accidentally changed during the attack.")
                     self._change_map_back_to_original(map_coords)
                 elif self._is_char_in_lumberjack_workshop():
                     log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
                     self._leave_lumberjacks_workshop()
-
-                self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
-
+                self._add_tooltip_location_to_forbidden_list(tooltip)
                 return Status.FAILED_TO_ATTACK_MONSTER
 
         log.info(f"Map '{map_coords}' fully searched.")
@@ -185,34 +162,43 @@ class Hunter:
 
         return Status.MAP_FULLY_SEARCHED
 
-    def _is_tooltip_location_forbidden(self, location: tuple[int, int]):
-        return location in self._forbidden_tooltip_locations
+    def _is_tooltip_location_forbidden(self, tooltip: Tooltip):
+        return tooltip.level_text_center_point in self._forbidden_tooltip_locations
 
-    @staticmethod
-    def _format_monster_counts(tooltip_monster_counts: dict) -> str:
-        """Output example: 2 Prespic, 4 Boar, 3 Mush Mush"""
-        formatted_strings = [f"{count} {monster}" for monster, count in tooltip_monster_counts.items()]
-        output_string = ", ".join(formatted_strings) if formatted_strings else ""
-        return output_string
+    def _add_tooltip_location_to_forbidden_list(self, tooltip: Tooltip):
+        self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
 
     @classmethod
-    def _contains_forbidden_monsters(cls, formatted_monster_counts: str):
+    def _does_tooltip_contain_forbidden_monsters(cls, tooltip: Tooltip):
         for monster in cls.FORBIDDEN_MONSTERS:
-            if monster in formatted_monster_counts:
+            if monster in tooltip.monster_counts_as_str:
                 log.info(f"Monster group contains a forbidden monster: {monster}.")
                 return True
         return False
 
-    def _attack(self, monster_x, monster_y):
-        log.info(f"Attacking monster at {monster_x, monster_y} ... ")
-        pyag.moveTo(monster_x, monster_y)
+    def _attack(self, monster_location: tuple[int, int]):
+        log.info(f"Attacking monster at {monster_location} ... ")
+
+        pyag.moveTo(*monster_location)
         pyag.click()
-        if self._is_attack_tooltip_visible():
+
+        if self._is_join_tooltip_visible():
+            log.info(f"Detected 'Join' tooltip after clicking on monster at: {monster_location}.")
+            # Clicking off the game area to close the tooltip.
+            move_mouse_off_game_area()
+            pyag.click()
+            return Status.MONSTER_IS_ALREADY_IN_COMBAT
+        elif self._is_attack_tooltip_visible():
             pyag.moveTo(*self._get_attack_tooltip_pos())
             pyag.click()
 
+        if self._is_ready_button_visible():
+            return Status.SUCCESSFULLY_ATTACKED_MONSTER
+
+        return Status.FAILED_TO_ATTACK_MONSTER
+
     @classmethod
-    def _clicked_on_join_sword(cls):
+    def _is_join_tooltip_visible(cls):
         if len(
             ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
@@ -250,7 +236,7 @@ class Hunter:
         raise RecoverableException("Failed to get 'Attack' tooltip position.")
 
     @classmethod
-    def _is_attack_successful(cls):
+    def _is_ready_button_visible(cls):
         start_time = perf_counter()
         while perf_counter() - start_time <= 8:
             if len(
@@ -261,9 +247,7 @@ class Hunter:
                     method=cv2.TM_SQDIFF_NORMED
                 )
             ) > 0:
-                log.info("Attack successful.")
                 return True
-        log.error("Attack failed.")
         return False  
 
     @staticmethod
