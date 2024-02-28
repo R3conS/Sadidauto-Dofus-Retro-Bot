@@ -26,6 +26,10 @@ class MonsterLocationFinder:
                 return location
         return None
 
+    @classmethod
+    def is_monster_tooltip_visible_around_point(cls, point: tuple[int, int]):
+        return cls._is_level_text_visible_around_point(point)
+
     @staticmethod
     def _get_possible_monster_locations(tooltip_rectangle):
         """
