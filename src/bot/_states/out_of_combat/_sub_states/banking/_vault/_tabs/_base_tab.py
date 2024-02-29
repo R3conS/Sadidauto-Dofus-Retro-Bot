@@ -4,7 +4,7 @@ log = get_logger()
 
 import os
 from abc import ABC
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import pyautogui as pyag
@@ -64,17 +64,26 @@ class BaseTab(ABC):
         if self.is_tab_open():
             log.info(f"'{self._name}' tab is already open.")
             return
+
         pyag.moveTo(*self._get_icon_position())
         pyag.click()
+
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
             if self.is_tab_open():
                 log.info(f"Successfully opened '{self._name}' tab.")
                 return
+
         raise RecoverableException(f"Timed out while trying to open '{self._name}' tab.")
 
     def deposit_tab(self):
         self.open_tab()
+
+        # Giving time for item sprites to load.
+        # ToDo: find a way to determine whether sprites have loaded
+        # dynamically and replace this fixed sleep time. 
+        sleep(1)
+
         if self._are_any_forbidden_items_loaded():
             log.info(f"'{self._name}' tab has forbidden items loaded. Depositing slot by slot ...")
             self._deposit_slot_by_slot()
@@ -113,8 +122,9 @@ class BaseTab(ABC):
                 return
             
             if not self._is_item_in_slot_forbidden(*slot_coords):
+                next_slot_screenshot = self._screenshot_next_slot(*slot_coords)
                 self._deposit_slot(*slot_coords)
-                if self._was_slot_deposited(*slot_coords):
+                if self._was_slot_deposited(slot_coords[0], slot_coords[1], next_slot_screenshot):
                     deposited_items_count += 1
                     continue
                 elif self._is_item_in_slot_linked_to_the_character(*slot_coords):
@@ -283,18 +293,17 @@ class BaseTab(ABC):
                     return True
         return False
 
-    def _was_slot_deposited(self, slot_x, slot_y):
-        next_slot_screenshot = self._screenshot_next_slot(slot_x, slot_y)
+    def _was_slot_deposited(self, slot_x, slot_y, next_slot_screenshot):
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            current_slot_screenshot = self._screenshot_slot(slot_x, slot_y)
-            rectangle = ImageDetection.find_image(
-                haystack=current_slot_screenshot,
-                needle=next_slot_screenshot,
-                confidence=0.95,
-                method=cv2.TM_CCORR_NORMED,
-            )
-            if len(rectangle) > 0:
+            if len(
+                ImageDetection.find_image(
+                    haystack=self._screenshot_slot(slot_x, slot_y),
+                    needle=next_slot_screenshot,
+                    confidence=0.95,
+                    method=cv2.TM_SQDIFF_NORMED,
+                )
+            ) > 0:
                 return True
         return False
 

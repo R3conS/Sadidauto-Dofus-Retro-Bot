@@ -1,17 +1,23 @@
 import cv2
-import numpy as np
 import pyautogui as pyag
 
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder._sorter import Sorter
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.tooltip import Tooltip
-from src.utilities.general import load_image_full_path
+from src.utilities.general import load_image
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
 
 class MonsterTooltipFinder:
 
-    LEVEL_IMAGE = load_image_full_path("src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_tooltip_finder\\_images\\level.png")
+    IMAGE_DIR_PATH = "src\\bot\\_states\\out_of_combat\\_sub_states\\hunting\\_monster_tooltip_finder\\_images"
+
+    LEVEL_IMAGES = [
+        load_image(IMAGE_DIR_PATH, "level_1.png"),
+        load_image(IMAGE_DIR_PATH, "level_2.png"),
+        load_image(IMAGE_DIR_PATH, "level_3.png"),
+        load_image(IMAGE_DIR_PATH, "level_4.png")
+    ]
 
     @classmethod
     def find_tooltips(cls) -> list[Tooltip]:
@@ -31,17 +37,21 @@ class MonsterTooltipFinder:
     @classmethod
     def _get_level_text_center_points(cls, image_to_search_on) -> list[tuple[int, int]]:
         """Returns a list of center points of the 'Level' text on the monster tooltips."""
-        rectangles = ImageDetection.find_image(
-            haystack=image_to_search_on,
-            needle=cls.LEVEL_IMAGE,
-            confidence=0.7,
-            method=cv2.TM_CCOEFF_NORMED,
-            get_best_match_only=False
-        )
-        # Duplicating so that close rectangles can be grouped properly.
-        rectangles = [rect for rect in rectangles for _ in range(2)]
-        rectangles = cv2.groupRectangles(rectangles, 1, 0.5)[0]
-        return [ImageDetection.get_rectangle_center_point(rect) for rect in rectangles]
+        all_rectangles = []
+        for level_image in cls.LEVEL_IMAGES:
+            rectangles = ImageDetection.find_image(
+                haystack=image_to_search_on,
+                needle=level_image,
+                confidence=0.7,
+                method=cv2.TM_CCOEFF_NORMED,
+                get_best_match_only=False
+            )
+            # Duplicating so that close rectangles can be grouped properly.
+            rectangles = [rect for rect in rectangles for _ in range(2)]
+            all_rectangles.extend(rectangles)
+
+        all_rectangles = cv2.groupRectangles(all_rectangles, 1, 0.5)[0]
+        return [ImageDetection.get_rectangle_center_point(rect) for rect in all_rectangles]
 
     @classmethod
     def __get_and_display_all_tooltips(cls):
@@ -69,13 +79,13 @@ class MonsterTooltipFinder:
 
 if __name__ == "__main__":
     from time import sleep
-    # Finder._Finder__get_and_display_all_tooltips()
-    from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
-    sleep(0.5)
-    tooltips = MonsterTooltipFinder.find_tooltips()
-    sorted_tooltips = Sorter.sort(tooltips, Sorter.SORT_BY_MONSTER_PRIORITY)
-    print(len(sorted_tooltips))
-    for tooltip in sorted_tooltips:
-        print(tooltip.monster_counts)
-        print(MonsterLocationFinder.get_monster_location(tooltip))
-        break
+    MonsterTooltipFinder._MonsterTooltipFinder__get_and_display_all_tooltips()
+    # from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
+    # sleep(1)
+    # tooltips = MonsterTooltipFinder.find_tooltips()
+    # sorted_tooltips = Sorter.sort(tooltips, Sorter.SORT_BY_MONSTER_PRIORITY)
+    # print(len(sorted_tooltips))
+    # for tooltip in sorted_tooltips:
+    #     print(tooltip.monster_counts)
+    #     print(MonsterLocationFinder.get_monster_location(tooltip))
+    #     break

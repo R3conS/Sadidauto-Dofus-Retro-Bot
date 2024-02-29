@@ -11,6 +11,7 @@ from src.bot._interfaces.interfaces import Interfaces
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._recoverer._reconnecter.reconnecter import Reconnecter
 from src.bot._states.in_combat._sub_states.sub_states_enum import State as InCombat_SubState
+from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 from src.bot._states.state_determiner.determiner import determine_state
 from src.bot._states.states_enum import State
 
@@ -21,14 +22,17 @@ class Recoverer:
             self, 
             character_name: str, 
             server_name: str, 
+            script: str,
             character_level: int,
             game_window_identifier: int | str, # String (title) only used for dev/testing.
             game_window_default_size: tuple[int, int]
         ):
         self._character_name = character_name
         self._server_name = server_name
+        self._script = script
         self._character_level = character_level
         self._game_window_default_size = game_window_default_size
+        self._zaap_map_coords = BankDataGetter().get_data(self._script)["zaap_map"]
         self._exception_tracker = {}
         self._max_consecutive_exceptions = 3
         self._max_consecutive_exceptions_period = 120 # Seconds.
@@ -123,19 +127,30 @@ class Recoverer:
             else:
                 Interfaces.close_all()
 
-    @classmethod
-    def _emergency_recall(cls):
+    def _emergency_recall(self):
         log.info("Attempting to recall ... ")
-        if cls._is_recall_potion_available():
+
+        if self._is_recall_potion_available():
             pyag.moveTo(664, 725)
             pyag.click(clicks=2, interval=0.1)
+
             try:
                 MapChanger.wait_loading_screen_pass()
             except RecoverableException as e:
+                # The following condition only happens if the bot recalls
+                # while being on zaap map already, because there is no
+                # loading screen when teleporting from the same map.
+                if MapChanger.get_current_map_coords() == self._zaap_map_coords:
+                    log.info("Failed to detect loading screen because recall was attempted from the zaap map!")
+                    log.info("Successfully recalled.")
+                    return
+
                 e.exception_reason = ExceptionReason.FAILED_TO_CHANGE_MAP
                 raise e
+
             log.info("Successfully recalled.")
             return
+
         raise UnrecoverableException("Recall potion is not available.")
             
     @staticmethod
@@ -144,4 +159,5 @@ class Recoverer:
 
 
 if __name__ == "__main__":
-    recoverer = Recoverer("Juni", "Semi-like", 65, "Abrak", (950, 785))
+    recoverer = Recoverer("Juni", "Semi-like", "af_anticlock", 65, "Abrak", (950, 785))
+    recoverer._emergency_recall()

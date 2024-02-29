@@ -6,7 +6,6 @@ from src.bot._interfaces.interfaces import Interfaces
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.equipment_tab import EquipmentTab
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.miscellaneous_tab import MiscellaneousTab
 from src.bot._states.out_of_combat._sub_states.banking._vault._tabs.resources_tab import ResourcesTab
-from src.bot._states.out_of_combat._sub_states.banking.bank_data import Getter as BankDataGetter
 
 
 class Vault:

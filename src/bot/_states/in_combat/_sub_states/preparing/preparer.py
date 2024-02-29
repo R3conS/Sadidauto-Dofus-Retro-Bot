@@ -14,6 +14,7 @@ from src.bot._exceptions import RecoverableException
 from src.bot._map_changer.map_changer import MapChanger
 from src.bot._states.in_combat._combat_options.combat_options import CombatOptions
 from src.bot._states.in_combat._status_enum import Status
+from src.bot._states.in_combat._sub_states.preparing._exceptions import FailedToSelectDummyCell, FailedToSelectStartingCell
 from src.bot._states.in_combat._sub_states.preparing._map_data.getter import Getter as MapDataGetter
 from src.bot._states.in_combat._sub_states.sub_states_enum import State as SubState
 from src.utilities.general import load_image, load_image_full_path, move_mouse_off_game_area
@@ -39,26 +40,55 @@ class Preparer:
         self._starting_cell_data = MapDataGetter.get_data_object(script).get_starting_cells()
         self._dummy_cell_data = MapDataGetter.get_data_object(script).get_dummy_cells()
         self._disable_spectator_mode = disable_spectator_mode
+        self._did_char_move_to_cell_timeout = 0
 
     def prepare(self):
+        self._did_char_move_to_cell_timeout = 0.35
         try:
             CombatOptions.FIGHT_LOCK.turn_on()
             if self._disable_spectator_mode:
                 CombatOptions.SPECTATOR_MODE.deactivate()
             CombatOptions.TACTICAL_MODE.turn_on()
+
             map_coords = MapChanger.get_current_map_coords()
-            if self._are_there_any_dummy_cells_on_map(map_coords):
-                final_dummy_cell_color = self._select_dummy_cell(map_coords)
-                # Mouse cursor will stay hovered over the character's model
-                # which in turn will display the black character's info
-                # tooltip (Name (lvl)) that blocks the view of the starting 
-                # cell locations on some maps. The cursor needs to be moved 
-                # off to make sure it doesn't happen.
-                move_mouse_off_game_area()
-                self._select_starting_cell(map_coords, final_dummy_cell_color)
+
+            attempts = 0
+            while attempts < 3:
+                # Check if no longer in selection stage. Happens if disconnected
+                # or when combat start automatically because the time allowed
+                # by Dofus runs out.
+                if self._get_ready_button_pos() is None:
+                    raise RecoverableException(
+                        "Failed to complete cell selection in Preparing state "
+                        "because 'Ready' button couldn't be found."
+                    )
+
+                try:
+                    if self._are_there_any_dummy_cells_on_map(map_coords):
+                        final_dummy_cell_color = self._select_dummy_cell(map_coords)
+                        # Mouse cursor will stay hovered over the character's model
+                        # which in turn will display the black character's info
+                        # tooltip (Name (lvl)) that blocks the view of the starting 
+                        # cell locations on some maps. The cursor needs to be moved 
+                        # off to make sure it doesn't happen.
+                        move_mouse_off_game_area()
+                        self._select_starting_cell(map_coords, final_dummy_cell_color)
+                    else:
+                        self._select_starting_cell(map_coords)
+
+                    self._start_combat()
+                    return
+                except (FailedToSelectDummyCell, FailedToSelectStartingCell):
+                    attempts += 1
+                    log.info(f"Attempt '{attempts}' to finish preparing failed!")
+                    # Cell selection most of the time fails due to Dofus lag
+                    # so increasing the timeout allows more time for the
+                    # character sprite to move to the cell.
+                    self._did_char_move_to_cell_timeout += 1.5
+
             else:
-                self._select_starting_cell(map_coords)
-            self._start_combat()
+                raise RecoverableException("Failed to complete cell selection in Preparing state.")                        
+
         except RecoverableException as e:
             e.occured_in_sub_state = SubState.PREPARING
             raise e
@@ -90,10 +120,11 @@ class Preparer:
         elif len(blue_dummy_cells) == 0:
             return self.BLUE
         
-        raise RecoverableException("Failed to select a dummy cell.")
+        raise FailedToSelectDummyCell("Failed to select a dummy cell.")
 
     def _select_starting_cell(self, map_coords: str, dummy_cell_color: str = None):
         log.info("Selecting a starting cell ...")
+
         if dummy_cell_color is not None:
             starting_cells = self._get_free_starting_cells(dummy_cell_color, map_coords)
         else:
@@ -106,7 +137,7 @@ class Preparer:
                 log.info(f"Successfully selected starting cell: {cell_coords}.")
                 return
         
-        raise RecoverableException("Failed to select a starting cell.")
+        raise FailedToSelectStartingCell("Failed to select a starting cell.")
 
     def _start_combat(self):
         log.info("Starting combat ... ")
@@ -168,7 +199,7 @@ class Preparer:
 
     def _did_char_move(self, cell_x, cell_y, px_color_before_moving: tuple):
         start_time = perf_counter()
-        while perf_counter() - start_time <= 0.35:
+        while perf_counter() - start_time <= self._did_char_move_to_cell_timeout:
             if (
                 not pyag.pixelMatchesColor(cell_x, cell_y, px_color_before_moving)
                 and not self._is_cell_free(cell_x, cell_y, pyag.screenshot(region=(0, 0, 933, 600)))
@@ -226,3 +257,4 @@ class Preparer:
 
 if __name__ == "__main__":
     preparer = Preparer("af_anticlock")
+    preparer.prepare()

@@ -9,6 +9,7 @@ import numpy as np
 import pyautogui as pyag
 
 from src.bot._exceptions import RecoverableException
+from src.bot._interfaces.interfaces import Interfaces
 from src.bot._states.in_combat._status_enum import Status
 from src.utilities.general import load_image, move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
@@ -20,10 +21,6 @@ class TurnDetector:
 
     IMAGE_FOLDER_PATH = "src\\bot\\_states\\in_combat\\_sub_states\\fighting\\_images"
     FIRST_TURN_INDICATOR_IMAGE = load_image(IMAGE_FOLDER_PATH, "first_turn_indicator.png")
-    CLOSE_BUTTON_IMAGES = [
-        load_image(IMAGE_FOLDER_PATH, "close_button.png"),
-        load_image(IMAGE_FOLDER_PATH, "close_button_2.png"),
-    ]
     AP_COUNTER_IMAGE = load_image(IMAGE_FOLDER_PATH, "ap_counter_image.png")
     AP_COUNTER_IMAGE_MASK = ImageDetection.create_mask(AP_COUNTER_IMAGE)
 
@@ -41,7 +38,7 @@ class TurnDetector:
                 return Status.CHARACTERS_TURN_DETECTED
 
             if not cls.is_ap_counter_visible():
-                if cls._is_close_button_visible():
+                if Interfaces.FIGHT_RESULTS.is_open():
                     log.info("Detected 'Fight Results' window.")
                     return Status.FIGHT_RESULTS_WINDOW_DETECTED
                 # If code reaches this point it most likely means that the
@@ -130,23 +127,6 @@ class TurnDetector:
         image = OCR.resize_image(image, image.shape[1] * 2, image.shape[0] * 2)
         image = OCR.erode_image(image, 2)
         return OCR.binarize_image(image, 30)
-
-    @classmethod
-    def _is_close_button_visible(cls):
-        # Detecting within a time frame because it takes some time for the game
-        # to fully render/draw the button on the screen.
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 5:
-            if len(
-                ImageDetection.find_images(
-                    haystack=ScreenCapture.game_window(),
-                    needles=cls.CLOSE_BUTTON_IMAGES,
-                    confidence=0.98,
-                    method=cv2.TM_SQDIFF_NORMED,
-                )
-            ) > 0:
-                return True
-        return False
 
     @staticmethod
     def _is_turn_timer_filling_up():

@@ -15,12 +15,11 @@ class Controller:
         self, 
         set_bot_state_callback: callable, 
         script: str, 
-        game_window_title: str,
-        go_bank_when_pods_percentage: int = 95,
+        go_bank_when_pods_percentage: int = 90,
     ):
         self._set_main_bot_state_callback = set_bot_state_callback
-        self._hunter = Hunter(script, game_window_title, go_bank_when_pods_percentage)
-        self._banker = Banker(script, game_window_title)
+        self._hunter = Hunter(script, go_bank_when_pods_percentage)
+        self._banker = Banker(script)
 
     def run(self):
         sub_state = SubState.HUNTING

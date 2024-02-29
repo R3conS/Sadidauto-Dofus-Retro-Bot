@@ -30,25 +30,23 @@ class MapChanger:
     def get_current_map_coords(cls):
         current_map_image = cls._screenshot_map_area()
         for map_coords, map_image in cls.MAP_IMAGE_DATA.items():
-            result = ImageDetection.find_image(
-                haystack=map_image,
-                needle=current_map_image,
-                confidence=0.99,
-                method=cv2.TM_SQDIFF_NORMED,
-                remove_alpha_channels=True,
-            )
-            if len(result) > 0:
+            if len(
+                ImageDetection.find_image(
+                    haystack=map_image,
+                    needle=current_map_image,
+                    confidence=0.99,
+                    method=cv2.TM_SQDIFF_NORMED,
+                    remove_alpha_channels=True,
+                )
+            ) > 0:
                 match = re.search(r'-?\d{1,2},-?\d{1,2}', map_coords)
                 if match:
                     return match.group()
         
-        if not cls._is_minimap_visible():
-            raise RecoverableException(
-                message="Failed to get current map coords because the minimap is not visible.",
-                reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
-            )
-
-        raise UnrecoverableException("Failed to get current map coords because the map image is missing.")
+        raise RecoverableException(
+            message="Failed to get current map coords.",
+            reason=ExceptionReason.FAILED_TO_GET_MAP_COORDS   
+        )
 
     @classmethod
     def change_map(cls, from_map: str, to_map: str):
@@ -141,3 +139,4 @@ class MapChanger:
 
 if __name__ == "__main__":
     print(MapChanger.get_current_map_coords())
+    # print(MapChanger._is_minimap_visible())

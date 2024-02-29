@@ -36,7 +36,7 @@ class Bot(mp.Process):
         character_name: str, 
         server_name: str,
         script: str,
-        go_bank_when_pods_percentage: int = 95,
+        go_bank_when_pods_percentage: int = 90,
         disable_spectator_mode: bool = True
     ):
         super().__init__()
@@ -58,7 +58,6 @@ class Bot(mp.Process):
             self._out_of_combat_controller = OOC_Controller(
                 self._set_state, 
                 self._script, 
-                self._window_title,
                 self._go_bank_when_pods_percentage
             )
             self._in_combat_controller = IC_Controller(
@@ -71,6 +70,7 @@ class Bot(mp.Process):
             self._recoverer = Recoverer(
                 self._character_name, 
                 self._server_name, 
+                self._script,
                 self._character_level, 
                 self._window_hwnd, 
                 self.WINDOW_SIZE
@@ -196,13 +196,18 @@ class Bot(mp.Process):
             log.info("Verifying character's name ... ")
             Interfaces.CHARACTERISTICS.open()
             sc = ScreenCapture.custom_area((685, 93, 205, 26))
+            sc = OCR.resize_image(sc, sc.shape[1] * 2, sc.shape[0] * 2)
+            sc = OCR.convert_to_grayscale(sc)
+            sc = OCR.invert_image(sc)
             text = OCR.get_text_from_image(sc)
             if character_name == text:
                 log.info("Successfully verified character's name!")
                 Interfaces.CHARACTERISTICS.close()
                 return character_name
+            else:
+                raise RecoverableException("The provided name and the one in-game do not match!")
         except RecoverableException:
-            raise InitializationException("Failed to verify character's name! The provided one and the one in-game do not match!")
+            raise InitializationException("Failed to verify character's name!")
 
     @staticmethod
     def _read_character_level():
@@ -215,6 +220,8 @@ class Bot(mp.Process):
                 log.info(f"Successfully read character's level: {level}!")
                 Interfaces.CHARACTERISTICS.close()
                 return int(level)
+            else:
+                raise RecoverableException("Read level string is not all digits!")
         except RecoverableException:
             raise InitializationException("Failed to read character's level!")
 
