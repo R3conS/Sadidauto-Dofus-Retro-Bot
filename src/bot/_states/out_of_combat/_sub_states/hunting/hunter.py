@@ -4,7 +4,7 @@ log = get_logger()
 
 import glob
 import os
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import pyautogui as pyag
@@ -59,7 +59,7 @@ class Hunter:
         self._bank_map_coords = bank_data["bank_map"]
         self._is_char_inside_bank: callable = bank_data["is_char_inside_bank"]
         self._bank_exit_coords = bank_data["exit_coords"]
-        self._forbidden_tooltip_locations = []
+        self._forbidden_monster_group_locations = []
 
     def hunt(self):
         while True:
@@ -87,13 +87,22 @@ class Hunter:
                 if result == Status.SUCCESSFULLY_TRAVERSED_MAP:
                     continue
             elif map_type == "fightable":
-                result = self._handle_fightable_map(map_coords)
-                if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
-                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
-                elif result == Status.MAP_FULLY_SEARCHED:
-                    continue
-                elif result == Status.FAILED_TO_ATTACK_MONSTER:
+                while True:
                     result = self._handle_fightable_map(map_coords)
+                    if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
+                        self._forbidden_monster_group_locations.clear()
+                        return Status.SUCCESSFULLY_ATTACKED_MONSTER
+                    elif result == Status.MAP_FULLY_SEARCHED:
+                        self._forbidden_monster_group_locations.clear()
+                        break
+                    elif (
+                        result == Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
+                        or result == Status.MONSTER_IS_NO_LONGER_AT_LOCATION
+                        or result == Status.ATTACK_TOOLTIP_NOT_FOUND
+                        or result == Status.MAP_WAS_CHANGED_BY_ACCIDENT
+                        or result == Status.ENTERED_LUMBERJACKS_WORKSHOP_BY_ACCIDENT
+                    ):
+                        continue
 
     def _get_pods_percentage(self):
         log.info("Getting inventory pods percentage ... ")
@@ -114,8 +123,8 @@ class Hunter:
         for tooltip in monster_tooltips:
             log.info(f"Found monster group: {tooltip.monster_counts_as_str}.")
 
-            if self._is_tooltip_location_forbidden(tooltip):
-                log.info("Skipping monster group because its tooltip location is forbidden ... ")
+            if self._is_monster_group_location_forbidden(tooltip):
+                log.info("Skipping monster group because its location is forbidden ... ")
                 continue
 
             if self._does_tooltip_contain_forbidden_monsters(tooltip):
@@ -131,10 +140,8 @@ class Hunter:
                 continue
 
             result = self._attack(monster_location)
-            if result == Status.MONSTER_IS_ALREADY_IN_COMBAT:
-                log.info("Skipping monster group because it was attacked by someone else ... ")
-                continue
-            elif result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
+
+            if result == Status.SUCCESSFULLY_ATTACKED_MONSTER:
                 self._consecutive_fights_counter += 1
                 self._total_fights_counter += 1
                 # If a need arises to change the format of any of these
@@ -144,29 +151,56 @@ class Hunter:
                 # the BotCountersPlainTextEdit class.
                 log.info(f"Successfully attacked: {tooltip.monster_counts_as_str}.")
                 log.info(f"Started fight number: '{self._total_fights_counter}'.")
-                self._forbidden_tooltip_locations.clear()
                 return Status.SUCCESSFULLY_ATTACKED_MONSTER
-            elif result == Status.FAILED_TO_ATTACK_MONSTER:
-                if map_coords != MapChanger.get_current_map_coords():
-                    log.error("Map was accidentally changed during the attack.")
+
+            elif result == Status.MONSTER_IS_NO_LONGER_AT_LOCATION:
+                wait_time = 3
+                log.info(
+                    "Monster group is no longer at its initial location. "
+                    f"Waiting {wait_time} seconds to make sure it stops "
+                    "moving in case it moved."
+                )
+                sleep(wait_time)
+                return Status.MONSTER_IS_NO_LONGER_AT_LOCATION
+
+            elif result == Status.ATTACK_TOOLTIP_NOT_FOUND:
+                log.info(
+                    "Failed to find 'Attack' tooltip. The monster group "
+                    "was most likely attacked by someone else."
+                )
+                self._add_monster_group_location_to_forbidden_locations(tooltip)
+                return Status.ATTACK_TOOLTIP_NOT_FOUND
+
+            # Can happen if:
+            # 1) the character is standing on the same spot as the monster
+            # that is being attacked.
+            # 2) if the attacked monster is standing on the map change sun.
+            elif result == Status.TIMED_OUT_WHILE_ATTACKING_MONSTER:
+                self._add_monster_group_location_to_forbidden_locations(tooltip)
+                if self._was_map_changed_by_accident(map_coords):
+                    log.info("Map was changed while attacking the monster.")
                     self._change_map_back_to_original(map_coords)
+                    return Status.MAP_WAS_CHANGED_BY_ACCIDENT
                 elif self._is_char_in_lumberjack_workshop():
-                    log.info("Character is in 'Lumberjack's Workshop'. Leaving ... ")
+                    log.info("Entered 'Lumberjack's Workshop' while attacking the monster.")
                     self._leave_lumberjacks_workshop()
-                self._add_tooltip_location_to_forbidden_list(tooltip)
-                return Status.FAILED_TO_ATTACK_MONSTER
+                    return Status.ENTERED_LUMBERJACKS_WORKSHOP_BY_ACCIDENT
+                return Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
 
         log.info(f"Map '{map_coords}' fully searched.")
-        self._forbidden_tooltip_locations.clear()
         MapChanger.change_map(map_coords, self._pathing_data[map_coords])
 
         return Status.MAP_FULLY_SEARCHED
 
-    def _is_tooltip_location_forbidden(self, tooltip: Tooltip):
-        return tooltip.level_text_center_point in self._forbidden_tooltip_locations
+    def _add_monster_group_location_to_forbidden_locations(self, tooltip: Tooltip):
+        self._forbidden_monster_group_locations.append(tooltip.level_text_center_point)
 
-    def _add_tooltip_location_to_forbidden_list(self, tooltip: Tooltip):
-        self._forbidden_tooltip_locations.append(tooltip.level_text_center_point)
+    @staticmethod
+    def _was_map_changed_by_accident(current_map_coords):
+        return current_map_coords != MapChanger.get_current_map_coords()
+
+    def _is_monster_group_location_forbidden(self, tooltip: Tooltip):
+        return tooltip.level_text_center_point in self._forbidden_monster_group_locations
 
     @classmethod
     def _does_tooltip_contain_forbidden_monsters(cls, tooltip: Tooltip):
@@ -176,26 +210,46 @@ class Hunter:
                 return True
         return False
 
+    @classmethod
+    def _wait_for_ready_button_to_appear(cls, timeout=8):
+        start_time = perf_counter()
+        while perf_counter() - start_time <= timeout:
+            if cls._is_ready_button_visible():
+                return 
+            sleep(0.25)
+        raise TimeoutError("Timed out while waiting for 'Ready' button to appear.")
+
     def _attack(self, monster_location: tuple[int, int]):
-        log.info(f"Attacking monster at {monster_location} ... ")
+        log.info(f"Attacking monster at: {monster_location} ... ")
 
         pyag.moveTo(*monster_location)
-        pyag.click()
-
-        if self._is_join_tooltip_visible():
-            log.info(f"Detected 'Join' tooltip after clicking on monster at: {monster_location}.")
-            # Clicking off the game area to close the tooltip.
-            move_mouse_off_game_area()
+        if MonsterLocationFinder.is_monster_tooltip_visible_around_point(monster_location):
             pyag.click()
-            return Status.MONSTER_IS_ALREADY_IN_COMBAT
-        elif self._is_attack_tooltip_visible():
-            pyag.moveTo(*self._get_attack_tooltip_pos())
-            pyag.click()
+            sleep(0.05) # Give some time for the tooltip to appear.
 
-        if self._is_ready_button_visible():
-            return Status.SUCCESSFULLY_ATTACKED_MONSTER
+            if self._is_attack_tooltip_visible():
+                pyag.moveTo(*self._get_attack_tooltip_pos())
+                pyag.click()
+                # ToDo: instead of moving mouse of the game area, keep it hovered
+                # and check if the monster tooltip is still present. If it is
+                # - check if it has stars. If it doesn't it means that
+                # the monster was attacked already. It can be done in the
+                # wait for ready button to appear loop.
+                move_mouse_off_game_area()
+                try:
+                    self._wait_for_ready_button_to_appear()
+                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
+                except TimeoutError:
+                    return Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
+            else:
+                # Close any tooltips that might've been opened like
+                # "Join", "Cut", other player's option menu etc.
+                move_mouse_off_game_area()
+                pyag.click()
+                return Status.ATTACK_TOOLTIP_NOT_FOUND
 
-        return Status.FAILED_TO_ATTACK_MONSTER
+        else:
+            return Status.MONSTER_IS_NO_LONGER_AT_LOCATION
 
     @classmethod
     def _is_join_tooltip_visible(cls):
@@ -203,7 +257,7 @@ class Hunter:
             ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
                 needles=cls.CLICKED_ON_JOIN_SWORD_IMAGES,
-                confidence=0.98,
+                confidence=0.99,
                 method=cv2.TM_SQDIFF_NORMED
             )
         ) > 0:
@@ -216,7 +270,7 @@ class Hunter:
             ImageDetection.find_images(
                 haystack=ScreenCapture.custom_area((0, 50, 937, 550)),
                 needles=cls.ATTACK_TOOLTIP_IMAGES,
-                confidence=0.98,
+                confidence=0.99,
                 method=cv2.TM_SQDIFF_NORMED
             )
         ) > 0:
@@ -237,17 +291,15 @@ class Hunter:
 
     @classmethod
     def _is_ready_button_visible(cls):
-        start_time = perf_counter()
-        while perf_counter() - start_time <= 8:
-            if len(
-                ImageDetection.find_images(
-                    haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
-                    needles=cls.READY_BUTTON_IMAGES,
-                    confidence=0.85,
-                    method=cv2.TM_SQDIFF_NORMED
-                )
-            ) > 0:
-                return True
+        if len(
+            ImageDetection.find_images(
+                haystack=ScreenCapture.custom_area(cls.READY_BUTTON_AREA),
+                needles=cls.READY_BUTTON_IMAGES,
+                confidence=0.85,
+                method=cv2.TM_SQDIFF_NORMED
+            )
+        ) > 0:
+            return True
         return False  
 
     @staticmethod
@@ -262,6 +314,7 @@ class Hunter:
 
     @staticmethod
     def _leave_lumberjacks_workshop():
+        log.info("Leaving 'Lumberjack's Workshop'.")
         pyag.keyDown("e")
         pyag.moveTo(667, 507)
         pyag.click()
@@ -286,11 +339,11 @@ class Hunter:
 
     @staticmethod
     def _change_map_back_to_original(original_map_coords):
-        log.info("Attempting to change map back to original ...")
+        log.info("Changing map back to original ...")
         MapChanger.change_map(MapChanger.get_current_map_coords(), original_map_coords)
+        log.info("Successfully changed map back to original!")
 
 
 if __name__ == "__main__":
-    hunter = Hunter("af_anticlock", "Dofus Retro")
-    print(hunter._is_attack_tooltip_visible())
-    print(hunter._get_attack_tooltip_pos())
+    hunter = Hunter("af_anticlock")
+    hunter.hunt()
