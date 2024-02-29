@@ -122,8 +122,9 @@ class BaseTab(ABC):
                 return
             
             if not self._is_item_in_slot_forbidden(*slot_coords):
+                next_slot_screenshot = self._screenshot_next_slot(*slot_coords)
                 self._deposit_slot(*slot_coords)
-                if self._was_slot_deposited(*slot_coords):
+                if self._was_slot_deposited(slot_coords[0], slot_coords[1], next_slot_screenshot):
                     deposited_items_count += 1
                     continue
                 elif self._is_item_in_slot_linked_to_the_character(*slot_coords):
@@ -292,18 +293,17 @@ class BaseTab(ABC):
                     return True
         return False
 
-    def _was_slot_deposited(self, slot_x, slot_y):
-        next_slot_screenshot = self._screenshot_next_slot(slot_x, slot_y)
+    def _was_slot_deposited(self, slot_x, slot_y, next_slot_screenshot):
         start_time = perf_counter()
         while perf_counter() - start_time <= 5:
-            current_slot_screenshot = self._screenshot_slot(slot_x, slot_y)
-            rectangle = ImageDetection.find_image(
-                haystack=current_slot_screenshot,
-                needle=next_slot_screenshot,
-                confidence=0.95,
-                method=cv2.TM_CCORR_NORMED,
-            )
-            if len(rectangle) > 0:
+            if len(
+                ImageDetection.find_image(
+                    haystack=self._screenshot_slot(slot_x, slot_y),
+                    needle=next_slot_screenshot,
+                    confidence=0.95,
+                    method=cv2.TM_SQDIFF_NORMED,
+                )
+            ) > 0:
                 return True
         return False
 
