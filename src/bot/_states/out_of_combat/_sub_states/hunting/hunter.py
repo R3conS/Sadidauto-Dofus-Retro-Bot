@@ -230,11 +230,6 @@ class Hunter:
             if self._is_attack_tooltip_visible():
                 pyag.moveTo(*self._get_attack_tooltip_pos())
                 pyag.click()
-                # ToDo: instead of moving mouse of the game area, keep it hovered
-                # and check if the monster tooltip is still present. If it is
-                # - check if it has stars. If it doesn't it means that
-                # the monster was attacked already. It can be done in the
-                # wait for ready button to appear loop.
                 move_mouse_off_game_area()
                 try:
                     self._wait_for_ready_button_to_appear()
