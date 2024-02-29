@@ -70,7 +70,7 @@ class MapChanger:
     def wait_loading_screen_pass():
         log.info("Waiting for loading screen ... ")
         start_time = perf_counter()
-        while perf_counter() - start_time <= 15:
+        while perf_counter() - start_time <= 10:
             if MapChanger._is_loading_screen_visible():
                 log.info("Loading screen detected ... ")
                 break
@@ -81,7 +81,7 @@ class MapChanger:
             )
         
         start_time = perf_counter()
-        while perf_counter() - start_time <= 15:
+        while perf_counter() - start_time <= 10:
             if not MapChanger._is_loading_screen_visible():
                 log.info("Loading screen finished.")
                 return
