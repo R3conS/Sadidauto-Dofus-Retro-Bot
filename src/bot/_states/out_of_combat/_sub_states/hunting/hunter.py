@@ -19,7 +19,7 @@ from src.bot._states.out_of_combat._sub_states.hunting._hp_recoverer.hp_recovere
 from src.bot._states.out_of_combat._sub_states.hunting._map_data.getter import Getter as MapDataGetter
 from src.bot._states.out_of_combat._sub_states.hunting._monster_location_finder import MonsterLocationFinder
 from src.bot._states.out_of_combat._sub_states.hunting._monster_tooltip_finder.monster_tooltip_finder import MonsterTooltipFinder, Tooltip
-from src.utilities.general import load_image_full_path, move_mouse_off_game_area, save_image_to_debug_folder
+from src.utilities.general import load_image_full_path, move_mouse_off_game_area
 from src.utilities.image_detection import ImageDetection
 from src.utilities.screen_capture import ScreenCapture
 
