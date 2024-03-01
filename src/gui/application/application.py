@@ -23,7 +23,7 @@ class Application(QApplication):
         
         https://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-7/1552105#1552105
         """
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("oFlex.Application")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Sadidauto.Application")
 
     def _get_default_palette(self, application: QApplication):
         palette = application.palette()

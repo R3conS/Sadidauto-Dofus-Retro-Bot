@@ -1,11 +1,11 @@
 # PyGetWindow 
 # A cross-platform module to find information about the windows on the screen.
 
-# Custom version for oFlex.
+# Custom version for Sadidauto.
 # - Removed macOS module.
 # - Modified BaseWindow to resolve issues with pickling when using multiprocessing.
 
-__version__ = "0.0.91 - oFlex Version"
+__version__ = "0.0.91 - for Sadidauto"
 
 import collections, pyrect
 
