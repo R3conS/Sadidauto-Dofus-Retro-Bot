@@ -18,7 +18,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.app = app
         self.setupUi(self)
-        self.setWindowTitle("oFlexBot")
+        self.setWindowTitle("oFlex")
         self.setFocus()
         self.setFocusPolicy(Qt.ClickFocus) # Make all widgets lose focus when clicking on the main window.
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint) # Set non resizable.
