@@ -1,11 +1,14 @@
 [tool.poetry]
-name = "oflex-bot-dofus"
+name = "Sadidauto-Dofus-Retro-Bot"
 version = "1.0.0"
-description = ""
-authors = ["ephell"]
+description = "Sadidauto is a bot tailored for the Sadida class in Dofus Retro."
+authors = ["ephell - https://github.com/ephell"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/ephell/Sadidauto-Dofus-Retro-Bot"
+repository = "https://github.com/ephell/Sadidauto-Dofus-Retro-Bot"
 packages = [{include = "src"}]
+include = ["README.md", "LICENSE"]
 
 [tool.poetry.dependencies]
 python = "3.11.7"
