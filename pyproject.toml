@@ -2,7 +2,7 @@
 name = "Sadidauto-Dofus-Retro-Bot"
 version = "1.0.0"
 description = "Sadidauto is a bot tailored for the Sadida class in Dofus Retro."
-authors = ["ephell - https://github.com/ephell"]
+authors = ["Erikas D. <dremaitiserikas@yahoo.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/ephell/Sadidauto-Dofus-Retro-Bot"
