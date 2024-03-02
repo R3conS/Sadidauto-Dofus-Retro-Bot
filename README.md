@@ -28,9 +28,10 @@ Clockwise             |  Counterclockwise
 [![Demo-Video](https://i.imgur.com/MNq2RTO.jpeg)](https://www.youtube.com/watch?v=kXMIF0KDwcs "Demo-Video")
 
 ## Limitations
+- Only for Windows. Tested on Windows 10 and 11.
 - Given that Sadidauto employs the mouse and keyboard to interact with the game, it's impossible to use your computer for other tasks simultaneously unless Sadidauto operates within a Virtual Machine.
 - A minimum of 4GB RAM and a 2-core CPU is recommended to smoothly run the game alongside Sadidauto.
-- May experience frequent crashes when used on laggy and unstable internet connections (>300 ping).
+- May experience frequent crashes when playing Dofus on a laggy and unstable internet connection (>300 ping).
 
 ## Logic flow
 Sadidauto is governed by a central controller, overseeing two primary states: **In Combat** and **Out of Combat**. These states, in turn, are managed by dedicated controllers, each handling specific sub-states: **Preparing**, **Fighting** and **Hunting**, **Banking** respectively. In the event of a recoverable exception a designated recovery procedure is initiated. If the recovery succeeds, control is returned to the main controller; otherwise, Sadidauto exits. A visual representation of this logic flow is provided below:
