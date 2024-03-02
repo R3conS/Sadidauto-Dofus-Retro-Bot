@@ -49,7 +49,7 @@ Sadidauto is governed by a central controller, overseeing two primary states: **
   - bash: `source venv/Scripts/activate`
   - shell: `.\venv\Scripts\activate`
 - Install project's dependencies: `pip install -r requirements.txt`
-- Start the application: `python src`
+- Start the application: `python -m src`
 
 ##### Method 2 - Poetry
 - Download and install Python 3.11.7.
