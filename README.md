@@ -22,7 +22,7 @@ Sadidauto is currently capable of farming the **Astrub Forest** area which encom
 
 Clockwise             |  Counterclockwise
 :-------------------------:|:-------------------------:
-![Clockwise](https://i.imgur.com/nWCkfOY.png)  |  ![Counterclockwise](https://i.imgur.com/2IHYxCG.png)
+![Clockwise](https://i.imgur.com/2IHYxCG.png)  |  ![Counterclockwise](https://i.imgur.com/nWCkfOY.png)
 
 ## Demo
 [![Demo-Video](https://i.imgur.com/MNq2RTO.jpeg)](https://www.youtube.com/watch?v=kXMIF0KDwcs "Demo-Video")
