@@ -98,7 +98,6 @@ class Hunter:
                     elif (
                         result == Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
                         or result == Status.MONSTER_IS_NO_LONGER_AT_LOCATION
-                        or result == Status.ATTACK_TOOLTIP_NOT_FOUND
                         or result == Status.MAP_WAS_CHANGED_BY_ACCIDENT
                         or result == Status.ENTERED_LUMBERJACKS_WORKSHOP_BY_ACCIDENT
                     ):
@@ -163,14 +162,6 @@ class Hunter:
                 sleep(wait_time)
                 return Status.MONSTER_IS_NO_LONGER_AT_LOCATION
 
-            elif result == Status.ATTACK_TOOLTIP_NOT_FOUND:
-                log.info(
-                    "Failed to find 'Attack' tooltip. The monster group "
-                    "was most likely attacked by someone else."
-                )
-                self._add_monster_group_location_to_forbidden_locations(tooltip)
-                return Status.ATTACK_TOOLTIP_NOT_FOUND
-
             # Can happen if:
             # 1) the character is standing on the same spot as the monster
             # that is being attacked.
@@ -230,18 +221,16 @@ class Hunter:
             if self._is_attack_tooltip_visible():
                 pyag.moveTo(*self._get_attack_tooltip_pos())
                 pyag.click()
-                move_mouse_off_game_area()
-                try:
-                    self._wait_for_ready_button_to_appear()
-                    return Status.SUCCESSFULLY_ATTACKED_MONSTER
-                except TimeoutError:
-                    return Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
-            else:
+
+            try:
+                self._wait_for_ready_button_to_appear()
+                return Status.SUCCESSFULLY_ATTACKED_MONSTER
+            except TimeoutError:
                 # Close any tooltips that might've been opened like
                 # "Join", "Cut", other player's option menu etc.
                 move_mouse_off_game_area()
                 pyag.click()
-                return Status.ATTACK_TOOLTIP_NOT_FOUND
+                return Status.TIMED_OUT_WHILE_ATTACKING_MONSTER
 
         else:
             return Status.MONSTER_IS_NO_LONGER_AT_LOCATION
