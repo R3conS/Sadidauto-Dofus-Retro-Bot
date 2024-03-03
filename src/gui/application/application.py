@@ -1,28 +1,29 @@
 import ctypes
-import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QIcon, QPalette
 from PySide6.QtWidgets import QApplication
 
 
 class Application(QApplication):
 
     STYLE = "Fusion"
+    ICON_PATH = "src\\gui\\application\\logo.png"
 
     def __init__(self, argv):
         super().__init__(argv)
-        self.__set_app_id()
+        self._set_app_id()
         self.setStyle(self.STYLE)
         self.setPalette(self._get_default_palette(self))
+        self.setWindowIcon(QIcon(self.ICON_PATH))
 
-    def __set_app_id(self):
+    def _set_app_id(self):
         """
         Set AppUserModelID so that the app icon is displayed in the taskbar.
         
         https://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-7/1552105#1552105
         """
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("ClipIt.Application")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Sadidauto.Application")
 
     def _get_default_palette(self, application: QApplication):
         palette = application.palette()

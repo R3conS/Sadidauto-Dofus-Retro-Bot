@@ -8,7 +8,7 @@ class BotCountersWindow(QWidget, Ui_BotCountersWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.setWindowTitle("oFlexBot - Bot Counters")
+        self.setWindowTitle("Sadidauto - Bot Counters")
         self.fully_close_on_close_event = False
 
     def closeEvent(self, event):

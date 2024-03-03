@@ -1,19 +1,21 @@
 [tool.poetry]
-name = "oflex-bot-dofus"
+name = "Sadidauto-Dofus-Retro-Bot"
 version = "1.0.0"
-description = ""
-authors = ["ephell"]
+description = "Sadidauto is a bot tailored for the Sadida class in Dofus Retro."
+authors = ["Erikas D. <dremaitiserikas@yahoo.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/ephell/Sadidauto-Dofus-Retro-Bot"
+repository = "https://github.com/ephell/Sadidauto-Dofus-Retro-Bot"
 packages = [{include = "src"}]
+include = ["README.md", "LICENSE"]
 
 [tool.poetry.dependencies]
 python = "3.11.7"
 keyboard = "^0.13.5"
-pynput = "^1.7.6"
 pyautogui = "^0.9.54"
 numpy = "^1.26.2"
-tesserocr = { file = "src\\utilities\\ocr\\tesserocr-2.6.0-cp311-cp311-win_amd64.whl" }
+tesserocr = { url = "https://github.com/simonflueckiger/tesserocr-windows_build/releases/download/tesserocr-v2.6.0-tesseract-5.3.1/tesserocr-2.6.0-cp311-cp311-win_amd64.whl" }
 opencv-python = "^4.9.0.80"
 pyside6 = "^6.6.1"
 
