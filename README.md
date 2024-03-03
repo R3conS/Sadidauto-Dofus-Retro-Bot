@@ -1,3 +1,5 @@
+![GitHub last commit](https://img.shields.io/github/last-commit/ephell/Sadidauto-Dofus-Retro-Bot)
+
 <p align="center">
     <img src="https://i.imgur.com/WWzi4PF.png" alt="Sadidauto-Banner">
 </p>
