@@ -13,4 +13,3 @@ class Status(Enum):
     MAP_WAS_CHANGED_BY_ACCIDENT = "map_was_changed_by_accident"
     ENTERED_LUMBERJACKS_WORKSHOP_BY_ACCIDENT = "entered_lumberjacks_worksop_by_accident"
     MONSTER_MOVED_FROM_INITIAL_LOCATION = "monster_moved_from_initial_location"
-    ATTACK_TOOLTIP_NOT_FOUND = "attack_tooltip_not_found"
