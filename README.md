@@ -39,33 +39,7 @@ Sadidauto is governed by a central controller, overseeing two primary states: **
     <img src="https://i.imgur.com/9UjOpfB.png" alt="Sadidauto-Flowchart">
 </p>
 
-## Installation
-
-##### Method 1 - venv + requirements.txt
-- Download and install Python 3.11.7.
-- Clone the repository: `git clone [repository URL]`
-- Navigate to the cloned directory via the terminal: `cd [cloned directory path]`
-- Create a virtual environment: `py -3.11 -m venv venv`
-- Activate the virtual environment:
-  - bash: `source venv/Scripts/activate`
-  - shell: `.\venv\Scripts\activate`
-- Install project's dependencies: `pip install -r requirements.txt`
-- Start the application: `python -m src`
-
-##### Method 2 - Poetry
-- Download and install Python 3.11.7.
-- Clone the repository: `git clone [repository URL]`
-- Navigate to the cloned directory via the terminal: `cd [cloned directory path]`
-- Install Poetry: `pip install poetry`
-- Instruct Poetry to create virtual environments in the project's directory: `poetry config virtualenvs.in-project true`
-- Create a virtual environment: `poetry env use [path-to-python-3-11-7.exe]`
-- Activate the virtual environment:
-  - bash: `source .venv/Scripts/activate`
-  - shell: `.\.venv\Scripts\activate`
-- Install project's dependencies: `poetry install`
-- Start the application: `python src`
-
-## Essential Dofus configuration & more
+## Installation & Usage
 See the [Wiki](https://github.com/ephell/Sadidauto-Dofus-Retro-Bot/wiki).
 
 ## License
