@@ -65,5 +65,8 @@ Sadidauto is governed by a central controller, overseeing two primary states: **
 - Install project's dependencies: `poetry install`
 - Start the application: `python src`
 
+## Essential Dofus configuration & more
+See the [Wiki](https://github.com/ephell/Sadidauto-Dofus-Retro-Bot/wiki).
+
 ## License
 [MIT](LICENSE)
