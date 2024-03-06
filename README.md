@@ -7,6 +7,9 @@
 # 🤖 Sadidauto - What is it?
 Sadidauto is a bot tailored for the Sadida class in Dofus Retro. It is specifically designed to capitalize on the Sadida's monster farming prowess when using a **damage set** as well as the **Earthquake + Poisoned Wind + Sylvan Power** spell combination. Sadidauto employs various visual detection techniques to determine its actions and uses the mouse and keyboard to interact with the official game client just like a genuine player would. The client doesn't get modified in any way.
 
+#### ⚠️ Disclaimer 
+External automation software is **against** Ankama's Terms of Service. Use at your own risk.
+
 ## Key features
 - Find and kill monsters.
 - Bank collected loot.
