@@ -214,12 +214,17 @@ class Bot(mp.Process):
         try:
             log.info("Reading character's level ... ")
             Interfaces.CHARACTERISTICS.open()
-            sc = ScreenCapture.custom_area((735, 129, 39, 21))
+            sc = ScreenCapture.custom_area((688, 129, 100, 21))
+            sc = OCR.resize_image(sc, sc.shape[1] * 5, sc.shape[0] * 5)
+            sc = OCR.convert_to_grayscale(sc)
+            sc = OCR.binarize_image(sc, 127)
             level = OCR.get_text_from_image(sc)
-            if level.isdigit():
-                log.info(f"Successfully read character's level: {level}!")
+            level = level.strip()
+            _, number = level.split(" ")
+            if number.isdigit():
+                log.info(f"Successfully read character's level: {number}!")
                 Interfaces.CHARACTERISTICS.close()
-                return int(level)
+                return int(number)
             else:
                 raise RecoverableException("Read level string is not all digits!")
         except RecoverableException:
