@@ -199,7 +199,7 @@ class Bot(mp.Process):
             sc = OCR.resize_image(sc, sc.shape[1] * 2, sc.shape[0] * 2)
             sc = OCR.convert_to_grayscale(sc)
             sc = OCR.invert_image(sc)
-            text = OCR.get_text_from_image(sc)
+            text = OCR.get_text_from_image(sc).strip()
             if character_name == text:
                 log.info("Successfully verified character's name!")
                 Interfaces.CHARACTERISTICS.close()
