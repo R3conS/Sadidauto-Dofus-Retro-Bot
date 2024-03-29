@@ -27,7 +27,7 @@ class Finder:
     RED_CIRCLE_IMAGE_MASKS = ImageDetection.create_masks(RED_CIRCLE_IMAGES)
     BLUE_CIRCLE_IMAGE = load_image(IMAGE_FOLDER_PATH, "blue_circle.png")
     BLUE_CIRCLE_IMAGE_MASK = ImageDetection.create_mask(BLUE_CIRCLE_IMAGE)
-    INFO_CARD_NAME_AREA = (593, 598, 225, 28)
+    INFO_CARD_NAME_AREA = (593, 598, 219, 28)
     CIRCLE_DETECTION_AREA = (0, 0, 933, 600)
     TURN_BAR_AREA = (0, 516, 933, 77)
 
@@ -149,7 +149,10 @@ class Finder:
 
     @staticmethod
     def read_name_area_screenshot(screenshot: np.ndarray):
-        return OCR.get_text_from_image(OCR.convert_to_grayscale(screenshot))
+        screenshot = OCR.resize_image(screenshot, screenshot.shape[1] * 2, screenshot.shape[0] * 2)
+        screenshot = OCR.convert_to_grayscale(screenshot)
+        screenshot = OCR.binarize_image(screenshot, 127)
+        return OCR.get_text_from_image(screenshot).strip()
 
     @staticmethod
     def is_info_card_visible():
